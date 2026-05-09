@@ -1,5 +1,5 @@
 import { regrets } from "@/data/mockData";
-import { formatKRW } from "@/lib/calculations";
+import { formatKRW } from "@/lib/formatters";
 
 export function RegretTrackerView() {
   return (

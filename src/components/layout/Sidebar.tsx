@@ -13,13 +13,13 @@ import {
 import type { NavItem, ViewKey } from "@/types";
 
 const navItems: NavItem[] = [
-  { key: "dashboard", label: "Dashboard", icon: BarChart3 },
-  { key: "wants", label: "Wants", icon: Sparkles },
-  { key: "calculator", label: "Asset Calculator", icon: Calculator },
-  { key: "regret", label: "Regret Tracker", icon: TrendingUp },
-  { key: "subscriptions", label: "Subscriptions", icon: CreditCard },
-  { key: "insights", label: "Book Insights", icon: BookOpen },
-  { key: "notes", label: "Notes / Inbox", icon: Inbox },
+  { key: "dashboard", label: "대시보드", icon: BarChart3 },
+  { key: "wants", label: "구매 목표", icon: Sparkles },
+  { key: "calculator", label: "자산 구매 계산기", icon: Calculator },
+  { key: "regret", label: "후회 기록장", icon: TrendingUp },
+  { key: "subscriptions", label: "구독 관리", icon: CreditCard },
+  { key: "insights", label: "인사이트 보관함", icon: BookOpen },
+  { key: "notes", label: "노트 / 수집함", icon: Inbox },
 ];
 
 type SidebarProps = {
@@ -36,7 +36,7 @@ export function Sidebar({ selectedView, onSelectView }: SidebarProps) {
         </div>
         <div>
           <h1 className="text-xl font-semibold tracking-wide text-zinc-50">AIOP</h1>
-          <p className="text-xs text-zinc-500">Personal Operating Page</p>
+          <p className="text-xs text-zinc-500">개인 운영 페이지</p>
         </div>
       </div>
 
@@ -65,7 +65,7 @@ export function Sidebar({ selectedView, onSelectView }: SidebarProps) {
       <div className="mt-8 hidden rounded-2xl border border-zinc-800 bg-zinc-900/70 p-4 md:block">
         <div className="mb-3 flex items-center gap-2 text-sm font-medium text-zinc-200">
           <ClipboardList className="h-4 w-4 text-emerald-300" />
-          Today Focus
+          오늘의 초점
         </div>
         <p className="text-sm leading-6 text-zinc-400">
           소비 결정, 자산 기준, 인사이트 기록을 한 화면에서 연결합니다.

@@ -1,37 +1,79 @@
-import { subscriptions } from "@/data/mockData";
-import { formatKRW } from "@/lib/calculations";
-import { SubscriptionCard } from "@/components/subscriptions/SubscriptionCard";
+"use client";
 
-const total = subscriptions.reduce((sum, item) => sum + item.monthlyPrice, 0);
-const keep = subscriptions.filter((item) => item.status === "keep");
-const review = subscriptions.filter((item) => item.status !== "keep");
+import { useMemo, useState } from "react";
+import { Plus } from "lucide-react";
+import { subscriptions } from "@/data/mockData";
+import { formatKRW } from "@/lib/formatters";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { AddSubscriptionModal } from "@/components/subscriptions/AddSubscriptionModal";
+import { SubscriptionCard } from "@/components/subscriptions/SubscriptionCard";
+import type { Subscription, SubscriptionStatus } from "@/types";
 
 export function SubscriptionsView() {
+  const [items, setItems] = useLocalStorage<Subscription[]>("aiop:subscriptions", subscriptions);
+  const [isAddOpen, setIsAddOpen] = useState(false);
+
+  const summary = useMemo(() => {
+    return {
+      total: items.reduce((sum, item) => sum + item.monthlyPrice, 0),
+      keepCount: items.filter((item) => item.status === "keep").length,
+      reviewCount: items.filter((item) => item.status === "review").length,
+      cancelCount: items.filter((item) => item.status === "cancel").length,
+    };
+  }, [items]);
+
+  function handleAdd(item: Subscription) {
+    setItems((prevItems) => [item, ...prevItems]);
+  }
+
+  function handleDelete(id: string) {
+    setItems((prevItems) => prevItems.filter((item) => item.id !== id));
+  }
+
+  function handleStatusChange(id: string, status: SubscriptionStatus) {
+    setItems((prevItems) => prevItems.map((item) => (item.id === id ? { ...item, status } : item)));
+  }
+
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-semibold text-zinc-50">월 구독 운영판</h2>
-        <p className="mt-2 text-zinc-500">구독을 비용이 아니라 사용 빈도와 효용으로 관리합니다.</p>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <h2 className="text-3xl font-semibold text-zinc-50">월 구독 운영판</h2>
+          <p className="mt-2 text-zinc-500">구독을 비용이 아니라 사용 빈도와 효용으로 관리합니다.</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setIsAddOpen(true)}
+          className="flex h-11 items-center justify-center gap-2 rounded-2xl bg-emerald-400 px-4 text-sm font-semibold text-zinc-950 hover:bg-emerald-300"
+        >
+          <Plus className="h-4 w-4" />
+          구독 추가
+        </button>
       </div>
-      <section className="grid gap-4 md:grid-cols-3">
+      <section className="grid gap-4 md:grid-cols-4">
         <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 shadow-soft">
           <p className="text-sm text-zinc-500">이번 달 총 구독비</p>
-          <p className="mt-2 text-3xl font-semibold text-zinc-50">{formatKRW(total)}</p>
+          <p className="mt-2 text-3xl font-semibold text-zinc-50">{formatKRW(summary.total)}</p>
         </div>
         <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 shadow-soft">
           <p className="text-sm text-zinc-500">유지 추천 구독</p>
-          <p className="mt-2 text-3xl font-semibold text-emerald-300">{keep.length}개</p>
+          <p className="mt-2 text-3xl font-semibold text-emerald-300">{summary.keepCount}개</p>
         </div>
         <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 shadow-soft">
-          <p className="text-sm text-zinc-500">해지 후보 구독</p>
-          <p className="mt-2 text-3xl font-semibold text-zinc-50">{review.length}개</p>
+          <p className="text-sm text-zinc-500">검토 중 구독</p>
+          <p className="mt-2 text-3xl font-semibold text-zinc-50">{summary.reviewCount}개</p>
+        </div>
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 shadow-soft">
+          <p className="text-sm text-zinc-500">해지 예정 구독</p>
+          <p className="mt-2 text-3xl font-semibold text-red-300">{summary.cancelCount}개</p>
         </div>
       </section>
       <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-        {subscriptions.map((item) => (
-          <SubscriptionCard key={item.id} item={item} />
+        {items.map((item) => (
+          <SubscriptionCard key={item.id} item={item} onDelete={handleDelete} onStatusChange={handleStatusChange} />
         ))}
       </div>
+      <AddSubscriptionModal isOpen={isAddOpen} onClose={() => setIsAddOpen(false)} onAdd={handleAdd} />
     </div>
   );
 }

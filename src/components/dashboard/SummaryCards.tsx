@@ -1,6 +1,6 @@
 import { Banknote, BookMarked, CreditCard, Sparkles } from "lucide-react";
 import { subscriptions, wants, insights } from "@/data/mockData";
-import { formatCompactKRW, formatKRW } from "@/lib/calculations";
+import { formatCompactKRW, formatKRW } from "@/lib/formatters";
 
 const monthlyTotal = subscriptions.reduce((sum, item) => sum + item.monthlyPrice, 0);
 const coverableSpend = wants.reduce((sum, item) => sum + item.price, 0);
@@ -21,7 +21,7 @@ const cards = [
   {
     label: "자산 커버 소비",
     value: formatCompactKRW(coverableSpend),
-    helper: "Want list 총 예상 비용",
+    helper: "구매 목표 총 예상 비용",
     icon: Banknote,
   },
   {

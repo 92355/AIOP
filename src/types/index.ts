@@ -16,6 +16,8 @@ export type NavItem = {
 };
 
 export type WantStatus = "thinking" | "planned" | "bought" | "skipped";
+export type WantPriority = "low" | "medium" | "high";
+export type Currency = "KRW" | "USD";
 
 export type WantItem = {
   id: string;
@@ -27,6 +29,11 @@ export type WantItem = {
   score: number;
   requiredCapital: number;
   targetDate: string;
+  priority?: WantPriority;
+  targetMonths?: number;
+  expectedYield?: number;
+  monthlyCashflowNeeded?: number;
+  currency?: Currency;
 };
 
 export type RegretItem = {
@@ -64,10 +71,13 @@ export type Insight = {
   relatedGoal: string;
 };
 
+export type NoteStatus = "inbox" | "processed" | "archived";
+
 export type Note = {
   id: string;
-  title: string;
+  title?: string;
   body: string;
   tags: string[];
   createdAt: string;
+  status?: NoteStatus;
 };

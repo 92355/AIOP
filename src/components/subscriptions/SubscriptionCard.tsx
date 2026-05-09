@@ -1,11 +1,19 @@
-import type { Subscription } from "@/types";
-import { formatKRW } from "@/lib/calculations";
+"use client";
+
+import { Trash2 } from "lucide-react";
+import type { Subscription, SubscriptionStatus } from "@/types";
+import { formatKRW } from "@/lib/formatters";
+import { getSubscriptionCategoryLabel, getSubscriptionStatusLabel, getUsageLabel } from "@/lib/labels";
 
 type SubscriptionCardProps = {
   item: Subscription;
+  onDelete?: (id: string) => void;
+  onStatusChange?: (id: string, status: SubscriptionStatus) => void;
 };
 
-export function SubscriptionCard({ item }: SubscriptionCardProps) {
+const statuses: SubscriptionStatus[] = ["keep", "review", "cancel"];
+
+export function SubscriptionCard({ item, onDelete, onStatusChange }: SubscriptionCardProps) {
   const statusStyle = {
     keep: "bg-emerald-400/10 text-emerald-300",
     review: "bg-zinc-800 text-zinc-300",
@@ -17,10 +25,38 @@ export function SubscriptionCard({ item }: SubscriptionCardProps) {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h3 className="text-xl font-semibold text-zinc-50">{item.service}</h3>
-          <p className="mt-1 text-sm text-zinc-500">{item.category} / {item.usage}</p>
+          <p className="mt-1 text-sm text-zinc-500">{getSubscriptionCategoryLabel(item.category)} / {getUsageLabel(item.usage)}</p>
         </div>
-        <span className={`rounded-full px-3 py-1 text-xs font-medium ${statusStyle}`}>{item.status}</span>
+        <div className="flex items-center gap-2">
+          <span className={`rounded-full px-3 py-1 text-xs font-medium ${statusStyle}`}>{getSubscriptionStatusLabel(item.status)}</span>
+          {onDelete ? (
+            <button
+              type="button"
+              onClick={() => onDelete(item.id)}
+              aria-label={`${item.service} 삭제`}
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-zinc-800 text-zinc-500 hover:border-red-400/40 hover:text-red-300"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          ) : null}
+        </div>
       </div>
+      {onStatusChange ? (
+        <div className="mt-5 grid grid-cols-3 gap-2 rounded-2xl border border-zinc-800 bg-zinc-950/70 p-1">
+          {statuses.map((status) => (
+            <button
+              key={status}
+              type="button"
+              onClick={() => onStatusChange(item.id, status)}
+              className={`rounded-xl px-3 py-2 text-xs font-semibold ${
+                item.status === status ? "bg-emerald-400 text-zinc-950" : "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100"
+              }`}
+            >
+              {getSubscriptionStatusLabel(status)}
+            </button>
+          ))}
+        </div>
+      ) : null}
       <div className="mt-6 flex items-end justify-between">
         <div>
           <p className="text-sm text-zinc-500">월 금액</p>

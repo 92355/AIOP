@@ -11,10 +11,14 @@ export const wants: WantItem[] = [
     score: 82,
     requiredCapital: 87500000,
     targetDate: "2026-11-30",
+    priority: "high",
+    targetMonths: 12,
+    expectedYield: 4,
+    currency: "KRW",
   },
   {
     id: "want-2",
-    name: "Standing Desk",
+    name: "스탠딩 데스크",
     price: 780000,
     category: "Lifestyle",
     reason: "장시간 작업 루틴의 피로도를 낮추기 위해",
@@ -22,10 +26,14 @@ export const wants: WantItem[] = [
     score: 74,
     requiredCapital: 19500000,
     targetDate: "2026-08-15",
+    priority: "medium",
+    targetMonths: 6,
+    expectedYield: 4,
+    currency: "KRW",
   },
   {
     id: "want-3",
-    name: "BTC DCA Budget",
+    name: "BTC 적립식 매수 예산",
     price: 1200000,
     category: "Investment",
     reason: "월별 자산 배분 실험을 작게 시작하기 위해",
@@ -33,10 +41,14 @@ export const wants: WantItem[] = [
     score: 68,
     requiredCapital: 30000000,
     targetDate: "2026-07-01",
+    priority: "medium",
+    targetMonths: 4,
+    expectedYield: 4,
+    currency: "KRW",
   },
   {
     id: "want-4",
-    name: "Mirrorless Camera",
+    name: "미러리스 카메라",
     price: 2100000,
     category: "Hobby",
     reason: "여행과 프로젝트 기록의 퀄리티를 높이기 위해",
@@ -44,10 +56,14 @@ export const wants: WantItem[] = [
     score: 61,
     requiredCapital: 52500000,
     targetDate: "2027-01-10",
+    priority: "low",
+    targetMonths: 14,
+    expectedYield: 4,
+    currency: "KRW",
   },
   {
     id: "want-5",
-    name: "Ergonomic Chair",
+    name: "인체공학 의자",
     price: 1450000,
     category: "Productivity",
     reason: "매일 쓰는 작업 환경의 기본 체력을 개선하기 위해",
@@ -55,6 +71,10 @@ export const wants: WantItem[] = [
     score: 88,
     requiredCapital: 36250000,
     targetDate: "2026-09-05",
+    priority: "high",
+    targetMonths: 8,
+    expectedYield: 4,
+    currency: "KRW",
   },
 ];
 
@@ -76,14 +96,14 @@ export const regrets: RegretItem[] = [
 ];
 
 export const insights: Insight[] = [
-  { id: "insight-1", title: "부의 추월차선", sourceType: "book", keySentence: "소비가 아니라 시스템을 사는 사람이 속도를 만든다.", actionItem: "사고 싶은 물건마다 수익 자산 기준으로 재해석하기", tags: ["wealth", "system"], relatedGoal: "Asset Calculator" },
-  { id: "insight-2", title: "Atomic Habits", sourceType: "book", keySentence: "환경 설계는 의지력보다 오래 간다.", actionItem: "책상 위 도구를 매일 쓰는 것만 남기기", tags: ["habit", "workspace"], relatedGoal: "Standing Desk" },
-  { id: "insight-3", title: "Zero to One", sourceType: "book", keySentence: "작은 독점은 명확한 관점에서 출발한다.", actionItem: "AIOP의 첫 사용자를 나 자신으로 좁히기", tags: ["startup", "focus"], relatedGoal: "AIOP MVP" },
-  { id: "insight-4", title: "Naval Almanack", sourceType: "article", keySentence: "판단력은 반복해서 기록한 결정에서 자란다.", actionItem: "구매 보류 사유를 Want마다 한 줄로 남기기", tags: ["decision", "life"], relatedGoal: "Regret Tracker" },
+  { id: "insight-1", title: "부의 추월차선", sourceType: "book", keySentence: "소비가 아니라 시스템을 사는 사람이 속도를 만든다.", actionItem: "사고 싶은 물건마다 수익 자산 기준으로 재해석하기", tags: ["부", "시스템"], relatedGoal: "자산 구매 계산기" },
+  { id: "insight-2", title: "아주 작은 습관의 힘", sourceType: "book", keySentence: "환경 설계는 의지력보다 오래 간다.", actionItem: "책상 위 도구를 매일 쓰는 것만 남기기", tags: ["습관", "작업환경"], relatedGoal: "스탠딩 데스크" },
+  { id: "insight-3", title: "제로 투 원", sourceType: "book", keySentence: "작은 독점은 명확한 관점에서 출발한다.", actionItem: "AIOP의 첫 사용자를 나 자신으로 좁히기", tags: ["스타트업", "집중"], relatedGoal: "AIOP MVP" },
+  { id: "insight-4", title: "나발 라비칸트의 지혜", sourceType: "article", keySentence: "판단력은 반복해서 기록한 결정에서 자란다.", actionItem: "구매 보류 사유를 구매 목표마다 한 줄로 남기기", tags: ["판단", "생활"], relatedGoal: "후회 기록장" },
 ];
 
 export const notes: Note[] = [
-  { id: "note-1", title: "카메라 구매 기준", body: "여행 빈도보다 기록 프로젝트가 먼저 생기면 구매 판단.", tags: ["want", "hobby"], createdAt: "Today 09:20" },
-  { id: "note-2", title: "구독 정리", body: "영상 서비스는 한 달에 하나만 유지하는 실험.", tags: ["subscription"], createdAt: "Yesterday 22:10" },
-  { id: "note-3", title: "책 문장", body: "소유하고 싶은 물건이 아니라 반복하고 싶은 행동을 산다.", tags: ["insight"], createdAt: "Mon 18:45" },
+  { id: "note-1", title: "카메라 구매 기준", body: "여행 빈도보다 기록 프로젝트가 먼저 생기면 구매 판단.", tags: ["구매목표", "취미"], createdAt: "오늘 09:20" },
+  { id: "note-2", title: "구독 정리", body: "영상 서비스는 한 달에 하나만 유지하는 실험.", tags: ["구독"], createdAt: "어제 22:10" },
+  { id: "note-3", title: "책 문장", body: "소유하고 싶은 물건이 아니라 반복하고 싶은 행동을 산다.", tags: ["인사이트"], createdAt: "월요일 18:45" },
 ];

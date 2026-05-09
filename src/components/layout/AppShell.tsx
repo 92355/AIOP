@@ -5,13 +5,13 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import type { ViewKey } from "@/types";
 
 const titles: Record<ViewKey, string> = {
-  dashboard: "Welcome back",
-  wants: "Wants",
-  calculator: "Asset Calculator",
-  regret: "Regret Tracker",
-  subscriptions: "Subscriptions",
-  insights: "Book Insights",
-  notes: "Notes / Inbox",
+  dashboard: "대시보드",
+  wants: "구매 목표",
+  calculator: "자산 구매 계산기",
+  regret: "후회 기록장",
+  subscriptions: "구독 관리",
+  insights: "인사이트 보관함",
+  notes: "노트 / 수집함",
 };
 
 type AppShellProps = {

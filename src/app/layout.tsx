@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "AIOP",
-  description: "Personal Operating Page",
+  description: "개인 운영 페이지",
 };
 
 export default function RootLayout({

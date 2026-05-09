@@ -1,19 +1,34 @@
+import { Trash2 } from "lucide-react";
 import type { WantItem } from "@/types";
-import { formatKRW } from "@/lib/calculations";
+import { formatKRW } from "@/lib/formatters";
+import { getWantCategoryLabel, getWantStatusLabel } from "@/lib/labels";
 
 type WantCardProps = {
   item: WantItem;
+  onDelete?: (id: string) => void;
 };
 
-export function WantCard({ item }: WantCardProps) {
+export function WantCard({ item, onDelete }: WantCardProps) {
   return (
-    <article className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 shadow-soft">
+    <article className="relative rounded-2xl border border-zinc-800 bg-zinc-900 p-5 shadow-soft">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">{item.category}</p>
+          <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">{getWantCategoryLabel(item.category)}</p>
           <h3 className="mt-2 text-xl font-semibold text-zinc-50">{item.name}</h3>
         </div>
-        <span className="rounded-full bg-emerald-400/10 px-3 py-1 text-xs font-medium text-emerald-300">{item.status}</span>
+        <div className="flex items-center gap-2">
+          <span className="rounded-full bg-emerald-400/10 px-3 py-1 text-xs font-medium text-emerald-300">{getWantStatusLabel(item.status)}</span>
+          {onDelete ? (
+            <button
+              type="button"
+              onClick={() => onDelete(item.id)}
+              aria-label={`${item.name} 삭제`}
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-zinc-800 text-zinc-500 hover:border-red-400/40 hover:text-red-300"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          ) : null}
+        </div>
       </div>
       <p className="mt-4 text-2xl font-semibold text-zinc-50">{formatKRW(item.price)}</p>
       <p className="mt-3 min-h-12 text-sm leading-6 text-zinc-400">{item.reason}</p>

@@ -1,5 +1,5 @@
 import { subscriptions } from "@/data/mockData";
-import { formatKRW } from "@/lib/calculations";
+import { formatKRW } from "@/lib/formatters";
 
 const total = subscriptions.reduce((sum, item) => sum + item.monthlyPrice, 0);
 const keep = subscriptions.filter((item) => item.status === "keep");
@@ -8,7 +8,7 @@ const review = subscriptions.filter((item) => item.status !== "keep");
 export function SubscriptionSummary() {
   return (
     <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 shadow-soft">
-      <h3 className="text-lg font-semibold text-zinc-50">Monthly Subscription Summary</h3>
+      <h3 className="text-lg font-semibold text-zinc-50">월 구독 요약</h3>
       <p className="mt-1 text-sm text-zinc-500">반복 지출을 사용 빈도와 가치 점수로 봅니다.</p>
       <div className="mt-5 grid gap-3 sm:grid-cols-3">
         <div className="rounded-2xl bg-zinc-950/70 p-4">

@@ -2,7 +2,10 @@
 
 import { useMemo, useState } from "react";
 import { Calculator, TrendingUp } from "lucide-react";
-import { calculateAssetPlan, formatKRW } from "@/lib/calculations";
+import { calculateAssetPlan } from "@/lib/calculations";
+import { formatKRW } from "@/lib/formatters";
+
+const CAREFUL_REQUIRED_CAPITAL = 100000000;
 
 export function AssetCalculatorView() {
   const [price, setPrice] = useState(3500000);
@@ -15,13 +18,13 @@ export function AssetCalculatorView() {
     [price, targetMonths, expectedYield, monthlyInvestment],
   );
 
-  const decision = result.monthsToBuy <= targetMonths ? "목표 기간 내 구매 가능" : "보류 / 목표화 추천";
+  const decision = getPurchaseDecision(price, monthlyInvestment, result.requiredCapital, result.monthsToBuy);
 
   const fields = [
-    { label: "Item Price", value: price, setter: setPrice, suffix: "KRW" },
-    { label: "Target Months", value: targetMonths, setter: setTargetMonths, suffix: "months" },
-    { label: "Expected Yield %", value: expectedYield, setter: setExpectedYield, suffix: "%" },
-    { label: "Monthly Investment", value: monthlyInvestment, setter: setMonthlyInvestment, suffix: "KRW" },
+    { label: "구매 가격", value: price, setter: setPrice, suffix: "원" },
+    { label: "목표 기간", value: targetMonths, setter: setTargetMonths, suffix: "개월" },
+    { label: "예상 수익률", value: expectedYield, setter: setExpectedYield, suffix: "%" },
+    { label: "월 투자 가능액", value: monthlyInvestment, setter: setMonthlyInvestment, suffix: "원" },
   ];
 
   return (
@@ -32,7 +35,7 @@ export function AssetCalculatorView() {
             <Calculator className="h-6 w-6" />
           </div>
           <div>
-            <h2 className="text-3xl font-semibold text-zinc-50">Asset Purchase Calculator</h2>
+            <h2 className="text-3xl font-semibold text-zinc-50">자산 구매 계산기</h2>
             <p className="mt-1 text-zinc-500">소비를 자산 현금흐름 기준으로 다시 계산합니다.</p>
           </div>
         </div>
@@ -44,7 +47,7 @@ export function AssetCalculatorView() {
                 <input
                   type="number"
                   value={field.value}
-                  onChange={(event) => field.setter(Number(event.target.value))}
+                  onChange={(event) => field.setter(toSafeNumber(event.target.value))}
                   className="min-w-0 flex-1 bg-transparent text-2xl font-semibold text-zinc-50 outline-none"
                 />
                 <span className="text-sm text-zinc-500">{field.suffix}</span>
@@ -60,16 +63,16 @@ export function AssetCalculatorView() {
             <TrendingUp className="h-6 w-6" />
           </div>
           <div>
-            <h3 className="text-xl font-semibold text-zinc-50">Decision Output</h3>
+            <h3 className="text-xl font-semibold text-zinc-50">판단 결과</h3>
             <p className="text-sm text-zinc-500">입력값에 따라 즉시 갱신됩니다.</p>
           </div>
         </div>
         <div className="mt-8 space-y-4">
-          <ResultRow label="Required Capital" value={formatKRW(result.requiredCapital)} highlight />
-          <ResultRow label="Monthly Cashflow Needed" value={formatKRW(result.monthlyCashflowNeeded)} />
-          <ResultRow label="Months to Buy" value={`${result.monthsToBuy.toFixed(1)}개월`} />
+          <ResultRow label="필요 자산" value={formatKRW(result.requiredCapital)} highlight />
+          <ResultRow label="월 필요 현금흐름" value={formatKRW(result.monthlyCashflowNeeded)} />
+          <ResultRow label="구매까지 걸리는 기간" value={`${result.monthsToBuy.toFixed(1)}개월`} />
           <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-5">
-            <p className="text-sm text-emerald-300/80">Purchase Decision</p>
+            <p className="text-sm text-emerald-300/80">구매 판단</p>
             <p className="mt-2 text-2xl font-semibold text-emerald-200">{decision}</p>
           </div>
         </div>
@@ -85,4 +88,17 @@ function ResultRow({ label, value, highlight = false }: { label: string; value: 
       <p className={`text-xl font-semibold ${highlight ? "text-emerald-300" : "text-zinc-50"}`}>{value}</p>
     </div>
   );
+}
+
+function toSafeNumber(value: string) {
+  const nextValue = Number(value);
+  return Number.isFinite(nextValue) ? nextValue : 0;
+}
+
+function getPurchaseDecision(price: number, monthlyInvestment: number, requiredCapital: number, monthsToBuy: number) {
+  if (monthlyInvestment <= 0 || price <= 0) return "입력값이 더 필요합니다";
+  if (requiredCapital >= CAREFUL_REQUIRED_CAPITAL) return "신중한 계획이 필요합니다";
+  if (monthsToBuy <= 3) return "곧 구매 가능합니다";
+  if (monthsToBuy <= 12) return "목표로 설정하세요";
+  return "보류";
 }

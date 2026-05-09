@@ -1,4 +1,5 @@
 import type { Insight } from "@/types";
+import { getInsightTypeLabel } from "@/lib/labels";
 
 type InsightCardProps = {
   item: Insight;
@@ -9,7 +10,7 @@ export function InsightCard({ item }: InsightCardProps) {
     <article className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 shadow-soft">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">{item.sourceType}</p>
+          <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">{getInsightTypeLabel(item.sourceType)}</p>
           <h3 className="mt-2 text-xl font-semibold text-zinc-50">{item.title}</h3>
         </div>
         <span className="rounded-full bg-zinc-800 px-3 py-1 text-xs text-zinc-300">{item.relatedGoal}</span>
