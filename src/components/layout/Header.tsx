@@ -1,12 +1,14 @@
 "use client";
 
-import { Bell, Command, Plus, Search } from "lucide-react";
+import { Bell, Command, Moon, Plus, Search, Sun } from "lucide-react";
 
 type HeaderProps = {
   title: string;
+  isDarkMode: boolean;
+  onToggleTheme: () => void;
 };
 
-export function Header({ title }: HeaderProps) {
+export function Header({ title, isDarkMode, onToggleTheme }: HeaderProps) {
   const today = new Intl.DateTimeFormat("ko-KR", {
     dateStyle: "full",
   }).format(new Date());
@@ -28,6 +30,16 @@ export function Header({ title }: HeaderProps) {
         </div>
         <div className="flex items-center gap-2">
           <div className="hidden text-right text-xs text-zinc-500 lg:block">{today}</div>
+          <button
+            aria-label={isDarkMode ? "라이트 모드로 변경" : "다크 모드로 변경"}
+            aria-pressed={!isDarkMode}
+            className="flex h-11 w-11 items-center justify-center rounded-2xl border border-zinc-800 bg-zinc-900 text-zinc-300 hover:text-zinc-50"
+            title={isDarkMode ? "라이트 모드" : "다크 모드"}
+            type="button"
+            onClick={onToggleTheme}
+          >
+            {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </button>
           <button className="flex h-11 w-11 items-center justify-center rounded-2xl border border-zinc-800 bg-zinc-900 text-zinc-300 hover:text-zinc-50" type="button" title="알림">
             <Bell className="h-4 w-4" />
           </button>

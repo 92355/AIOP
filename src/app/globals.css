@@ -6,6 +6,10 @@
   color-scheme: dark;
 }
 
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -33,4 +37,87 @@ body {
 .thin-scrollbar::-webkit-scrollbar-thumb {
   background: #3f3f46;
   border-radius: 999px;
+}
+
+.theme-light {
+  background: #f8fafc;
+  color: #18181b;
+}
+
+.theme-light [class~="bg-zinc-950"],
+.theme-light [class~="bg-zinc-950/95"] {
+  background-color: #f8fafc;
+}
+
+.theme-light [class~="bg-zinc-950/80"] {
+  background-color: rgba(248, 250, 252, 0.9);
+}
+
+.theme-light [class~="bg-zinc-950/70"],
+.theme-light [class~="bg-zinc-950/60"] {
+  background-color: rgba(241, 245, 249, 0.88);
+}
+
+.theme-light [class~="bg-zinc-900"],
+.theme-light [class~="bg-zinc-900/70"] {
+  background-color: #ffffff;
+}
+
+.theme-light [class~="bg-zinc-800"] {
+  background-color: #e4e4e7;
+}
+
+.theme-light [class~="border-zinc-800"] {
+  border-color: #d4d4d8;
+}
+
+.theme-light [class~="text-zinc-50"],
+.theme-light [class~="text-zinc-100"],
+.theme-light [class~="text-zinc-200"] {
+  color: #18181b;
+}
+
+.theme-light [class~="text-zinc-300"],
+.theme-light [class~="text-zinc-400"] {
+  color: #52525b;
+}
+
+.theme-light [class~="text-zinc-500"] {
+  color: #71717a;
+}
+
+.theme-light [class~="placeholder:text-zinc-600"]::placeholder {
+  color: #a1a1aa;
+}
+
+.theme-light [class~="text-emerald-200"],
+.theme-light [class~="text-emerald-300"],
+.theme-light [class~="text-emerald-300/80"] {
+  color: #047857;
+}
+
+.theme-light [class~="hover:border-zinc-800"]:hover {
+  border-color: #d4d4d8;
+}
+
+.theme-light [class~="hover:bg-zinc-900"]:hover {
+  background-color: #f4f4f5;
+}
+
+.theme-light [class~="hover:text-zinc-50"]:hover,
+.theme-light [class~="hover:text-zinc-100"]:hover {
+  color: #18181b;
+}
+
+.theme-light [class~="shadow-soft"] {
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
+}
+
+.theme-light.thin-scrollbar,
+.theme-light .thin-scrollbar {
+  scrollbar-color: #d4d4d8 transparent;
+}
+
+.theme-light .thin-scrollbar::-webkit-scrollbar-thumb {
+  background: #d4d4d8;
 }
