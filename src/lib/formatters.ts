@@ -6,6 +6,14 @@ export function formatKRW(value: number) {
   }).format(value);
 }
 
+export function formatCurrency(value: number, currency: "KRW" | "USD") {
+  return new Intl.NumberFormat(currency === "KRW" ? "ko-KR" : "en-US", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: currency === "KRW" ? 0 : 2,
+  }).format(value);
+}
+
 export function formatCompactKRW(value: number) {
   if (value >= 100000000) return `${(value / 100000000).toFixed(1)}억`;
   if (value >= 10000) return `${Math.round(value / 10000).toLocaleString("ko-KR")}만`;

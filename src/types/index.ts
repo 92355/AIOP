@@ -39,12 +39,16 @@ export type WantItem = {
 export type RegretItem = {
   id: string;
   name: string;
-  oldPrice: number;
+  assetType: string;
+  symbol?: string;
+  watchedPrice: number;
   currentPrice: number;
-  changeRate: number;
-  memo: string;
-  thoughtThen: string;
-  resultNow: string;
+  currency: Currency;
+  quantity: number;
+  watchedAt?: string;
+  note: string;
+  resultPercent: number;
+  profitAmount: number;
 };
 
 export type SubscriptionStatus = "keep" | "review" | "cancel";

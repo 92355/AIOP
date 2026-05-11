@@ -1,4 +1,13 @@
+import { calculateProfitAmount, calculateRegretPercent } from "@/lib/calculations";
 import type { Insight, Note, RegretItem, Subscription, WantItem } from "@/types";
+
+function createRegretItem(item: Omit<RegretItem, "resultPercent" | "profitAmount">): RegretItem {
+  return {
+    ...item,
+    resultPercent: calculateRegretPercent(item.watchedPrice, item.currentPrice),
+    profitAmount: calculateProfitAmount(item.watchedPrice, item.currentPrice, item.quantity),
+  };
+}
 
 export const wants: WantItem[] = [
   {
@@ -88,11 +97,75 @@ export const subscriptions: Subscription[] = [
 ];
 
 export const regrets: RegretItem[] = [
-  { id: "regret-1", name: "NVDA", oldPrice: 420000, currentPrice: 1270000, changeRate: 202.3, memo: "AI 인프라 수요를 봤지만 실행하지 못함", thoughtThen: "이미 많이 오른 것 같다", resultNow: "관심은 맞았고 기준이 부족했다" },
-  { id: "regret-2", name: "BTC", oldPrice: 38000000, currentPrice: 92000000, changeRate: 142.1, memo: "분할 매수 원칙 없이 가격만 바라봄", thoughtThen: "더 내려오면 사자", resultNow: "계획 없는 대기는 기회비용이 컸다" },
-  { id: "regret-3", name: "Apple Vision Pro", oldPrice: 4700000, currentPrice: 3900000, changeRate: -17.0, memo: "초기 제품은 경험 욕구와 효용을 분리해야 함", thoughtThen: "새로운 컴퓨팅을 빨리 경험하고 싶다", resultNow: "기다린 판단이 더 합리적이었다" },
-  { id: "regret-4", name: "Tesla", oldPrice: 210000, currentPrice: 260000, changeRate: 23.8, memo: "변동성이 큰 종목은 기록 기준이 필요", thoughtThen: "뉴스가 너무 시끄럽다", resultNow: "관심 종목은 노이즈와 thesis를 분리해야 한다" },
-  { id: "regret-5", name: "MacBook Pro", oldPrice: 3200000, currentPrice: 3500000, changeRate: 9.4, memo: "필수 장비는 가격보다 생산성 회수 기간으로 판단", thoughtThen: "다음 세대를 기다리자", resultNow: "업무 효율 손실이 더 비쌌다" },
+  createRegretItem({
+    id: "regret-1",
+    name: "NVDA",
+    assetType: "주식",
+    symbol: "NVDA",
+    watchedPrice: 420000,
+    currentPrice: 1270000,
+    currency: "KRW",
+    quantity: 1,
+    watchedAt: "2024-02-15",
+    note: "AI 인프라 수요를 봤지만 실행하지 못함",
+  }),
+  createRegretItem({
+    id: "regret-2",
+    name: "BTC",
+    assetType: "암호자산",
+    symbol: "BTC",
+    watchedPrice: 38000000,
+    currentPrice: 92000000,
+    currency: "KRW",
+    quantity: 0.1,
+    watchedAt: "2023-10-01",
+    note: "분할 매수 원칙 없이 가격만 바라봄",
+  }),
+  createRegretItem({
+    id: "regret-3",
+    name: "Apple Vision Pro",
+    assetType: "제품",
+    watchedPrice: 4700000,
+    currentPrice: 3900000,
+    currency: "KRW",
+    quantity: 1,
+    watchedAt: "2024-06-30",
+    note: "초기 제품은 경험 욕구와 효용을 분리해야 함",
+  }),
+  createRegretItem({
+    id: "regret-4",
+    name: "Tesla",
+    assetType: "주식",
+    symbol: "TSLA",
+    watchedPrice: 210000,
+    currentPrice: 260000,
+    currency: "KRW",
+    quantity: 5,
+    watchedAt: "2024-04-20",
+    note: "변동성이 큰 종목은 기록 기준이 필요",
+  }),
+  createRegretItem({
+    id: "regret-5",
+    name: "MacBook Pro",
+    assetType: "장비",
+    watchedPrice: 3200000,
+    currentPrice: 3500000,
+    currency: "KRW",
+    quantity: 1,
+    watchedAt: "2025-01-05",
+    note: "필수 장비는 가격보다 생산성 회수 기간으로 판단",
+  }),
+  createRegretItem({
+    id: "regret-6",
+    name: "서울 역세권 오피스텔",
+    assetType: "부동산",
+    watchedPrice: 250000000,
+    currentPrice: 310000000,
+    currency: "KRW",
+    quantity: 1,
+    watchedAt: "2022-09-01",
+    note: "대출 부담만 보고 현금흐름 가능성을 따로 계산하지 않음",
+  }),
 ];
 
 export const insights: Insight[] = [

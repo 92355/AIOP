@@ -1,42 +1,47 @@
+"use client";
+
+import { Plus } from "lucide-react";
+import { useState } from "react";
 import { regrets } from "@/data/mockData";
-import { formatKRW } from "@/lib/formatters";
+import { AddRegretItemModal } from "@/components/regret/AddRegretItemModal";
+import { RegretCard } from "@/components/regret/RegretCard";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
+import type { RegretItem } from "@/types";
 
 export function RegretTrackerView() {
+  const [items, setItems] = useLocalStorage<RegretItem[]>("aiop:regret-items", regrets);
+  const [isAddOpen, setIsAddOpen] = useState(false);
+
+  const handleAdd = (item: RegretItem) => {
+    setItems((currentItems) => [item, ...currentItems]);
+  };
+
+  const handleDelete = (id: string) => {
+    setItems((currentItems) => currentItems.filter((item) => item.id !== id));
+  };
+
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-semibold text-zinc-50">그때 살걸 기록장</h2>
-        <p className="mt-2 text-zinc-500">관심 있었던 자산과 물건을 결과가 아니라 판단 과정으로 복기합니다.</p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 className="text-3xl font-semibold text-zinc-50">그때 살걸 기록장</h2>
+          <p className="mt-2 text-zinc-500">관심 있었던 자산과 물건을 결과가 아니라 판단 과정으로 복기합니다.</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setIsAddOpen(true)}
+          className="flex h-11 items-center justify-center gap-2 rounded-2xl bg-emerald-400 px-4 text-sm font-semibold text-zinc-950 hover:bg-emerald-300"
+        >
+          <Plus className="h-4 w-4" />
+          후회 항목 추가
+        </button>
       </div>
       <div className="grid gap-4 xl:grid-cols-2">
-        {regrets.map((item) => (
-          <article key={item.id} className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 shadow-soft">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h3 className="text-xl font-semibold text-zinc-50">{item.name}</h3>
-                <p className="mt-1 text-sm text-zinc-500">{item.memo}</p>
-              </div>
-              <span className={`rounded-full px-3 py-1 text-sm font-medium ${item.changeRate >= 0 ? "bg-emerald-400/10 text-emerald-300" : "bg-zinc-800 text-zinc-300"}`}>
-                {item.changeRate > 0 ? "+" : ""}{item.changeRate}%
-              </span>
-            </div>
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl bg-zinc-950/70 p-4">
-                <p className="text-sm text-zinc-500">당시 가격</p>
-                <p className="mt-1 text-lg font-semibold text-zinc-100">{formatKRW(item.oldPrice)}</p>
-              </div>
-              <div className="rounded-2xl bg-zinc-950/70 p-4">
-                <p className="text-sm text-zinc-500">현재 가격</p>
-                <p className="mt-1 text-lg font-semibold text-zinc-100">{formatKRW(item.currentPrice)}</p>
-              </div>
-            </div>
-            <div className="mt-4 grid gap-3 lg:grid-cols-2">
-              <p className="rounded-2xl border border-zinc-800 p-4 text-sm leading-6 text-zinc-400">당시 생각: {item.thoughtThen}</p>
-              <p className="rounded-2xl border border-zinc-800 p-4 text-sm leading-6 text-zinc-400">현재 결과: {item.resultNow}</p>
-            </div>
-          </article>
+        {items.map((item) => (
+          <RegretCard key={item.id} item={item} onDelete={handleDelete} />
         ))}
       </div>
+      <AddRegretItemModal isOpen={isAddOpen} onClose={() => setIsAddOpen(false)} onAdd={handleAdd} />
     </div>
   );
 }
