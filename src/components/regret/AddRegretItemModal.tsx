@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { X } from "lucide-react";
+import { MoneyInputField } from "@/components/inputs/MoneyInputField";
 import { calculateProfitAmount, calculateRegretPercent } from "@/lib/calculations";
 import { useCompactMode } from "@/contexts/CompactModeContext";
 import { useEscapeKey } from "@/hooks/useEscapeKey";
@@ -100,8 +101,20 @@ export function AddRegretItemModal({ isOpen, onClose, onAdd }: AddRegretItemModa
             <SelectField label="자산 유형" value={form.assetType} options={assetTypes} onChange={(value) => setForm((prev) => ({ ...prev, assetType: value }))} />
             <TextField label="심볼" value={form.symbol} onChange={(value) => setForm((prev) => ({ ...prev, symbol: value }))} />
             <SelectField label="통화" value={form.currency} options={currencies} onChange={(value) => setForm((prev) => ({ ...prev, currency: value as Currency }))} />
-            <NumberField label="관심 가격" value={form.watchedPrice} onChange={(value) => setForm((prev) => ({ ...prev, watchedPrice: value }))} />
-            <NumberField label="현재 가격" value={form.currentPrice} onChange={(value) => setForm((prev) => ({ ...prev, currentPrice: value }))} />
+            <MoneyInputField
+              label="관심 가격"
+              value={form.watchedPrice}
+              currency={form.currency}
+              helperText="천 / 만 / 억 단위로 입력하세요."
+              onChange={(value) => setForm((prev) => ({ ...prev, watchedPrice: value }))}
+            />
+            <MoneyInputField
+              label="현재 가격"
+              value={form.currentPrice}
+              currency={form.currency}
+              helperText="천 / 만 / 억 단위로 입력하세요."
+              onChange={(value) => setForm((prev) => ({ ...prev, currentPrice: value }))}
+            />
             <NumberField label="수량" value={form.quantity} onChange={(value) => setForm((prev) => ({ ...prev, quantity: value }))} />
             <DateField label="관심 날짜" value={form.watchedAt} onChange={(value) => setForm((prev) => ({ ...prev, watchedAt: value }))} />
           </div>

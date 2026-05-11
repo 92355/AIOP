@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Calculator, TrendingUp } from "lucide-react";
+import { MoneyInputField } from "@/components/inputs/MoneyInputField";
 import { useCompactMode } from "@/contexts/CompactModeContext";
 import { calculateAssetPlan } from "@/lib/calculations";
 import { formatKRW } from "@/lib/formatters";
@@ -22,13 +23,6 @@ export function AssetCalculatorView() {
 
   const decision = getPurchaseDecision(price, monthlyInvestment, result.requiredCapital, result.monthsToBuy);
 
-  const fields = [
-    { label: "구매 가격", value: price, setter: setPrice, suffix: "원" },
-    { label: "목표 기간", value: targetMonths, setter: setTargetMonths, suffix: "개월" },
-    { label: "예상 수익률", value: expectedYield, setter: setExpectedYield, suffix: "%" },
-    { label: "월 투자 가능액", value: monthlyInvestment, setter: setMonthlyInvestment, suffix: "원" },
-  ];
-
   return (
     <div className={`grid gap-4 ${isCompact ? "" : "xl:grid-cols-[1.05fr_0.95fr] xl:gap-6"}`}>
       <section className={`rounded-2xl border border-emerald-400/20 bg-zinc-900 shadow-soft ${isCompact ? "p-4" : "p-6"}`}>
@@ -42,20 +36,32 @@ export function AssetCalculatorView() {
           </div>
         </div>
         <div className={`grid gap-4 ${isCompact ? "mt-5" : "mt-8 sm:grid-cols-2"}`}>
-          {fields.map((field) => (
-            <label key={field.label} className="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4">
-              <span className="text-sm text-zinc-500">{field.label}</span>
-              <div className="mt-3 flex items-center gap-2">
-                <input
-                  type="number"
-                  value={field.value}
-                  onChange={(event) => field.setter(toSafeNumber(event.target.value))}
-                  className="min-w-0 flex-1 bg-transparent text-2xl font-semibold text-zinc-50 outline-none"
-                />
-                <span className="text-sm text-zinc-500">{field.suffix}</span>
-              </div>
-            </label>
-          ))}
+          <MoneyInputField label="구매 가격" value={price} onChange={setPrice} helperText="천 / 만 / 억 단위로 볼 수 있습니다." />
+          <label className="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4">
+            <span className="text-sm text-zinc-500">목표 기간</span>
+            <div className="mt-3 flex items-center gap-2">
+              <input
+                type="number"
+                value={targetMonths}
+                onChange={(event) => setTargetMonths(toSafeNumber(event.target.value))}
+                className="min-w-0 flex-1 bg-transparent text-2xl font-semibold text-zinc-50 outline-none"
+              />
+              <span className="text-sm text-zinc-500">개월</span>
+            </div>
+          </label>
+          <label className="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4">
+            <span className="text-sm text-zinc-500">예상 수익률</span>
+            <div className="mt-3 flex items-center gap-2">
+              <input
+                type="number"
+                value={expectedYield}
+                onChange={(event) => setExpectedYield(toSafeNumber(event.target.value))}
+                className="min-w-0 flex-1 bg-transparent text-2xl font-semibold text-zinc-50 outline-none"
+              />
+              <span className="text-sm text-zinc-500">%</span>
+            </div>
+          </label>
+          <MoneyInputField label="월 투자 가능액" value={monthlyInvestment} onChange={setMonthlyInvestment} helperText="목표 기간 기준으로 계산합니다." />
         </div>
       </section>
 

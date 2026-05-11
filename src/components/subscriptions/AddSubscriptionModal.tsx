@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { X } from "lucide-react";
+import { MoneyInputField } from "@/components/inputs/MoneyInputField";
 import { getSubscriptionStatusLabel, getUsageLabel } from "@/lib/labels";
 import { useCompactMode } from "@/contexts/CompactModeContext";
 import { useEscapeKey } from "@/hooks/useEscapeKey";
@@ -79,7 +80,7 @@ export function AddSubscriptionModal({ isOpen, onClose, onAdd }: AddSubscription
         <form onSubmit={handleSubmit} className="mt-6 space-y-5">
           <div className={`grid gap-4 ${isCompact ? "" : "sm:grid-cols-2"}`}>
             <TextField label="서비스명" value={form.service} onChange={(value) => setForm((prev) => ({ ...prev, service: value }))} />
-            <NumberField label="월 금액" value={form.monthlyPrice} onChange={(value) => setForm((prev) => ({ ...prev, monthlyPrice: value }))} />
+            <MoneyInputField label="월 금액" value={form.monthlyPrice} onChange={(value) => setForm((prev) => ({ ...prev, monthlyPrice: value }))} helperText="천 / 만 / 억 단위로 입력하세요." />
             <TextField label="카테고리" value={form.category} onChange={(value) => setForm((prev) => ({ ...prev, category: value }))} />
             <SelectField label="사용 빈도" value={form.usage} options={usages} getOptionLabel={(option) => getUsageLabel(option as Subscription["usage"])} onChange={(value) => setForm((prev) => ({ ...prev, usage: value as Subscription["usage"] }))} />
             <NumberField label="가치 점수" value={form.valueScore} onChange={(value) => setForm((prev) => ({ ...prev, valueScore: value }))} />

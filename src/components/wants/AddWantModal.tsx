@@ -2,6 +2,7 @@
 
 import { X } from "lucide-react";
 import { FormEvent, useState } from "react";
+import { MoneyInputField } from "@/components/inputs/MoneyInputField";
 import { calculateMonthlyCashflowNeeded, calculateRequiredCapital } from "@/lib/calculations";
 import { getWantCategoryLabel, getWantPriorityLabel, getWantStatusLabel } from "@/lib/labels";
 import { useCompactMode } from "@/contexts/CompactModeContext";
@@ -95,7 +96,13 @@ export function AddWantModal({ isOpen, onClose, onAdd }: AddWantModalProps) {
         <form onSubmit={handleSubmit} className="mt-6 space-y-5">
           <div className={`grid gap-4 ${isCompact ? "" : "sm:grid-cols-2"}`}>
             <TextField label="이름" value={form.name} onChange={(value) => setForm((prev) => ({ ...prev, name: value }))} />
-            <NumberField label="가격" value={form.price} onChange={(value) => setForm((prev) => ({ ...prev, price: value }))} />
+            <MoneyInputField
+              label="가격"
+              value={form.price}
+              currency={form.currency}
+              helperText="천 / 만 / 억 단위로 입력 가능합니다."
+              onChange={(value) => setForm((prev) => ({ ...prev, price: value }))}
+            />
             <SelectField label="통화" value={form.currency} options={currencies} onChange={(value) => setForm((prev) => ({ ...prev, currency: value as Currency }))} />
             <SelectField label="카테고리" value={form.category} options={categories} getOptionLabel={(option) => getWantCategoryLabel(option as WantItem["category"])} onChange={(value) => setForm((prev) => ({ ...prev, category: value as WantItem["category"] }))} />
             <SelectField label="우선순위" value={form.priority} options={priorities} getOptionLabel={(option) => getWantPriorityLabel(option as WantPriority)} onChange={(value) => setForm((prev) => ({ ...prev, priority: value as WantPriority }))} />
@@ -139,15 +146,6 @@ function TextField({ label, value, onChange }: { label: string; value: string; o
   );
 }
 
-function NumberField({ label, value, onChange }: { label: string; value: number; onChange: (value: number) => void }) {
-  return (
-    <label className="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4">
-      <span className="text-sm text-zinc-500">{label}</span>
-      <input type="number" value={value} onChange={(event) => onChange(toSafeNumber(event.target.value))} className="mt-3 w-full bg-transparent text-lg font-semibold text-zinc-50 outline-none" />
-    </label>
-  );
-}
-
 function SelectField({
   label,
   value,
@@ -171,6 +169,20 @@ function SelectField({
           </option>
         ))}
       </select>
+    </label>
+  );
+}
+
+function NumberField({ label, value, onChange }: { label: string; value: number; onChange: (value: number) => void }) {
+  return (
+    <label className="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4">
+      <span className="text-sm text-zinc-500">{label}</span>
+      <input
+        type="number"
+        value={value}
+        onChange={(event) => onChange(toSafeNumber(event.target.value))}
+        className="mt-3 w-full bg-transparent text-lg font-semibold text-zinc-50 outline-none"
+      />
     </label>
   );
 }
