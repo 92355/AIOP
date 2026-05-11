@@ -6,9 +6,10 @@ type HeaderProps = {
   title: string;
   isDarkMode: boolean;
   onToggleTheme: () => void;
+  onOpenQuickAdd: () => void;
 };
 
-export function Header({ title, isDarkMode, onToggleTheme }: HeaderProps) {
+export function Header({ title, isDarkMode, onToggleTheme, onOpenQuickAdd }: HeaderProps) {
   const today = new Intl.DateTimeFormat("ko-KR", {
     dateStyle: "full",
   }).format(new Date());
@@ -43,7 +44,11 @@ export function Header({ title, isDarkMode, onToggleTheme }: HeaderProps) {
           <button className="flex h-11 w-11 items-center justify-center rounded-2xl border border-zinc-800 bg-zinc-900 text-zinc-300 hover:text-zinc-50" type="button" title="알림">
             <Bell className="h-4 w-4" />
           </button>
-          <button className="flex h-11 items-center gap-2 rounded-2xl bg-emerald-400 px-4 text-sm font-semibold text-zinc-950 hover:bg-emerald-300" type="button">
+          <button
+            className="flex h-11 items-center gap-2 rounded-2xl bg-emerald-400 px-4 text-sm font-semibold text-zinc-950 hover:bg-emerald-300"
+            type="button"
+            onClick={onOpenQuickAdd}
+          >
             <Plus className="h-4 w-4" />
             빠른 추가
           </button>

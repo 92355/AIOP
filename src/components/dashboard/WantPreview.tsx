@@ -19,14 +19,14 @@ export function WantPreview() {
     <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 shadow-soft">
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-zinc-50">Purchase Goal Preview</h3>
-          <p className="text-sm text-zinc-500">Recent wants are reflected from localStorage.</p>
+          <h3 className="text-lg font-semibold text-zinc-50">구매 목표 미리보기</h3>
+          <p className="text-sm text-zinc-500">최근에 추가한 구매 목표를 보여줍니다.</p>
         </div>
       </div>
       <div className="space-y-3">
         {previewItems.length === 0 ? (
           <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-4 text-sm text-zinc-500">
-            No wants have been added yet.
+            아직 추가한 구매 목표가 없습니다.
           </div>
         ) : null}
         {previewItems.map((item) => (
@@ -41,7 +41,7 @@ export function WantPreview() {
             </div>
             <div className="text-right">
               <p className="text-xl font-semibold text-zinc-50">{item.score}</p>
-              <p className="text-xs text-zinc-500">AI score</p>
+              <p className="text-xs text-zinc-500">판단 점수</p>
             </div>
           </div>
         ))}

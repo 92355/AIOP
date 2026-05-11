@@ -16,12 +16,12 @@ export function RecentInsights() {
 
   return (
     <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 shadow-soft">
-      <h3 className="text-lg font-semibold text-zinc-50">Recent Insights</h3>
-      <p className="mt-1 text-sm text-zinc-500">Latest saved insight records from localStorage.</p>
+      <h3 className="text-lg font-semibold text-zinc-50">최근 인사이트</h3>
+      <p className="mt-1 text-sm text-zinc-500">최근에 저장한 인사이트를 보여줍니다.</p>
       <div className="mt-4 space-y-3">
         {recentItems.length === 0 ? (
           <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-4 text-sm text-zinc-500">
-            No recent insights have been added yet.
+            아직 추가한 인사이트가 없습니다.
           </div>
         ) : null}
         {recentItems.map((item) => (

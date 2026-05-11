@@ -34,33 +34,33 @@ export function SummaryCards() {
 
   const cards = [
     {
-      label: "Wants",
-      value: `${wantItems.length} items`,
-      helper: "Tracked purchase goals",
+      label: "구매 목표",
+      value: `${wantItems.length}개`,
+      helper: "기록 중인 구매 목표",
       icon: Sparkles,
     },
     {
-      label: "Monthly subscriptions",
+      label: "월 구독비",
       value: formatKRW(monthlyTotal),
-      helper: "Recurring monthly spend",
+      helper: "매달 반복되는 지출",
       icon: CreditCard,
     },
     {
-      label: "Target spend",
+      label: "목표 지출",
       value: formatCompactKRW(coverableSpend),
-      helper: "Total planned want price",
+      helper: "구매 목표 총액",
       icon: Banknote,
     },
     {
-      label: "Recent insights",
-      value: `${insightItems.length} items`,
-      helper: "Saved books, videos, thoughts",
+      label: "인사이트",
+      value: `${insightItems.length}개`,
+      helper: "저장한 책, 영상, 생각",
       icon: BookMarked,
     },
     {
-      label: "Notes Inbox",
-      value: `${inboxNoteCount} items`,
-      helper: "Unprocessed quick notes",
+      label: "메모함",
+      value: `${inboxNoteCount}개`,
+      helper: "아직 정리하지 않은 메모",
       icon: NotebookTabs,
     },
   ];
