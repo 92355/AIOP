@@ -14,6 +14,7 @@ export type NavItem = {
   key: ViewKey;
   label: string;
   icon: LucideIcon;
+  href: string;
 };
 
 export type WantStatus = "thinking" | "planned" | "bought" | "skipped";

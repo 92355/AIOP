@@ -22,12 +22,32 @@ export const viewTitles: Record<ViewKey, string> = {
 };
 
 export const navItems: NavItem[] = [
-  { key: "dashboard", label: viewTitles.dashboard, icon: BarChart3 },
-  { key: "wants", label: viewTitles.wants, icon: Sparkles },
-  { key: "calculator", label: "계산기", icon: Calculator },
-  { key: "regret", label: "후회 기록", icon: TrendingUp },
-  { key: "subscriptions", label: "구독", icon: CreditCard },
-  { key: "insights", label: "인사이트", icon: BookOpen },
-  { key: "notes", label: "노트", icon: Inbox },
-  { key: "todos", label: "Todo", icon: CheckSquare },
+  { key: "dashboard", label: viewTitles.dashboard, icon: BarChart3, href: "/" },
+  { key: "wants", label: viewTitles.wants, icon: Sparkles, href: "/wants" },
+  { key: "calculator", label: "계산기", icon: Calculator, href: "/calculator" },
+  { key: "regret", label: "후회 기록", icon: TrendingUp, href: "/regret" },
+  { key: "subscriptions", label: "구독", icon: CreditCard, href: "/subscriptions" },
+  { key: "insights", label: "인사이트", icon: BookOpen, href: "/insights" },
+  { key: "notes", label: "노트", icon: Inbox, href: "/notes" },
+  { key: "todos", label: "Todo", icon: CheckSquare, href: "/todos" },
 ];
+
+export function isDashboardPathname(pathname: string) {
+  return pathname === "/";
+}
+
+export function isNavItemActive(pathname: string, item: NavItem) {
+  if (item.href === "/") {
+    return isDashboardPathname(pathname);
+  }
+
+  return pathname === item.href || pathname.startsWith(`${item.href}/`);
+}
+
+export function getActiveNavItem(pathname: string) {
+  return navItems.find((item) => isNavItemActive(pathname, item)) ?? navItems[0];
+}
+
+export function getViewKeyFromPathname(pathname: string): ViewKey {
+  return getActiveNavItem(pathname).key;
+}

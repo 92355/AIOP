@@ -5,12 +5,13 @@ import { DndContext, PointerSensor, closestCenter, type DragEndEvent, useSensor,
 import { SortableContext, arrayMove, rectSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Banknote, BookMarked, CheckSquare, CreditCard, NotebookTabs, Sparkles, type LucideIcon } from "lucide-react";
+import Link from "next/link";
 import { insights, notes, subscriptions, wants } from "@/data/mockData";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useCompactMode } from "@/contexts/CompactModeContext";
 import { useLayoutContext } from "@/contexts/LayoutContext";
 import { formatCompactKRW, formatKRW } from "@/lib/formatters";
-import type { Insight, Note, Subscription, TodoItem, ViewKey, WantItem } from "@/types";
+import type { Insight, Note, Subscription, TodoItem, WantItem } from "@/types";
 import type { SummaryCardId } from "@/types/layout";
 
 type SummaryCard = {
@@ -19,7 +20,7 @@ type SummaryCard = {
   value: string;
   helper: string;
   icon: LucideIcon;
-  targetView: ViewKey;
+  targetHref: string;
 };
 
 function getStoredArray<T>(value: unknown, fallback: T[]): T[] {
@@ -34,11 +35,7 @@ function sortCardsByOrder(cards: SummaryCard[], order: SummaryCardId[]) {
   return [...orderedCards, ...missingCards];
 }
 
-type SummaryCardsProps = {
-  onSelectView: (view: ViewKey) => void;
-};
-
-export function SummaryCards({ onSelectView }: SummaryCardsProps) {
+export function SummaryCards() {
   const { isCompact } = useCompactMode();
   const { isEditMode, layout, setCardsOrder } = useLayoutContext();
   const [storedWants] = useLocalStorage<unknown>("aiop:wants", wants);
@@ -74,7 +71,7 @@ export function SummaryCards({ onSelectView }: SummaryCardsProps) {
       value: `${wantItems.length}개`,
       helper: "기록 중인 구매 목표",
       icon: Sparkles,
-      targetView: "wants",
+      targetHref: "/wants",
     },
     {
       id: "subscriptions-monthly",
@@ -82,7 +79,7 @@ export function SummaryCards({ onSelectView }: SummaryCardsProps) {
       value: formatKRW(monthlyTotal),
       helper: "매달 반복되는 지출",
       icon: CreditCard,
-      targetView: "subscriptions",
+      targetHref: "/subscriptions",
     },
     {
       id: "planned-spend",
@@ -90,7 +87,7 @@ export function SummaryCards({ onSelectView }: SummaryCardsProps) {
       value: formatCompactKRW(coverableSpend),
       helper: "구매 목표 총액",
       icon: Banknote,
-      targetView: "wants",
+      targetHref: "/wants",
     },
     {
       id: "recent-insight",
@@ -98,7 +95,7 @@ export function SummaryCards({ onSelectView }: SummaryCardsProps) {
       value: `${insightItems.length}개`,
       helper: "저장한 책, 영상, 생각",
       icon: BookMarked,
-      targetView: "insights",
+      targetHref: "/insights",
     },
     {
       id: "inbox-count",
@@ -106,7 +103,7 @@ export function SummaryCards({ onSelectView }: SummaryCardsProps) {
       value: `${inboxNoteCount}개`,
       helper: "아직 정리하지 않은 메모",
       icon: NotebookTabs,
-      targetView: "notes",
+      targetHref: "/notes",
     },
     {
       id: "todo-count",
@@ -114,7 +111,7 @@ export function SummaryCards({ onSelectView }: SummaryCardsProps) {
       value: `${activeTodoCount}개`,
       helper: "완료 전 Todo",
       icon: CheckSquare,
-      targetView: "todos",
+      targetHref: "/todos",
     },
   ];
 
@@ -144,7 +141,7 @@ export function SummaryCards({ onSelectView }: SummaryCardsProps) {
           </div>
         ) : null}
         {orderedCards.map((card) => (
-          <SummaryCardItem key={card.id} card={card} isCompact={isCompact} onSelect={() => onSelectView(card.targetView)} />
+          <SummaryCardItem key={card.id} card={card} isCompact={isCompact} isLinked />
         ))}
       </section>
     );
@@ -206,18 +203,18 @@ function SummaryCardItem({
   card,
   isCompact,
   isEditable = false,
-  onSelect,
+  isLinked = false,
 }: {
   card: SummaryCard;
   isCompact: boolean;
   isEditable?: boolean;
-  onSelect?: () => void;
+  isLinked?: boolean;
 }) {
   const Icon = card.icon;
-  const className = `group h-full w-full rounded-2xl border bg-zinc-900 text-left shadow-soft transition duration-200 ${
+  const className = `group block h-full w-full rounded-2xl border bg-zinc-900 text-left shadow-soft transition duration-200 ${
     isEditable ? "border-emerald-400/30" : "border-zinc-800"
   } ${
-    onSelect
+    isLinked
       ? "cursor-pointer hover:-translate-y-0.5 hover:border-emerald-400/50 hover:bg-zinc-800/80 hover:shadow-[0_18px_50px_rgba(52,211,153,0.12)] focus:outline-none focus:ring-2 focus:ring-emerald-400/50 active:translate-y-0"
       : ""
   } ${
@@ -238,11 +235,11 @@ function SummaryCardItem({
     </>
   );
 
-  if (onSelect) {
+  if (isLinked) {
     return (
-      <button type="button" onClick={onSelect} className={className} aria-label={`${card.label} 화면으로 이동`}>
+      <Link href={card.targetHref} className={className} aria-label={`${card.label} 화면으로 이동`}>
         {content}
-      </button>
+      </Link>
     );
   }
 

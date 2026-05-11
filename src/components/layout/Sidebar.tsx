@@ -1,22 +1,19 @@
 "use client";
 
 import { ClipboardList } from "lucide-react";
-import { navItems, viewTitles } from "@/components/layout/navItems";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { isNavItemActive, navItems, viewTitles } from "@/components/layout/navItems";
 import { SidebarSettingsButton } from "@/components/layout/settings/SidebarSettingsButton";
-import type { ViewKey } from "@/types";
 
-type SidebarProps = {
-  selectedView: ViewKey;
-  onSelectView: (view: ViewKey) => void;
-};
+export function Sidebar() {
+  const pathname = usePathname();
 
-export function Sidebar({ selectedView, onSelectView }: SidebarProps) {
   return (
     <aside className="relative z-50 flex border-zinc-800 bg-zinc-950/95 px-4 py-5 md:h-screen md:w-72 md:flex-col md:border-r">
       <div>
-        <button
-          type="button"
-          onClick={() => onSelectView("dashboard")}
+        <Link
+          href="/"
           className="mb-6 flex w-full items-center gap-3 rounded-2xl px-2 py-1 text-left transition hover:bg-zinc-900"
           aria-label="Dashboard로 이동"
         >
@@ -27,17 +24,16 @@ export function Sidebar({ selectedView, onSelectView }: SidebarProps) {
             <h1 className="text-xl font-semibold tracking-wide text-zinc-50">AIOP</h1>
             <p className="text-xs text-zinc-500">개인 운영 페이지</p>
           </div>
-        </button>
+        </Link>
 
         <nav className="thin-scrollbar flex gap-2 overflow-x-auto pb-1 md:block md:space-y-1 md:overflow-visible md:pb-0">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const active = selectedView === item.key;
+            const active = isNavItemActive(pathname, item);
             return (
-              <button
+              <Link
                 key={item.key}
-                type="button"
-                onClick={() => onSelectView(item.key)}
+                href={item.href}
                 className={`flex min-w-fit items-center gap-3 rounded-2xl px-3 py-3 text-sm transition md:w-full ${
                   active
                     ? "border border-emerald-400/25 bg-emerald-400/10 text-emerald-200 shadow-soft"
@@ -46,7 +42,7 @@ export function Sidebar({ selectedView, onSelectView }: SidebarProps) {
               >
                 <Icon className="h-4 w-4" />
                 <span className="whitespace-nowrap">{viewTitles[item.key]}</span>
-              </button>
+              </Link>
             );
           })}
         </nav>

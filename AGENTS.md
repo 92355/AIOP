@@ -16,7 +16,7 @@
 - v0.9 — Dashboard 카드/위젯이 localStorage 데이터를 직접 읽어 갱신.
 - v1.0 — UI 품질 정리, 빠른 추가(QuickAddModal), 라이트/다크 토글, 컴팩트뷰(`BottomTabBar`), Todo 화면.
 - v1.1 ~ v1.2 — Dashboard 드래그&드롭 (`react-grid-layout 2.2.3`), 위젯/카드 visibility 토글, Summary 카드 reorder(`@dnd-kit`), 컴팩트뷰 위/아래 이동 버튼, draft layout 패턴.
-- 추가 — SummaryCard 클릭 이동, SPA 뒤로가기(`?view=` query + popstate), Hero 문구 사용자 편집, hover 디자인, 위젯 overflow 정리, 설정 드롭다운 z-index 정리, useLocalStorage `useRef` 안정화.
+- 추가 — SummaryCard 클릭 이동, App Router 라우트 분리, Hero 문구 사용자 편집, hover 디자인, 위젯 overflow 정리, 설정 드롭다운 z-index 정리, useLocalStorage `useRef` 안정화.
 - v1.3 — 데이터 export / import (`SettingsMenu` → JSON 백업), localStorage schema guard (`src/lib/storageNormalizers.ts`).
 - 부가 — Notes status 변경 UI (inbox→processed→archived 사이클), Header 검색창 동작 (Wants/Subscriptions/Insights/Notes/Todo 화면 필터).
 
@@ -28,6 +28,7 @@
 - `src/components/layout/grid/` — `DashboardGrid`, `WidgetFrame`, `defaultLayout`.
 - `src/components/layout/settings/` — `SettingsMenu`, `HeaderSettingsButton`, `SidebarSettingsButton`.
 - `src/components/layout/BottomTabBar.tsx`.
+- `src/app/wants`, `src/app/calculator`, `src/app/regret`, `src/app/subscriptions`, `src/app/insights`, `src/app/notes`, `src/app/todos` — App Router 화면 라우트.
 - `src/components/dashboard/HeroWidget.tsx`, `TodoSummary.tsx`.
 - `src/hooks/useDashboardLayout.ts`, `useEscapeKey.ts`.
 - `src/lib/storageNormalizers.ts`, `src/lib/dataPortability.ts`.
@@ -58,9 +59,20 @@
 
 ### 남은 작업 (다음 차례)
 
-- v2.0 Supabase 백엔드 + Google OAuth + AI API Route Handler (별도 계획서 `.agent-notes/aiop-v20-backend-plan.md` 참조).
+- v2.0 Supabase 백엔드 + Google OAuth + 환율 API + AI Route Handler (별도 계획서 `.agent-notes/aiop-v20-backend-plan.md`).
 - v2.1+ AI 기능 4종 (자동분류 → 오늘의 할일 추천 → 투자종목 추천 → 뉴스 추천).
 - 진행 계획 상세: `.agent-notes/aiop-next-steps-stage2.md` 및 후속 계획서.
+
+### v2.0 사전 결정 (확정, 2026-05-11)
+
+상세는 `.agent-notes/aiop-v20-decisions.md`. 요약:
+
+- D1 — 데이터 흐름: **RSC + Server Actions** (SWR 미도입).
+- D2 — 네이밍: **snake_case DB + camelCase TS + mappers.ts**.
+- D3 — multi-currency: **환율 API (Frankfurter) v2.0 포함**, 단일 기준통화(KRW) 자동 환산.
+- D4 — 태그: **`text[]` + GIN 인덱스**.
+- D5 — 삭제: **Hard delete**.
+- D6 — URL: **App Router 라우트 분리** (`/wants`, `/subscriptions`, ...). `?view=` SPA 패턴 제거.
 
 ---
 

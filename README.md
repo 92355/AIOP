@@ -135,7 +135,7 @@ AIOP는 가계부도, 투자 앱도, 메모 앱도 아닙니다.
 
 - Header의 `빠른 추가` 버튼으로 QuickAddModal 오픈.
 - 구매 목표 / 구독 / 인사이트 / 후회 기록 / 메모 5개 카테고리.
-- 선택한 카테고리의 기존 Add Modal을 그대로 사용 → 저장 시 localStorage에 prepend 되고 화면 데이터가 즉시 갱신됩니다 (`refreshKey` 패턴).
+- 선택한 카테고리의 기존 Add Modal을 그대로 사용 → 저장 시 localStorage에 prepend 되고 해당 App Router 라우트로 이동합니다.
 
 ---
 
@@ -188,7 +188,7 @@ v2.0 인프라가 자리 잡은 뒤 다음 순서로 도입합니다.
 - Supabase / PostgreSQL / 임의 DB.
 - 로그인 / 회원가입 / OAuth.
 - OpenAI API 등 AI API.
-- 실제 금융 / 주식 / 환율 API.
+- 실제 금융 / 주식 API. (환율 API 는 v2.0 에 포함)
 - 결제, 권한 시스템, 서버 CRUD.
 
 ---
@@ -245,9 +245,23 @@ npx tsc --noEmit     # 타입 체크만
 ```text
 src/
 ├── app/
+│   ├── calculator/
+│   │   └── page.tsx
 │   ├── globals.css
+│   ├── insights/
+│   │   └── page.tsx
 │   ├── layout.tsx
-│   └── page.tsx                         # 단일 진입점, useState로 ViewKey 스위칭 + QuickAdd 라우팅
+│   ├── notes/
+│   │   └── page.tsx
+│   ├── page.tsx                         # Dashboard 라우트
+│   ├── regret/
+│   │   └── page.tsx
+│   ├── subscriptions/
+│   │   └── page.tsx
+│   ├── todos/
+│   │   └── page.tsx
+│   └── wants/
+│       └── page.tsx
 ├── components/
 │   ├── calculator/
 │   │   └── AssetCalculatorView.tsx
@@ -308,7 +322,8 @@ src/
 ├── lib/
 │   ├── calculations.ts                 # Required Capital / Months to Buy / Regret %
 │   ├── formatters.ts                   # KRW / USD / Compact / Percent / Date
-│   └── labels.ts                       # enum → 한국어 라벨
+│   ├── labels.ts                       # enum → 한국어 라벨
+│   └── storage.ts                      # localStorage prepend helper
 └── types/
     ├── index.ts                        # 도메인 타입 (WantItem, Subscription, Insight, Note, RegretItem, TodoItem, ViewKey)
     └── layout.ts                       # WidgetId, SummaryCardId, DashboardLayout

@@ -1,21 +1,25 @@
 "use client";
 
 import { Command, Moon, Plus, Search, Smartphone, Sun, X } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { useCompactMode } from "@/contexts/CompactModeContext";
 import { useSearchContext } from "@/contexts/SearchContext";
 import { HeaderSettingsButton } from "@/components/layout/settings/HeaderSettingsButton";
+import { getActiveNavItem, isDashboardPathname, viewTitles } from "@/components/layout/navItems";
 
 type HeaderProps = {
-  title: string;
   isDarkMode: boolean;
   onToggleTheme: () => void;
   onOpenQuickAdd: () => void;
-  canCustomizeLayout?: boolean;
 };
 
-export function Header({ title, isDarkMode, onToggleTheme, onOpenQuickAdd, canCustomizeLayout = false }: HeaderProps) {
+export function Header({ isDarkMode, onToggleTheme, onOpenQuickAdd }: HeaderProps) {
+  const pathname = usePathname();
   const { isCompact, toggleCompact } = useCompactMode();
   const { searchQuery, setSearchQuery } = useSearchContext();
+  const activeNavItem = getActiveNavItem(pathname);
+  const canCustomizeLayout = isDashboardPathname(pathname);
+  const title = viewTitles[activeNavItem.key];
   const today = new Intl.DateTimeFormat("ko-KR", {
     dateStyle: "full",
   }).format(new Date());

@@ -12,7 +12,6 @@ import { editableWidgetIds } from "@/components/layout/grid/defaultLayout";
 import { WidgetFrame } from "@/components/layout/grid/WidgetFrame";
 import { useCompactMode } from "@/contexts/CompactModeContext";
 import { useLayoutContext } from "@/contexts/LayoutContext";
-import type { ViewKey } from "@/types";
 import type { WidgetId, WidgetLayout } from "@/types/layout";
 
 const widgetTitles: Record<WidgetId, string> = {
@@ -63,16 +62,12 @@ function fromGridLayout(layout: LayoutItem): WidgetLayout | null {
   };
 }
 
-type DashboardGridProps = {
-  onSelectView: (view: ViewKey) => void;
-};
-
-function renderWidget(id: WidgetId, onSelectView: (view: ViewKey) => void) {
+function renderWidget(id: WidgetId) {
   switch (id) {
     case "hero":
       return <HeroWidget />;
     case "summary-cards":
-      return <SummaryCards onSelectView={onSelectView} />;
+      return <SummaryCards />;
     case "want-preview":
       return <WantPreview />;
     case "asset-snapshot":
@@ -86,7 +81,7 @@ function renderWidget(id: WidgetId, onSelectView: (view: ViewKey) => void) {
   }
 }
 
-export function DashboardGrid({ onSelectView }: DashboardGridProps) {
+export function DashboardGrid() {
   const { isCompact } = useCompactMode();
   const { isEditMode, layout, setLayout, setNarrowLayout } = useLayoutContext();
   const { width, containerRef, mounted } = useContainerWidth({ initialWidth: 1280 });
@@ -166,7 +161,7 @@ export function DashboardGrid({ onSelectView }: DashboardGridProps) {
                 onMoveUp={isNarrowLayout ? () => handleMoveNarrowWidget(id, "up") : undefined}
                 onMoveDown={isNarrowLayout ? () => handleMoveNarrowWidget(id, "down") : undefined}
               >
-                {renderWidget(id, onSelectView)}
+                {renderWidget(id)}
               </WidgetFrame>
             </div>
             );

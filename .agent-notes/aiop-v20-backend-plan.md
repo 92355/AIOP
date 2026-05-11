@@ -1,8 +1,9 @@
 # AIOP v2.0 — Supabase 백엔드 + 인증 + AI Route Handler 계획서
 
 > 작성일: 2026-05-11
+> 갱신: 2026-05-11 (사전 결정 D1~D6 반영, 짝 문서 `aiop-v20-decisions.md` 참조)
 > 전제: v1.0 ~ v1.3 마무리 후 착수
-> 정책: 본 단계는 **한 묶음**으로 도입한다. 인증 / DB / AI Route Handler 는 분리해서 진행하지 않는다.
+> 정책: 본 단계는 **한 묶음**으로 도입한다. 인증 / DB / 환율 / AI Route Handler 는 분리해서 진행하지 않는다.
 
 ---
 
@@ -163,29 +164,42 @@ export function useWants() {
 
 ```text
 1. Supabase 프로젝트 생성 + 환경 변수 설정 + Vercel 연결
-2. Postgres 스키마 + RLS 정책 적용 (SQL 파일로 버전 관리)
+2. Postgres 스키마 + RLS 정책 적용 (SQL 파일로 버전 관리, user_settings.base_currency 포함)
 3. Google OAuth provider 등록 + /auth/callback 구현
-4. @supabase/ssr 서버/클라이언트 세팅
-5. 도메인별 Server Component 또는 hook 1개 (예: wants) 구현 + 화면 연결
-6. 5번이 검증되면 나머지 도메인으로 확장
-7. /api/sync/import + 첫 로그인 다이얼로그
-8. /api/sync/export (선택)
-9. dashboard_layouts, user_settings 동기화
-10. localStorage 사용 코드 제거 + README/AGENTS.md 갱신
-11. v2.1+ AI Route Handler 단계별 추가
+4. @supabase/ssr 서버/클라이언트 세팅 + src/lib/db/mappers.ts
+5. App Router 라우트 분리 (D6) — 단일 page.tsx → /wants, /subscriptions ... 7개
+6. 도메인 1개 (wants) Server Component fetch + Server Action mutation + revalidateTag 검증
+7. 6번이 검증되면 나머지 도메인으로 확장
+8. exchange_rates 테이블 + Vercel Cron + 환율 자동 환산 로직
+9. /api/sync/import + 첫 로그인 시 v1.3 백업 import 다이얼로그
+10. /api/sync/export (선택)
+11. dashboard_layouts, user_settings 동기화
+12. localStorage 사용 코드 제거 + README/AGENTS.md 갱신
+13. v2.1+ AI Route Handler 단계별 추가 (Vercel AI Gateway)
 ```
 
 ---
 
-## 12. 사전 확정 필요 사항
+## 12. 사전 확정 사항 (D1~D6 결정 완료)
 
-다음 항목은 v2.0 착수 직전에 결정.
+상세는 `aiop-v20-decisions.md` 참조. 요약:
 
-- **데이터 흐름**: RSC + Server Actions vs SWR + Route Handler — 추천: RSC + Server Actions.
-- **테이블 컬럼 네이밍**: snake_case 통일 (Postgres 관습). 코드 레이어 ↔ DB 매핑 함수 1개로 처리.
-- **multi-currency**: 현재 KRW 위주. USD 지원은 컬럼은 두되 포맷팅만 분기.
-- **태그**: `text[]` 인지 별도 테이블인지 → 단일 사용자라 `text[]` 로 충분.
-- **삭제 정책**: soft delete (`deleted_at`) 도입 여부 — 가족/공동 사용이 아니므로 hard delete 로 충분.
+| ID | 항목 | 결정 |
+| --- | --- | --- |
+| D1 | 데이터 흐름 | RSC + Server Actions (+ `useOptimistic` / form action pending) |
+| D2 | 네이밍 | snake_case (DB) ↔ camelCase (TS), `src/lib/db/mappers.ts` 매핑 함수 |
+| D3 | multi-currency | 환율 API 도입 (Frankfurter 1순위), 단일 기준통화(KRW)로 자동 환산, `exchange_rates` 캐시 테이블 |
+| D4 | 태그 | `text[]` + GIN 인덱스 |
+| D5 | 삭제 | Hard delete |
+| D6 | URL | App Router 라우트 분리 (`/wants`, `/subscriptions`, ...) |
+
+## 13. 환율 처리 (D3 후속)
+
+- 후보 API: **Frankfurter** (ECB 기반, 무료, 한도 없음) 1순위 / 한국수출입은행 API 2순위.
+- 테이블 `exchange_rates(date date primary key, base text, rates jsonb)` — 일 1회 fetch.
+- 호출 위치: Vercel Cron Job (`vercel.ts` crons) → `/api/cron/fx-rates` 라우트 → Supabase 에 upsert.
+- 도메인 합계 계산 시: Server Component 에서 최신 `exchange_rates` row + 사용자 기준 통화 조회 → 변환.
+- 사용자 기준 통화는 `user_settings.base_currency text` (기본 'KRW').
 
 ---
 
