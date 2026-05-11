@@ -1,18 +1,35 @@
+"use client";
+
 import { wants } from "@/data/mockData";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { formatKRW } from "@/lib/formatters";
 import { getWantCategoryLabel, getWantStatusLabel } from "@/lib/labels";
+import type { WantItem } from "@/types";
+
+function getStoredWants(value: unknown): WantItem[] {
+  return Array.isArray(value) ? (value as WantItem[]) : wants;
+}
 
 export function WantPreview() {
+  const [storedWants] = useLocalStorage<unknown>("aiop:wants", wants);
+  const items = getStoredWants(storedWants);
+  const previewItems = items.slice(0, 5);
+
   return (
     <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 shadow-soft">
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-zinc-50">구매 목표 미리보기</h3>
-          <p className="text-sm text-zinc-500">구매 욕구를 점수와 자산 기준으로 정리합니다.</p>
+          <h3 className="text-lg font-semibold text-zinc-50">Purchase Goal Preview</h3>
+          <p className="text-sm text-zinc-500">Recent wants are reflected from localStorage.</p>
         </div>
       </div>
       <div className="space-y-3">
-        {wants.slice(0, 5).map((item) => (
+        {previewItems.length === 0 ? (
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-4 text-sm text-zinc-500">
+            No wants have been added yet.
+          </div>
+        ) : null}
+        {previewItems.map((item) => (
           <div key={item.id} className="flex items-center justify-between gap-4 rounded-2xl border border-zinc-800 bg-zinc-950/60 p-3">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
@@ -24,7 +41,7 @@ export function WantPreview() {
             </div>
             <div className="text-right">
               <p className="text-xl font-semibold text-zinc-50">{item.score}</p>
-              <p className="text-xs text-zinc-500">AI 점수</p>
+              <p className="text-xs text-zinc-500">AI score</p>
             </div>
           </div>
         ))}

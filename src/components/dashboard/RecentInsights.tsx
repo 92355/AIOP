@@ -1,13 +1,30 @@
+"use client";
+
 import { insights } from "@/data/mockData";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { getInsightTypeLabel } from "@/lib/labels";
+import type { Insight } from "@/types";
+
+function getStoredInsights(value: unknown): Insight[] {
+  return Array.isArray(value) ? (value as Insight[]) : insights;
+}
 
 export function RecentInsights() {
+  const [storedInsights] = useLocalStorage<unknown>("aiop:insights", insights);
+  const items = getStoredInsights(storedInsights);
+  const recentItems = items.slice(0, 3);
+
   return (
     <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 shadow-soft">
-      <h3 className="text-lg font-semibold text-zinc-50">최근 인사이트</h3>
-      <p className="mt-1 text-sm text-zinc-500">최근 책, 영상, 생각을 실행 단위로 압축합니다.</p>
+      <h3 className="text-lg font-semibold text-zinc-50">Recent Insights</h3>
+      <p className="mt-1 text-sm text-zinc-500">Latest saved insight records from localStorage.</p>
       <div className="mt-4 space-y-3">
-        {insights.slice(0, 3).map((item) => (
+        {recentItems.length === 0 ? (
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-4 text-sm text-zinc-500">
+            No recent insights have been added yet.
+          </div>
+        ) : null}
+        {recentItems.map((item) => (
           <article key={item.id} className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-4">
             <div className="flex items-center justify-between gap-3">
               <h4 className="font-medium text-zinc-100">{item.title}</h4>
