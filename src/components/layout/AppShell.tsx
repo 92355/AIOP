@@ -5,6 +5,7 @@ import { BottomTabBar } from "@/components/layout/BottomTabBar";
 import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { CompactModeProvider, useCompactMode } from "@/contexts/CompactModeContext";
+import { LayoutProvider } from "@/contexts/LayoutContext";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { viewTitles } from "@/components/layout/navItems";
 import type { ViewKey } from "@/types";
@@ -21,9 +22,11 @@ type ThemeMode = "dark" | "light";
 export function AppShell({ selectedView, onSelectView, onOpenQuickAdd, children }: AppShellProps) {
   return (
     <CompactModeProvider>
-      <AppShellContent selectedView={selectedView} onSelectView={onSelectView} onOpenQuickAdd={onOpenQuickAdd}>
-        {children}
-      </AppShellContent>
+      <LayoutProvider>
+        <AppShellContent selectedView={selectedView} onSelectView={onSelectView} onOpenQuickAdd={onOpenQuickAdd}>
+          {children}
+        </AppShellContent>
+      </LayoutProvider>
     </CompactModeProvider>
   );
 }
@@ -45,7 +48,13 @@ function AppShellContent({ selectedView, onSelectView, onOpenQuickAdd, children 
     <div className={`min-h-screen bg-zinc-950 text-zinc-100 ${isCompact ? "" : "md:flex"} ${isDarkMode ? "theme-dark" : "theme-light"}`}>
       {isCompact ? null : <Sidebar selectedView={selectedView} onSelectView={onSelectView} />}
       <div className="min-w-0 flex-1">
-        <Header title={viewTitles[selectedView]} isDarkMode={isDarkMode} onToggleTheme={handleToggleTheme} onOpenQuickAdd={onOpenQuickAdd} />
+        <Header
+          title={viewTitles[selectedView]}
+          isDarkMode={isDarkMode}
+          onToggleTheme={handleToggleTheme}
+          onOpenQuickAdd={onOpenQuickAdd}
+          canCustomizeLayout={selectedView === "dashboard"}
+        />
         <main
           className={`thin-scrollbar min-h-0 ${
             isCompact

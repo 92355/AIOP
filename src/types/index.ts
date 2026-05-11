@@ -7,7 +7,8 @@ export type ViewKey =
   | "regret"
   | "subscriptions"
   | "insights"
-  | "notes";
+  | "notes"
+  | "todos";
 
 export type NavItem = {
   key: ViewKey;
@@ -84,4 +85,15 @@ export type Note = {
   tags: string[];
   createdAt: string;
   status?: NoteStatus;
+};
+
+export type TodoStatus = "todo" | "doing" | "done";
+
+export type TodoItem = {
+  id: string;
+  title: string;
+  status: TodoStatus;
+  priority: "low" | "medium" | "high";
+  createdAt: string;
+  dueDate?: string;
 };

@@ -2,15 +2,17 @@
 
 import { Command, Moon, Plus, Search, Smartphone, Sun } from "lucide-react";
 import { useCompactMode } from "@/contexts/CompactModeContext";
+import { HeaderSettingsButton } from "@/components/layout/settings/HeaderSettingsButton";
 
 type HeaderProps = {
   title: string;
   isDarkMode: boolean;
   onToggleTheme: () => void;
   onOpenQuickAdd: () => void;
+  canCustomizeLayout?: boolean;
 };
 
-export function Header({ title, isDarkMode, onToggleTheme, onOpenQuickAdd }: HeaderProps) {
+export function Header({ title, isDarkMode, onToggleTheme, onOpenQuickAdd, canCustomizeLayout = false }: HeaderProps) {
   const { isCompact, toggleCompact } = useCompactMode();
   const today = new Intl.DateTimeFormat("ko-KR", {
     dateStyle: "full",
@@ -22,7 +24,7 @@ export function Header({ title, isDarkMode, onToggleTheme, onOpenQuickAdd }: Hea
         <p className="text-xs uppercase tracking-[0.28em] text-emerald-300/80">운영 센터</p>
         <h2 className={`mt-1 font-semibold text-zinc-50 ${isCompact ? "text-xl" : "text-2xl"}`}>{title}</h2>
       </div>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+      <div className="flex flex-col items-end gap-3 sm:flex-row sm:items-center">
         <div className={`${isCompact ? "hidden" : "flex"} h-11 min-w-0 items-center gap-2 rounded-2xl border border-zinc-800 bg-zinc-900 px-3 text-zinc-500 sm:w-80`}>
           <Search className="h-4 w-4" />
           <input
@@ -31,8 +33,9 @@ export function Header({ title, isDarkMode, onToggleTheme, onOpenQuickAdd }: Hea
           />
           <Command className="h-4 w-4" />
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
           <div className="hidden text-right text-xs text-zinc-500 lg:block">{today}</div>
+          {canCustomizeLayout ? <HeaderSettingsButton /> : null}
           <button
             aria-label={isDarkMode ? "라이트 모드로 변경" : "다크 모드로 변경"}
             aria-pressed={!isDarkMode}

@@ -14,7 +14,7 @@ export function BottomTabBar({ selectedView, onSelectView }: BottomTabBarProps) 
       className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-800 bg-zinc-950/95 px-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-2 backdrop-blur"
       aria-label="간단뷰 하단 탐색"
     >
-      <div className="mx-auto grid max-w-md grid-cols-7 gap-1">
+      <div className="mx-auto grid max-w-md grid-cols-8 gap-1">
         {navItems.map((item) => {
           const Icon = item.icon;
           const active = selectedView === item.key;

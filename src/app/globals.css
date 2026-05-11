@@ -1,3 +1,6 @@
+@import "react-grid-layout/css/styles.css";
+@import "react-resizable/css/styles.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -120,4 +123,24 @@ body {
 
 .theme-light .thin-scrollbar::-webkit-scrollbar-thumb {
   background: #d4d4d8;
+}
+
+.dashboard-grid .react-grid-item.react-grid-placeholder {
+  border-radius: 1rem;
+  background: rgba(52, 211, 153, 0.18);
+}
+
+.dashboard-grid .react-resizable-handle {
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+
+.dashboard-grid .react-grid-item:hover .react-resizable-handle,
+.dashboard-grid .react-grid-item.resizing .react-resizable-handle,
+.dashboard-grid-edit .react-resizable-handle {
+  opacity: 1;
+}
+
+.dashboard-grid .react-resizable-handle::after {
+  border-color: rgba(52, 211, 153, 0.9);
 }

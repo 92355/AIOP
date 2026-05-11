@@ -106,26 +106,53 @@ AIOP는 가계부도, 투자 앱도, 메모 앱도 아닙니다.
 
 ## 앞으로 구현될 기능
 
-### v1.1+ 검토 항목 (확정 아님)
+다음 순서를 따릅니다. 앞 단계가 끝나야 다음 단계로 진행합니다.
 
-- Context 또는 공용 store 도입으로 같은 탭 내 실시간 동기화
-- `storage` 이벤트 기반 탭 간 동기화
+### v1.1 ~ v1.2 — 레이아웃 드래그&드롭 커스터마이징 (프론트 마감)
+
+- Dashboard 위젯의 위치 / 크기를 마우스 드래그로 조정
+- 편집 모드 토글 (편집 ↔ 보기)
+- 레이아웃 설정값을 localStorage (`aiop:layout`)에 저장
+- 모바일은 1열 고정, 데스크탑/태블릿에서만 드래그 활성화
+- 컴팩트 모드 / 다크 모드와 충돌 없이 동작
+- 상세는 `.agent-notes/aiop-v11-drag-drop-layout.md` 참고
+
+### v1.3 — 데이터 export / import (백엔드 이전 안전망)
+
+- 모든 `aiop:*` localStorage 키를 JSON 1개 파일로 내보내기
+- JSON 파일을 업로드해 복원
+- v2.0 백엔드 마이그레이션 시 데이터 이관 경로 확보
+
+### v1.x 보조 작업 (필요 시)
+
 - localStorage item 단위 schema guard
-- 데이터 export / import (JSON)
 - 모달 공통 컴포넌트 추상화
-- 본격 모바일 내비게이션 정비
+- 모바일 내비게이션 정비
 - ESLint 설정을 Next.js 15 방식으로 재정리
 
-### 백엔드 전환 기준 (그 전까지 미진행)
+### v2.0 — Supabase 백엔드 + 인증 + AI API 라우트 (한 번에)
 
-다음 조건이 충족되면 Supabase 등 백엔드를 검토합니다.
+다음을 한 묶음으로 도입합니다.
 
-- localStorage만으로 부족함이 명확해졌을 때
-- 모바일 앱 연동 필요성이 생겼을 때
-- 데이터 백업이 필요해졌을 때
-- 로그인 기반 사용자 분리가 필요해졌을 때
+- Supabase Postgres + Auth (Google OAuth)
+- 5개 도메인 테이블 + RLS 정책
+- 클라이언트 localStorage → Supabase 데이터 흐름 교체
+- AI API 호출용 Next.js Route Handler (OpenAI / Claude 등의 키는 서버에서만 사용)
+- Vercel 배포
+- 상세는 `.agent-notes/aiop-v20-backend-plan.md` 참고
 
-그 전까지 다음은 **도입하지 않습니다**:
+### v2.1+ — AI 기능 4종
+
+v2.0 백엔드 인프라가 자리 잡은 뒤 다음 순서로 도입합니다.
+
+1. **입력 자동분류** — 사용자가 빠른 추가로 던진 텍스트를 Wants / Insights / Subscriptions / Notes 중 어디에 들어갈지 추천
+2. **오늘의 할일 추천** — 최근 Wants / Insights / 메모 / 구매 목표를 기반으로 오늘 처리할 항목 제안
+3. **AI 추천 투자종목** — 사용자가 관심 있는 분야 / 자산 비중 기반 추천 (참고용)
+4. **AI 추천 뉴스기사** — 사용자 관심 키워드 기반 큐레이션
+
+각 기능은 별도 단계로 진행하며, 매 단계마다 비용 / 응답 품질 / UX 검증 후 다음으로 넘어갑니다.
+
+### v2.0 이전까지 도입하지 않습니다
 
 - Supabase / PostgreSQL / 임의 DB
 - 로그인 / 회원가입 / OAuth
@@ -233,5 +260,9 @@ src/
 - v0.8 — Regret Tracker 로컬 계산 (완료)
 - v0.9 — Dashboard 데이터 통합 (완료)
 - v1.0 — UI 품질 정리 + README 최종화 (완료)
+- v1.1 ~ v1.2 — 레이아웃 드래그&드롭 커스터마이징 (예정)
+- v1.3 — 데이터 export / import (예정)
+- v2.0 — Supabase 백엔드 + Google OAuth + AI API 라우트 (계획서 작성됨)
+- v2.1+ — AI 기능 4종 (자동분류 → 오늘의 할일 추천 → 투자종목 추천 → 뉴스 추천)
 
 상세 구현 순서와 단계별 작업 지시는 [`AGENTS.md`](./AGENTS.md)를 참고하세요.
