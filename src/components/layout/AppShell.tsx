@@ -6,6 +6,7 @@ import { AddInsightModal } from "@/components/insights/AddInsightModal";
 import { BottomTabBar } from "@/components/layout/BottomTabBar";
 import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
+import { UpdateNoticeModal } from "@/components/layout/UpdateNoticeModal";
 import { AddNoteModal } from "@/components/notes/AddNoteModal";
 import { QuickAddModal, type QuickAddCategory } from "@/components/quick-add/QuickAddModal";
 import { AddRegretItemModal } from "@/components/regret/AddRegretItemModal";
@@ -57,6 +58,7 @@ function AppShellContent({ children }: AppShellProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [themeMode, setThemeMode] = useLocalStorage<ThemeMode>("aiop-theme-mode", "dark");
+  const [updateNoticeOpen, setUpdateNoticeOpen] = useState(true);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<QuickAddCategory | null>(null);
   const { isCompact } = useCompactMode();
@@ -77,6 +79,10 @@ function AppShellContent({ children }: AppShellProps) {
 
   function handleCloseItemModal() {
     setActiveCategory(null);
+  }
+
+  function handleCloseUpdateNotice() {
+    setUpdateNoticeOpen(false);
   }
 
   function handleAddedItem<T>(targetHref: string, storageKey: string, item: T, fallbackItems: T[]) {
@@ -111,6 +117,7 @@ function AppShellContent({ children }: AppShellProps) {
         </main>
       </div>
       {isCompact ? <BottomTabBar /> : null}
+      <UpdateNoticeModal isOpen={updateNoticeOpen} onClose={handleCloseUpdateNotice} />
       <QuickAddModal isOpen={quickAddOpen} onClose={() => setQuickAddOpen(false)} onSelectCategory={handleSelectQuickAddCategory} />
       <AddWantModal
         isOpen={activeCategory === "want"}
