@@ -12,6 +12,7 @@ import { editableWidgetIds } from "@/components/layout/grid/defaultLayout";
 import { WidgetFrame } from "@/components/layout/grid/WidgetFrame";
 import { useCompactMode } from "@/contexts/CompactModeContext";
 import { useLayoutContext } from "@/contexts/LayoutContext";
+import type { ViewKey } from "@/types";
 import type { WidgetId, WidgetLayout } from "@/types/layout";
 
 const widgetTitles: Record<WidgetId, string> = {
@@ -62,12 +63,16 @@ function fromGridLayout(layout: LayoutItem): WidgetLayout | null {
   };
 }
 
-function renderWidget(id: WidgetId) {
+type DashboardGridProps = {
+  onSelectView: (view: ViewKey) => void;
+};
+
+function renderWidget(id: WidgetId, onSelectView: (view: ViewKey) => void) {
   switch (id) {
     case "hero":
       return <HeroWidget />;
     case "summary-cards":
-      return <SummaryCards />;
+      return <SummaryCards onSelectView={onSelectView} />;
     case "want-preview":
       return <WantPreview />;
     case "asset-snapshot":
@@ -81,7 +86,7 @@ function renderWidget(id: WidgetId) {
   }
 }
 
-export function DashboardGrid() {
+export function DashboardGrid({ onSelectView }: DashboardGridProps) {
   const { isCompact } = useCompactMode();
   const { isEditMode, layout, setLayout, setNarrowLayout } = useLayoutContext();
   const { width, containerRef, mounted } = useContainerWidth({ initialWidth: 1280 });
@@ -91,10 +96,12 @@ export function DashboardGrid() {
 
   const hiddenWidgets = layout.hidden ?? [];
   const visibleWidgetIds = editableWidgetIds.filter((id) => !hiddenWidgets.includes(id));
+  const narrowWidgetOrder = getNormalizedNarrowWidgetOrder(layout.narrowWidgetsOrder ?? editableWidgetIds);
+  const visibleNarrowWidgetIds = narrowWidgetOrder.filter((id) => visibleWidgetIds.includes(id));
   const editableLayouts = layout.widgets.filter((widgetLayout) => visibleWidgetIds.includes(widgetLayout.id));
   const largeLayout = editableLayouts.map(toGridLayout);
   const narrowLayout = getNarrowLayout(
-    (layout.narrowWidgetsOrder ?? editableWidgetIds).filter((id) => visibleWidgetIds.includes(id)),
+    visibleNarrowWidgetIds,
     layout.narrowWidgetHeights ?? {},
   );
 
@@ -110,6 +117,20 @@ export function DashboardGrid() {
 
       setLayout(nextWidgets);
     }
+  }
+
+  function handleMoveNarrowWidget(widgetId: WidgetId, direction: "up" | "down") {
+    const currentIndex = visibleNarrowWidgetIds.indexOf(widgetId);
+    if (currentIndex < 0) return;
+
+    const nextIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+    if (nextIndex < 0 || nextIndex >= visibleNarrowWidgetIds.length) return;
+
+    const nextOrder = [...visibleNarrowWidgetIds];
+    const currentId = nextOrder[currentIndex];
+    nextOrder[currentIndex] = nextOrder[nextIndex];
+    nextOrder[nextIndex] = currentId;
+    setNarrowLayout(getNarrowLayout(nextOrder, layout.narrowWidgetHeights ?? {}).map(fromNarrowLayout));
   }
 
   return (
@@ -132,13 +153,24 @@ export function DashboardGrid() {
           width={width}
           onLayoutChange={handleLayoutChange}
         >
-          {visibleWidgetIds.map((id) => (
+          {visibleWidgetIds.map((id) => {
+            const narrowIndex = visibleNarrowWidgetIds.indexOf(id);
+
+            return (
             <div key={id}>
-              <WidgetFrame id={id} title={widgetTitles[id]}>
-                {renderWidget(id)}
+              <WidgetFrame
+                id={id}
+                title={widgetTitles[id]}
+                canMoveUp={isNarrowLayout && narrowIndex > 0}
+                canMoveDown={isNarrowLayout && narrowIndex >= 0 && narrowIndex < visibleNarrowWidgetIds.length - 1}
+                onMoveUp={isNarrowLayout ? () => handleMoveNarrowWidget(id, "up") : undefined}
+                onMoveDown={isNarrowLayout ? () => handleMoveNarrowWidget(id, "down") : undefined}
+              >
+                {renderWidget(id, onSelectView)}
               </WidgetFrame>
             </div>
-          ))}
+            );
+          })}
         </Responsive>
       ) : null}
       {visibleWidgetIds.length === 0 ? (
@@ -148,6 +180,15 @@ export function DashboardGrid() {
       ) : null}
     </div>
   );
+}
+
+function getNormalizedNarrowWidgetOrder(order: WidgetId[]) {
+  const uniqueIds = order
+    .filter((id) => editableWidgetIds.includes(id))
+    .filter((id, index, ids) => ids.indexOf(id) === index);
+  const missingIds = editableWidgetIds.filter((id) => !uniqueIds.includes(id));
+
+  return [...uniqueIds, ...missingIds];
 }
 
 function getNarrowLayout(order: WidgetId[], heights: Partial<Record<WidgetId, number>>) {
@@ -168,6 +209,18 @@ function getNarrowLayout(order: WidgetId[], heights: Partial<Record<WidgetId, nu
     currentY += height;
     return layout;
   });
+}
+
+function fromNarrowLayout(layout: LayoutItem): WidgetLayout {
+  return {
+    id: layout.i as WidgetId,
+    x: 0,
+    y: layout.y,
+    w: 1,
+    h: layout.h,
+    minW: layout.minW,
+    minH: layout.minH,
+  };
 }
 
 function sortLayoutByPosition(items: WidgetLayout[]) {

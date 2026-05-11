@@ -17,10 +17,10 @@ export function RecentInsights() {
   const recentItems = items.slice(0, 3);
 
   return (
-    <section className={`rounded-2xl border border-zinc-800 bg-zinc-900 shadow-soft ${isCompact ? "p-4" : "p-5"}`}>
+    <section className={`flex flex-col rounded-2xl border border-zinc-800 bg-zinc-900 shadow-soft ${isCompact ? "p-4" : "p-5"}`}>
       <h3 className="text-lg font-semibold text-zinc-50">최근 인사이트</h3>
       {isCompact ? null : <p className="mt-1 text-sm text-zinc-500">최근에 저장한 인사이트를 보여줍니다.</p>}
-      <div className="mt-4 space-y-3">
+      <div className="mt-4 min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
         {recentItems.length === 0 ? (
           <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-4 text-sm text-zinc-500">
             아직 추가한 인사이트가 없습니다.

@@ -20,7 +20,7 @@ export function TodoSummary() {
   const previewItems = activeItems.slice(0, 4);
 
   return (
-    <section className={`rounded-2xl border border-zinc-800 bg-zinc-900 shadow-soft ${isCompact ? "p-4" : "p-5"}`}>
+    <section className={`flex flex-col rounded-2xl border border-zinc-800 bg-zinc-900 shadow-soft ${isCompact ? "p-4" : "p-5"}`}>
       <div className="flex items-start justify-between gap-4">
         <div>
           <h3 className="text-lg font-semibold text-zinc-50">Todo 요약</h3>
@@ -46,7 +46,7 @@ export function TodoSummary() {
         </div>
       </div>
 
-      <div className="mt-4 space-y-2">
+      <div className="mt-4 min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
         {previewItems.length === 0 ? (
           <div className="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4 text-sm text-zinc-500">
             진행할 Todo가 없습니다.

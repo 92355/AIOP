@@ -8,12 +8,21 @@ import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { AddSubscriptionModal } from "@/components/subscriptions/AddSubscriptionModal";
 import { SubscriptionCard } from "@/components/subscriptions/SubscriptionCard";
 import { useCompactMode } from "@/contexts/CompactModeContext";
+import { useSearchContext, normalizeSearchTerm } from "@/contexts/SearchContext";
 import type { Subscription, SubscriptionStatus } from "@/types";
 
 export function SubscriptionsView() {
   const { isCompact } = useCompactMode();
+  const { searchQuery } = useSearchContext();
   const [items, setItems] = useLocalStorage<Subscription[]>("aiop:subscriptions", subscriptions);
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const searchTerm = normalizeSearchTerm(searchQuery);
+  const filteredItems = searchTerm
+    ? items.filter(
+        (item) =>
+          item.service.toLowerCase().includes(searchTerm) || item.category.toLowerCase().includes(searchTerm),
+      )
+    : items;
 
   const summary = useMemo(() => {
     return {
@@ -71,12 +80,14 @@ export function SubscriptionsView() {
         </div>
       </section>
       <div className={`grid gap-4 ${isCompact ? "" : "lg:grid-cols-2 xl:grid-cols-3"}`}>
-        {items.length === 0 ? (
+        {filteredItems.length === 0 ? (
           <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 text-sm text-zinc-500 shadow-soft lg:col-span-2 xl:col-span-3">
-            등록된 구독이 없습니다. 구독을 추가하면 월 합계와 상태별 개수가 자동으로 갱신됩니다.
+            {items.length === 0
+              ? "등록된 구독이 없습니다. 구독을 추가하면 월 합계와 상태별 개수가 자동으로 갱신됩니다."
+              : `"${searchQuery}" 검색 결과가 없습니다.`}
           </div>
         ) : null}
-        {items.map((item) => (
+        {filteredItems.map((item) => (
           <SubscriptionCard key={item.id} item={item} onDelete={handleDelete} onStatusChange={handleStatusChange} />
         ))}
       </div>

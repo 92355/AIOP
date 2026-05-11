@@ -18,14 +18,14 @@ export function WantPreview() {
   const previewItems = items.slice(0, 5);
 
   return (
-    <section className={`rounded-2xl border border-zinc-800 bg-zinc-900 shadow-soft ${isCompact ? "p-4" : "p-5"}`}>
+    <section className={`flex flex-col rounded-2xl border border-zinc-800 bg-zinc-900 shadow-soft ${isCompact ? "p-4" : "p-5"}`}>
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h3 className="text-lg font-semibold text-zinc-50">최근 구매 목표</h3>
           {isCompact ? null : <p className="text-sm text-zinc-500">최근에 추가한 구매 목표를 보여줍니다.</p>}
         </div>
       </div>
-      <div className="space-y-3">
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
         {previewItems.length === 0 ? (
           <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-4 text-sm text-zinc-500">
             아직 추가한 구매 목표가 없습니다.

@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Check, Circle, Clock3, Plus, Trash2 } from "lucide-react";
 import { useCompactMode } from "@/contexts/CompactModeContext";
+import { useSearchContext, normalizeSearchTerm } from "@/contexts/SearchContext";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import type { TodoItem, TodoStatus } from "@/types";
 
@@ -42,10 +43,15 @@ const statusLabels: Record<TodoStatus, string> = {
 
 export function TodoView() {
   const { isCompact } = useCompactMode();
+  const { searchQuery } = useSearchContext();
   const [items, setItems] = useLocalStorage<TodoItem[]>(todoStorageKey, defaultTodos);
   const [title, setTitle] = useState("");
   const [priority, setPriority] = useState<TodoItem["priority"]>("medium");
   const [errorMessage, setErrorMessage] = useState("");
+  const searchTerm = normalizeSearchTerm(searchQuery);
+  const filteredItems = searchTerm
+    ? items.filter((item) => item.title.toLowerCase().includes(searchTerm))
+    : items;
 
   const summary = useMemo(
     () => ({
@@ -156,11 +162,15 @@ export function TodoView() {
       <section className={`rounded-2xl border border-zinc-800 bg-zinc-900 shadow-soft ${isCompact ? "p-4" : "p-6"}`}>
         <h3 className="text-xl font-semibold text-zinc-50">Todo 목록</h3>
         <div className="mt-5 space-y-3">
-          {items.length === 0 ? (
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4 text-sm text-zinc-500">등록된 Todo가 없습니다.</div>
+          {filteredItems.length === 0 ? (
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4 text-sm text-zinc-500">
+              {items.length === 0
+                ? "등록된 Todo가 없습니다."
+                : `"${searchQuery}" 검색 결과가 없습니다.`}
+            </div>
           ) : null}
 
-          {items.map((item) => (
+          {filteredItems.map((item) => (
             <article key={item.id} className={`rounded-2xl border border-zinc-800 bg-zinc-950/70 ${isCompact ? "p-3" : "p-4"}`}>
               <div className="flex items-start gap-3">
                 <button

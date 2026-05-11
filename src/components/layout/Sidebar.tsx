@@ -12,7 +12,7 @@ type SidebarProps = {
 
 export function Sidebar({ selectedView, onSelectView }: SidebarProps) {
   return (
-    <aside className="flex border-zinc-800 bg-zinc-950/95 px-4 py-5 md:h-screen md:w-72 md:flex-col md:border-r">
+    <aside className="relative z-50 flex border-zinc-800 bg-zinc-950/95 px-4 py-5 md:h-screen md:w-72 md:flex-col md:border-r">
       <div>
         <button
           type="button"

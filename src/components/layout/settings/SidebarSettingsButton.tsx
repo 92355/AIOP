@@ -23,7 +23,7 @@ export function SidebarSettingsButton() {
         <span>설정</span>
       </button>
       {isOpen ? (
-        <div className="absolute bottom-14 left-0 z-40">
+        <div className="absolute bottom-14 left-0 z-[70]">
           <SettingsMenu onClose={() => setIsOpen(false)} />
         </div>
       ) : null}

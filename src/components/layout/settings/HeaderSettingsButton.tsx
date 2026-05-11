@@ -23,7 +23,7 @@ export function HeaderSettingsButton() {
         <Settings className="h-4 w-4" />
       </button>
       {isOpen ? (
-        <div className="absolute right-0 top-12 z-50">
+        <div className="absolute right-0 top-12 z-[70]">
           <SettingsMenu onClose={() => setIsOpen(false)} />
         </div>
       ) : null}

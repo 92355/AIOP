@@ -1,6 +1,7 @@
 "use client";
 
-import { Eye, EyeOff, RotateCcw, Save, SlidersHorizontal, X } from "lucide-react";
+import { useRef } from "react";
+import { Download, Eye, EyeOff, RotateCcw, Save, SlidersHorizontal, Upload, X } from "lucide-react";
 import {
   editableWidgetIds,
   summaryCardIds,
@@ -8,6 +9,7 @@ import {
   widgetLabels,
 } from "@/components/layout/grid/defaultLayout";
 import { useLayoutContext } from "@/contexts/LayoutContext";
+import { applyImport, downloadExport } from "@/lib/dataPortability";
 
 type SettingsMenuProps = {
   onClose: () => void;
@@ -24,6 +26,7 @@ export function SettingsMenu({ onClose }: SettingsMenuProps) {
     toggleWidgetVisibility,
     toggleSummaryCardVisibility,
   } = useLayoutContext();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const hiddenWidgets = layout.hidden ?? [];
   const hiddenSummaryCards = layout.hiddenSummaryCards ?? [];
@@ -44,6 +47,44 @@ export function SettingsMenu({ onClose }: SettingsMenuProps) {
 
     resetLayout();
     onClose();
+  }
+
+  function handleExport() {
+    downloadExport();
+    onClose();
+  }
+
+  function handleImportClick() {
+    fileInputRef.current?.click();
+  }
+
+  async function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) return;
+
+    const confirmed = window.confirm(
+      "현재 저장된 모든 AIOP 데이터를 백업 파일로 덮어씁니다. 계속할까요?",
+    );
+    if (!confirmed) return;
+
+    try {
+      const text = await file.text();
+      const result = applyImport(text);
+
+      if (!result.ok) {
+        window.alert(result.message);
+        return;
+      }
+
+      window.alert(result.message);
+      onClose();
+      window.location.reload();
+    } catch (error) {
+      console.warn("Failed to import AIOP backup file", error);
+      window.alert("백업 파일을 읽지 못했습니다.");
+    }
   }
 
   return (
@@ -98,6 +139,32 @@ export function SettingsMenu({ onClose }: SettingsMenuProps) {
         <RotateCcw className="h-4 w-4" />
         <span>레이아웃 초기화</span>
       </button>
+
+      <SettingsGroup title="데이터 백업">
+        <button
+          type="button"
+          onClick={handleExport}
+          className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm text-zinc-200 transition hover:bg-zinc-900"
+        >
+          <Download className="h-4 w-4 text-emerald-300" />
+          <span>데이터 내보내기</span>
+        </button>
+        <button
+          type="button"
+          onClick={handleImportClick}
+          className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm text-zinc-200 transition hover:bg-zinc-900"
+        >
+          <Upload className="h-4 w-4 text-emerald-300" />
+          <span>데이터 가져오기</span>
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="application/json,.json"
+          className="hidden"
+          onChange={handleFileChange}
+        />
+      </SettingsGroup>
     </div>
   );
 }

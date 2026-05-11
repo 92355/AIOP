@@ -10,7 +10,7 @@ import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useCompactMode } from "@/contexts/CompactModeContext";
 import { useLayoutContext } from "@/contexts/LayoutContext";
 import { formatCompactKRW, formatKRW } from "@/lib/formatters";
-import type { Insight, Note, Subscription, TodoItem, WantItem } from "@/types";
+import type { Insight, Note, Subscription, TodoItem, ViewKey, WantItem } from "@/types";
 import type { SummaryCardId } from "@/types/layout";
 
 type SummaryCard = {
@@ -19,6 +19,7 @@ type SummaryCard = {
   value: string;
   helper: string;
   icon: LucideIcon;
+  targetView: ViewKey;
 };
 
 function getStoredArray<T>(value: unknown, fallback: T[]): T[] {
@@ -33,7 +34,11 @@ function sortCardsByOrder(cards: SummaryCard[], order: SummaryCardId[]) {
   return [...orderedCards, ...missingCards];
 }
 
-export function SummaryCards() {
+type SummaryCardsProps = {
+  onSelectView: (view: ViewKey) => void;
+};
+
+export function SummaryCards({ onSelectView }: SummaryCardsProps) {
   const { isCompact } = useCompactMode();
   const { isEditMode, layout, setCardsOrder } = useLayoutContext();
   const [storedWants] = useLocalStorage<unknown>("aiop:wants", wants);
@@ -69,6 +74,7 @@ export function SummaryCards() {
       value: `${wantItems.length}개`,
       helper: "기록 중인 구매 목표",
       icon: Sparkles,
+      targetView: "wants",
     },
     {
       id: "subscriptions-monthly",
@@ -76,6 +82,7 @@ export function SummaryCards() {
       value: formatKRW(monthlyTotal),
       helper: "매달 반복되는 지출",
       icon: CreditCard,
+      targetView: "subscriptions",
     },
     {
       id: "planned-spend",
@@ -83,6 +90,7 @@ export function SummaryCards() {
       value: formatCompactKRW(coverableSpend),
       helper: "구매 목표 총액",
       icon: Banknote,
+      targetView: "wants",
     },
     {
       id: "recent-insight",
@@ -90,6 +98,7 @@ export function SummaryCards() {
       value: `${insightItems.length}개`,
       helper: "저장한 책, 영상, 생각",
       icon: BookMarked,
+      targetView: "insights",
     },
     {
       id: "inbox-count",
@@ -97,6 +106,7 @@ export function SummaryCards() {
       value: `${inboxNoteCount}개`,
       helper: "아직 정리하지 않은 메모",
       icon: NotebookTabs,
+      targetView: "notes",
     },
     {
       id: "todo-count",
@@ -104,6 +114,7 @@ export function SummaryCards() {
       value: `${activeTodoCount}개`,
       helper: "완료 전 Todo",
       icon: CheckSquare,
+      targetView: "todos",
     },
   ];
 
@@ -133,7 +144,7 @@ export function SummaryCards() {
           </div>
         ) : null}
         {orderedCards.map((card) => (
-          <SummaryCardItem key={card.id} card={card} isCompact={isCompact} />
+          <SummaryCardItem key={card.id} card={card} isCompact={isCompact} onSelect={() => onSelectView(card.targetView)} />
         ))}
       </section>
     );
@@ -191,25 +202,51 @@ function SortableSummaryCard({ card, isCompact }: { card: SummaryCard; isCompact
   );
 }
 
-function SummaryCardItem({ card, isCompact, isEditable = false }: { card: SummaryCard; isCompact: boolean; isEditable?: boolean }) {
+function SummaryCardItem({
+  card,
+  isCompact,
+  isEditable = false,
+  onSelect,
+}: {
+  card: SummaryCard;
+  isCompact: boolean;
+  isEditable?: boolean;
+  onSelect?: () => void;
+}) {
   const Icon = card.icon;
-
-  return (
-    <article
-      className={`h-full rounded-2xl border bg-zinc-900 shadow-soft ${
-        isEditable ? "border-emerald-400/30" : "border-zinc-800"
-      } ${isCompact ? "p-3" : "p-5"}`}
-    >
+  const className = `group h-full w-full rounded-2xl border bg-zinc-900 text-left shadow-soft transition duration-200 ${
+    isEditable ? "border-emerald-400/30" : "border-zinc-800"
+  } ${
+    onSelect
+      ? "cursor-pointer hover:-translate-y-0.5 hover:border-emerald-400/50 hover:bg-zinc-800/80 hover:shadow-[0_18px_50px_rgba(52,211,153,0.12)] focus:outline-none focus:ring-2 focus:ring-emerald-400/50 active:translate-y-0"
+      : ""
+  } ${
+    isCompact ? "p-3" : "p-5"
+  }`;
+  const content = (
+    <>
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-sm text-zinc-500">{card.label}</p>
-          <strong className={`mt-2 block font-semibold text-zinc-50 ${isCompact ? "text-xl" : "text-2xl"}`}>{card.value}</strong>
+          <p className="text-sm text-zinc-500 transition-colors group-hover:text-zinc-400">{card.label}</p>
+          <strong className={`mt-2 block font-semibold text-zinc-50 transition-colors group-hover:text-emerald-200 ${isCompact ? "text-xl" : "text-2xl"}`}>{card.value}</strong>
         </div>
-        <div className={`flex items-center justify-center rounded-2xl bg-emerald-400/10 text-emerald-300 ${isCompact ? "h-9 w-9" : "h-11 w-11"}`}>
+        <div className={`flex items-center justify-center rounded-2xl bg-emerald-400/10 text-emerald-300 transition duration-200 group-hover:scale-105 group-hover:bg-emerald-400/15 group-hover:text-emerald-200 ${isCompact ? "h-9 w-9" : "h-11 w-11"}`}>
           <Icon className={isCompact ? "h-4 w-4" : "h-5 w-5"} />
         </div>
       </div>
-      {isCompact ? null : <p className="mt-4 text-sm text-zinc-500">{card.helper}</p>}
-    </article>
+      {isCompact ? null : <p className="mt-4 text-sm text-zinc-500 transition-colors group-hover:text-zinc-400">{card.helper}</p>}
+    </>
+  );
+
+  if (onSelect) {
+    return (
+      <button type="button" onClick={onSelect} className={className} aria-label={`${card.label} 화면으로 이동`}>
+        {content}
+      </button>
+    );
+  }
+
+  return (
+    <article className={className}>{content}</article>
   );
 }

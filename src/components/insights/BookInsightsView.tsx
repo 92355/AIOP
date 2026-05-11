@@ -6,13 +6,23 @@ import { insights } from "@/data/mockData";
 import { AddInsightModal } from "@/components/insights/AddInsightModal";
 import { InsightCard } from "@/components/insights/InsightCard";
 import { useCompactMode } from "@/contexts/CompactModeContext";
+import { useSearchContext, normalizeSearchTerm } from "@/contexts/SearchContext";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import type { Insight } from "@/types";
 
 export function BookInsightsView() {
   const { isCompact } = useCompactMode();
+  const { searchQuery } = useSearchContext();
   const [items, setItems] = useLocalStorage<Insight[]>("aiop:insights", insights);
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const searchTerm = normalizeSearchTerm(searchQuery);
+  const filteredItems = searchTerm
+    ? items.filter((item) =>
+        [item.title, item.keySentence, item.actionItem, item.relatedGoal, ...item.tags]
+          .filter((value): value is string => typeof value === "string")
+          .some((value) => value.toLowerCase().includes(searchTerm)),
+      )
+    : items;
 
   const handleAdd = (item: Insight) => {
     setItems((currentItems) => [item, ...currentItems]);
@@ -39,12 +49,14 @@ export function BookInsightsView() {
         </button>
       </div>
       <div className={`grid gap-4 ${isCompact ? "" : "xl:grid-cols-2"}`}>
-        {items.length === 0 ? (
+        {filteredItems.length === 0 ? (
           <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 text-sm text-zinc-500 shadow-soft xl:col-span-2">
-            등록된 인사이트가 없습니다. 책, 영상, 아티클에서 얻은 실행 문장을 추가하세요.
+            {items.length === 0
+              ? "등록된 인사이트가 없습니다. 책, 영상, 아티클에서 얻은 실행 문장을 추가하세요."
+              : `"${searchQuery}" 검색 결과가 없습니다.`}
           </div>
         ) : null}
-        {items.map((item) => (
+        {filteredItems.map((item) => (
           <InsightCard key={item.id} item={item} onDelete={handleDelete} />
         ))}
       </div>

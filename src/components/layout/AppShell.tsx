@@ -6,6 +6,7 @@ import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { CompactModeProvider, useCompactMode } from "@/contexts/CompactModeContext";
 import { LayoutProvider } from "@/contexts/LayoutContext";
+import { SearchProvider } from "@/contexts/SearchContext";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { viewTitles } from "@/components/layout/navItems";
 import type { ViewKey } from "@/types";
@@ -23,9 +24,11 @@ export function AppShell({ selectedView, onSelectView, onOpenQuickAdd, children 
   return (
     <CompactModeProvider>
       <LayoutProvider>
-        <AppShellContent selectedView={selectedView} onSelectView={onSelectView} onOpenQuickAdd={onOpenQuickAdd}>
-          {children}
-        </AppShellContent>
+        <SearchProvider>
+          <AppShellContent selectedView={selectedView} onSelectView={onSelectView} onOpenQuickAdd={onOpenQuickAdd}>
+            {children}
+          </AppShellContent>
+        </SearchProvider>
       </LayoutProvider>
     </CompactModeProvider>
   );

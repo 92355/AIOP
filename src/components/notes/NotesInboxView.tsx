@@ -1,20 +1,50 @@
 "use client";
 
 import { useState } from "react";
-import { Send, Trash2 } from "lucide-react";
+import { Archive, CheckCircle2, Inbox, Send, Trash2 } from "lucide-react";
 import { notes } from "@/data/mockData";
 import { useCompactMode } from "@/contexts/CompactModeContext";
+import { useSearchContext, normalizeSearchTerm } from "@/contexts/SearchContext";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
-import type { Note } from "@/types";
+import { getNoteStatusLabel } from "@/lib/labels";
+import type { Note, NoteStatus } from "@/types";
 
 const quickTags = ["구매목표", "인사이트", "구독", "나중에"];
+const statusFilters: Array<"all" | NoteStatus> = ["all", "inbox", "processed", "archived"];
+
+function getNextStatus(status: NoteStatus | undefined): NoteStatus {
+  if (status === "inbox" || status === undefined) return "processed";
+  if (status === "processed") return "archived";
+  return "inbox";
+}
+
+function getStatusIcon(status: NoteStatus | undefined) {
+  if (status === "processed") return <CheckCircle2 className="h-4 w-4" />;
+  if (status === "archived") return <Archive className="h-4 w-4" />;
+  return <Inbox className="h-4 w-4" />;
+}
+
+function getStatusClassName(status: NoteStatus | undefined) {
+  if (status === "processed") return "border-emerald-400/30 bg-emerald-400/10 text-emerald-300";
+  if (status === "archived") return "border-zinc-700 bg-zinc-900 text-zinc-400";
+  return "border-zinc-800 bg-zinc-950/70 text-zinc-300";
+}
 
 export function NotesInboxView() {
   const { isCompact } = useCompactMode();
+  const { searchQuery } = useSearchContext();
   const [items, setItems] = useLocalStorage<Note[]>("aiop:notes", notes);
   const [body, setBody] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [errorMessage, setErrorMessage] = useState("");
+  const [statusFilter, setStatusFilter] = useState<(typeof statusFilters)[number]>("all");
+  const searchTerm = normalizeSearchTerm(searchQuery);
+  const filteredItems = items.filter((item) => {
+    if (statusFilter !== "all" && (item.status ?? "inbox") !== statusFilter) return false;
+    if (!searchTerm) return true;
+    const haystacks = [item.body, item.title ?? "", ...item.tags].map((value) => value.toLowerCase());
+    return haystacks.some((value) => value.includes(searchTerm));
+  });
 
   function handleToggleTag(tag: string) {
     setSelectedTags((prevTags) => (prevTags.includes(tag) ? prevTags.filter((item) => item !== tag) : [...prevTags, tag]));
@@ -43,6 +73,12 @@ export function NotesInboxView() {
 
   function handleDelete(id: string) {
     setItems((prevItems) => prevItems.filter((item) => item.id !== id));
+  }
+
+  function handleCycleStatus(id: string) {
+    setItems((prevItems) =>
+      prevItems.map((item) => (item.id === id ? { ...item, status: getNextStatus(item.status) } : item)),
+    );
   }
 
   return (
@@ -83,18 +119,51 @@ export function NotesInboxView() {
       <section className={`rounded-2xl border border-zinc-800 bg-zinc-900 shadow-soft ${isCompact ? "p-4" : "p-6"}`}>
         <h3 className="text-xl font-semibold text-zinc-50">최근 노트</h3>
         {isCompact ? null : <p className="mt-1 text-sm text-zinc-500">나중에 구매 목표, 인사이트, 구독 관리로 연결할 수 있습니다.</p>}
+        <div className="mt-4 flex flex-wrap gap-2">
+          {statusFilters.map((filter) => (
+            <button
+              key={filter}
+              type="button"
+              onClick={() => setStatusFilter(filter)}
+              className={`rounded-full border px-3 py-1 text-xs transition ${
+                statusFilter === filter
+                  ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300"
+                  : "border-zinc-800 text-zinc-400 hover:text-zinc-100"
+              }`}
+            >
+              {filter === "all" ? "전체" : getNoteStatusLabel(filter)}
+            </button>
+          ))}
+        </div>
         <div className="mt-5 space-y-3">
-          {items.length === 0 ? (
+          {filteredItems.length === 0 ? (
             <div className="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4 text-sm text-zinc-500">
-              등록된 노트가 없습니다. 빠르게 떠오른 생각을 왼쪽 입력창에 남겨두세요.
+              {items.length === 0
+                ? "등록된 노트가 없습니다. 빠르게 떠오른 생각을 왼쪽 입력창에 남겨두세요."
+                : searchTerm
+                  ? `"${searchQuery}" 검색 결과가 없습니다.`
+                  : "선택한 상태에 해당하는 노트가 없습니다."}
             </div>
           ) : null}
-          {items.map((item) => (
+          {filteredItems.map((item) => {
+            const currentStatus = item.status ?? "inbox";
+
+            return (
             <article key={item.id} className={`rounded-2xl border border-zinc-800 bg-zinc-950/70 ${isCompact ? "p-3" : "p-4"}`}>
               <div className="flex items-start justify-between gap-4">
                 <h4 className="min-w-0 truncate font-medium text-zinc-100">{item.title || getNotePreview(item.body)}</h4>
                 <div className="flex shrink-0 items-center gap-2">
                   {isCompact ? null : <span className="text-xs text-zinc-500">{item.createdAt}</span>}
+                  <button
+                    type="button"
+                    onClick={() => handleCycleStatus(item.id)}
+                    aria-label={`노트 상태 변경 (현재: ${getNoteStatusLabel(currentStatus)})`}
+                    title={`다음 상태: ${getNoteStatusLabel(getNextStatus(currentStatus))}`}
+                    className={`flex h-8 items-center gap-1 rounded-full border px-2 transition ${getStatusClassName(currentStatus)}`}
+                  >
+                    {getStatusIcon(currentStatus)}
+                    <span className="text-xs">{getNoteStatusLabel(currentStatus)}</span>
+                  </button>
                   <button
                     type="button"
                     onClick={() => handleDelete(item.id)}
@@ -112,7 +181,8 @@ export function NotesInboxView() {
                 ))}
               </div>
             </article>
-          ))}
+            );
+          })}
         </div>
       </section>
     </div>

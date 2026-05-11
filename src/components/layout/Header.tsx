@@ -1,7 +1,8 @@
 "use client";
 
-import { Command, Moon, Plus, Search, Smartphone, Sun } from "lucide-react";
+import { Command, Moon, Plus, Search, Smartphone, Sun, X } from "lucide-react";
 import { useCompactMode } from "@/contexts/CompactModeContext";
+import { useSearchContext } from "@/contexts/SearchContext";
 import { HeaderSettingsButton } from "@/components/layout/settings/HeaderSettingsButton";
 
 type HeaderProps = {
@@ -14,12 +15,13 @@ type HeaderProps = {
 
 export function Header({ title, isDarkMode, onToggleTheme, onOpenQuickAdd, canCustomizeLayout = false }: HeaderProps) {
   const { isCompact, toggleCompact } = useCompactMode();
+  const { searchQuery, setSearchQuery } = useSearchContext();
   const today = new Intl.DateTimeFormat("ko-KR", {
     dateStyle: "full",
   }).format(new Date());
 
   return (
-    <header className={`flex flex-col gap-4 border-b border-zinc-800 bg-zinc-950/80 backdrop-blur md:flex-row md:items-center md:justify-between ${isCompact ? "px-3 py-3" : "px-5 py-4 md:px-8"}`}>
+    <header className={`relative z-50 flex flex-col gap-4 border-b border-zinc-800 bg-zinc-950/80 backdrop-blur md:flex-row md:items-center md:justify-between ${isCompact ? "px-3 py-3" : "px-5 py-4 md:px-8"}`}>
       <div>
         <p className="text-xs uppercase tracking-[0.28em] text-emerald-300/80">운영 센터</p>
         <h2 className={`mt-1 font-semibold text-zinc-50 ${isCompact ? "text-xl" : "text-2xl"}`}>{title}</h2>
@@ -28,10 +30,24 @@ export function Header({ title, isDarkMode, onToggleTheme, onOpenQuickAdd, canCu
         <div className={`${isCompact ? "hidden" : "flex"} h-11 min-w-0 items-center gap-2 rounded-2xl border border-zinc-800 bg-zinc-900 px-3 text-zinc-500 sm:w-80`}>
           <Search className="h-4 w-4" />
           <input
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
             className="min-w-0 flex-1 bg-transparent text-sm text-zinc-200 outline-none placeholder:text-zinc-600"
             placeholder="구매 목표, 노트, 인사이트 검색..."
+            aria-label="검색"
           />
-          <Command className="h-4 w-4" />
+          {searchQuery ? (
+            <button
+              type="button"
+              onClick={() => setSearchQuery("")}
+              aria-label="검색어 지우기"
+              className="flex h-6 w-6 items-center justify-center rounded-full text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          ) : (
+            <Command className="h-4 w-4" />
+          )}
         </div>
         <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
           <div className="hidden text-right text-xs text-zinc-500 lg:block">{today}</div>

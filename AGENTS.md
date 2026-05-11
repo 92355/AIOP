@@ -2,8 +2,65 @@
 
 > 대상: Claude Code  
 > 프로젝트: AIOP / All-In-One Page  
-> 현재 목표: 백엔드 없이 프론트엔드 MVP를 점진적으로 실제 사용 가능한 형태로 개선  
-> 현재 상태: mock data 기반 프론트엔드 레이아웃 MVP
+> 현재 목표: 백엔드 없이 프론트엔드 MVP를 점진적으로 실제 사용 가능한 형태로 개선
+
+---
+
+## 최신 진행 상태 (2026-05-11)
+
+본 문서 하단의 "1. 전체 구현 로드맵" 은 v0.8 시점 명세 기준이다. 실제 코드 상태는 다음과 같이 앞서 있다. 신규 작업 시 아래 정보를 우선시한다.
+
+### 완료 (코드 기준)
+
+- v0.1 ~ v0.8 — 7개 도메인 화면 (Wants, Calculator, Subscriptions, Notes, Insights, Regret, Dashboard) 로컬 CRUD + localStorage 영속화.
+- v0.9 — Dashboard 카드/위젯이 localStorage 데이터를 직접 읽어 갱신.
+- v1.0 — UI 품질 정리, 빠른 추가(QuickAddModal), 라이트/다크 토글, 컴팩트뷰(`BottomTabBar`), Todo 화면.
+- v1.1 ~ v1.2 — Dashboard 드래그&드롭 (`react-grid-layout 2.2.3`), 위젯/카드 visibility 토글, Summary 카드 reorder(`@dnd-kit`), 컴팩트뷰 위/아래 이동 버튼, draft layout 패턴.
+- 추가 — SummaryCard 클릭 이동, SPA 뒤로가기(`?view=` query + popstate), Hero 문구 사용자 편집, hover 디자인, 위젯 overflow 정리, 설정 드롭다운 z-index 정리, useLocalStorage `useRef` 안정화.
+- v1.3 — 데이터 export / import (`SettingsMenu` → JSON 백업), localStorage schema guard (`src/lib/storageNormalizers.ts`).
+- 부가 — Notes status 변경 UI (inbox→processed→archived 사이클), Header 검색창 동작 (Wants/Subscriptions/Insights/Notes/Todo 화면 필터).
+
+### 신규 디렉토리 / 모듈
+
+- `src/contexts/` — `CompactModeContext`, `LayoutContext`, `SearchContext`.
+- `src/components/quick-add/QuickAddModal.tsx`.
+- `src/components/todos/TodoView.tsx`.
+- `src/components/layout/grid/` — `DashboardGrid`, `WidgetFrame`, `defaultLayout`.
+- `src/components/layout/settings/` — `SettingsMenu`, `HeaderSettingsButton`, `SidebarSettingsButton`.
+- `src/components/layout/BottomTabBar.tsx`.
+- `src/components/dashboard/HeroWidget.tsx`, `TodoSummary.tsx`.
+- `src/hooks/useDashboardLayout.ts`, `useEscapeKey.ts`.
+- `src/lib/storageNormalizers.ts`, `src/lib/dataPortability.ts`.
+- `src/types/layout.ts` — `WidgetId`, `SummaryCardId`, `DashboardLayout`.
+
+### localStorage 키 (현재 전체)
+
+| Key | 내용 |
+| --- | --- |
+| `aiop:wants` | WantItem[] |
+| `aiop:subscriptions` | Subscription[] |
+| `aiop:insights` | Insight[] |
+| `aiop:notes` | Note[] |
+| `aiop:regret-items` | RegretItem[] |
+| `aiop:todos` | TodoItem[] |
+| `aiop:layout` | DashboardLayout |
+| `aiop:hero-message` | string |
+| `aiop-compact-mode` | boolean |
+| `aiop-theme-mode` | "light" \| "dark" |
+
+### 타입 명세와 코드의 차이
+
+- `WantItem` 의 `aiScore` (명세) → 실제 코드 `score`.
+- `Subscription` 의 `name`/`usageFrequency` (명세) → 실제 `service`/`usage`.
+- `Insight` 의 `summary`/`relatedTarget` (명세) → 실제 `keySentence`/`relatedGoal`.
+- `RegretItem` 은 명세대로 `watchedPrice/currentPrice/quantity/resultPercent/profitAmount` 사용.
+- `TodoItem` 은 명세에 없는 도메인. `id/title/status/priority/createdAt/dueDate?`.
+
+### 남은 작업 (다음 차례)
+
+- v2.0 Supabase 백엔드 + Google OAuth + AI API Route Handler (별도 계획서 `.agent-notes/aiop-v20-backend-plan.md` 참조).
+- v2.1+ AI 기능 4종 (자동분류 → 오늘의 할일 추천 → 투자종목 추천 → 뉴스 추천).
+- 진행 계획 상세: `.agent-notes/aiop-next-steps-stage2.md` 및 후속 계획서.
 
 ---
 

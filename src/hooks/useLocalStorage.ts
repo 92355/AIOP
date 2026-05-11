@@ -1,8 +1,9 @@
 "use client";
 
-import { Dispatch, SetStateAction, useEffect, useState } from "react";
+import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
 
 export function useLocalStorage<T>(key: string, initialValue: T): [T, Dispatch<SetStateAction<T>>] {
+  const initialValueRef = useRef(initialValue);
   const [value, setValue] = useState<T>(initialValue);
   const [isHydrated, setIsHydrated] = useState(false);
 
@@ -16,11 +17,11 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, Dispatch<S
       }
     } catch (error) {
       console.warn(`Failed to read localStorage key: ${key}`, error);
-      setValue(initialValue);
+      setValue(initialValueRef.current);
     } finally {
       setIsHydrated(true);
     }
-  }, [initialValue, key]);
+  }, [key]);
 
   useEffect(() => {
     if (typeof window === "undefined" || !isHydrated) return;
