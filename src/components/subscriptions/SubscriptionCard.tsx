@@ -4,6 +4,7 @@ import { Trash2 } from "lucide-react";
 import type { Subscription, SubscriptionStatus } from "@/types";
 import { formatKRW } from "@/lib/formatters";
 import { getSubscriptionCategoryLabel, getSubscriptionStatusLabel, getUsageLabel } from "@/lib/labels";
+import { useCompactMode } from "@/contexts/CompactModeContext";
 
 type SubscriptionCardProps = {
   item: Subscription;
@@ -14,6 +15,7 @@ type SubscriptionCardProps = {
 const statuses: SubscriptionStatus[] = ["keep", "review", "cancel"];
 
 export function SubscriptionCard({ item, onDelete, onStatusChange }: SubscriptionCardProps) {
+  const { isCompact } = useCompactMode();
   const statusStyle = {
     keep: "bg-emerald-400/10 text-emerald-300",
     review: "bg-zinc-800 text-zinc-300",
@@ -21,14 +23,14 @@ export function SubscriptionCard({ item, onDelete, onStatusChange }: Subscriptio
   }[item.status];
 
   return (
-    <article className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 shadow-soft">
+    <article className={`rounded-2xl border border-zinc-800 bg-zinc-900 shadow-soft ${isCompact ? "p-4" : "p-5"}`}>
       <div className="flex items-start justify-between gap-4">
-        <div>
-          <h3 className="text-xl font-semibold text-zinc-50">{item.service}</h3>
-          <p className="mt-1 text-sm text-zinc-500">{getSubscriptionCategoryLabel(item.category)} / {getUsageLabel(item.usage)}</p>
+        <div className="min-w-0">
+          <h3 className="truncate text-xl font-semibold text-zinc-50">{item.service}</h3>
+          <p className={`mt-1 text-sm text-zinc-500 ${isCompact ? "line-clamp-1" : ""}`}>{getSubscriptionCategoryLabel(item.category)} / {getUsageLabel(item.usage)}</p>
         </div>
-        <div className="flex items-center gap-2">
-          <span className={`rounded-full px-3 py-1 text-xs font-medium ${statusStyle}`}>{getSubscriptionStatusLabel(item.status)}</span>
+        <div className="flex shrink-0 items-center gap-2">
+          {isCompact ? null : <span className={`rounded-full px-3 py-1 text-xs font-medium ${statusStyle}`}>{getSubscriptionStatusLabel(item.status)}</span>}
           {onDelete ? (
             <button
               type="button"
@@ -57,7 +59,7 @@ export function SubscriptionCard({ item, onDelete, onStatusChange }: Subscriptio
           ))}
         </div>
       ) : null}
-      <div className="mt-6 flex items-end justify-between">
+      <div className={isCompact ? "mt-4 flex items-end justify-between" : "mt-6 flex items-end justify-between"}>
         <div>
           <p className="text-sm text-zinc-500">월 금액</p>
           <p className="mt-1 text-2xl font-semibold text-zinc-50">{formatKRW(item.monthlyPrice)}</p>

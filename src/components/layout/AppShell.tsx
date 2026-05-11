@@ -1,20 +1,13 @@
 "use client";
 
 import { useEffect } from "react";
+import { BottomTabBar } from "@/components/layout/BottomTabBar";
 import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
+import { CompactModeProvider, useCompactMode } from "@/contexts/CompactModeContext";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { viewTitles } from "@/components/layout/navItems";
 import type { ViewKey } from "@/types";
-
-const titles: Record<ViewKey, string> = {
-  dashboard: "대시보드",
-  wants: "구매 목표",
-  calculator: "자산 구매 계산기",
-  regret: "후회 기록장",
-  subscriptions: "구독 관리",
-  insights: "인사이트 보관함",
-  notes: "노트 / 수집함",
-};
 
 type AppShellProps = {
   selectedView: ViewKey;
@@ -26,7 +19,18 @@ type AppShellProps = {
 type ThemeMode = "dark" | "light";
 
 export function AppShell({ selectedView, onSelectView, onOpenQuickAdd, children }: AppShellProps) {
+  return (
+    <CompactModeProvider>
+      <AppShellContent selectedView={selectedView} onSelectView={onSelectView} onOpenQuickAdd={onOpenQuickAdd}>
+        {children}
+      </AppShellContent>
+    </CompactModeProvider>
+  );
+}
+
+function AppShellContent({ selectedView, onSelectView, onOpenQuickAdd, children }: AppShellProps) {
   const [themeMode, setThemeMode] = useLocalStorage<ThemeMode>("aiop-theme-mode", "dark");
+  const { isCompact } = useCompactMode();
   const isDarkMode = themeMode === "dark";
 
   useEffect(() => {
@@ -38,14 +42,21 @@ export function AppShell({ selectedView, onSelectView, onOpenQuickAdd, children 
   };
 
   return (
-    <div className={`min-h-screen bg-zinc-950 text-zinc-100 md:flex ${isDarkMode ? "theme-dark" : "theme-light"}`}>
-      <Sidebar selectedView={selectedView} onSelectView={onSelectView} />
+    <div className={`min-h-screen bg-zinc-950 text-zinc-100 ${isCompact ? "" : "md:flex"} ${isDarkMode ? "theme-dark" : "theme-light"}`}>
+      {isCompact ? null : <Sidebar selectedView={selectedView} onSelectView={onSelectView} />}
       <div className="min-w-0 flex-1">
-        <Header title={titles[selectedView]} isDarkMode={isDarkMode} onToggleTheme={handleToggleTheme} onOpenQuickAdd={onOpenQuickAdd} />
-        <main className="thin-scrollbar h-[calc(100vh-88px)] overflow-y-auto px-5 py-6 md:px-8">
-          {children}
+        <Header title={viewTitles[selectedView]} isDarkMode={isDarkMode} onToggleTheme={handleToggleTheme} onOpenQuickAdd={onOpenQuickAdd} />
+        <main
+          className={`thin-scrollbar min-h-0 ${
+            isCompact
+              ? "mx-auto max-w-md px-3 py-4 pb-24 md:h-[calc(100vh-88px)] md:overflow-y-auto"
+              : "px-5 py-6 md:h-[calc(100vh-88px)] md:overflow-y-auto md:px-8"
+          }`}
+        >
+          <div className={isCompact ? "space-y-4" : undefined}>{children}</div>
         </main>
       </div>
+      {isCompact ? <BottomTabBar selectedView={selectedView} onSelectView={onSelectView} /> : null}
     </div>
   );
 }

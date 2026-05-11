@@ -1,6 +1,8 @@
 "use client";
 
 import { BarChart3, BookOpen, CreditCard, FileText, ShoppingBag, X } from "lucide-react";
+import { useCompactMode } from "@/contexts/CompactModeContext";
+import { useEscapeKey } from "@/hooks/useEscapeKey";
 
 export type QuickAddCategory = "want" | "subscription" | "insight" | "regret" | "note";
 
@@ -49,23 +51,31 @@ const categories: Array<{
 ];
 
 export function QuickAddModal({ isOpen, onClose, onSelectCategory }: QuickAddModalProps) {
+  const { isCompact } = useCompactMode();
+  useEscapeKey(isOpen, onClose);
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/80 p-4 backdrop-blur-sm" onClick={onClose}>
-      <div className="w-full max-w-3xl rounded-2xl border border-zinc-800 bg-zinc-900 p-6 shadow-soft" onClick={(event) => event.stopPropagation()}>
+    <div className={`fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/80 backdrop-blur-sm ${isCompact ? "p-0" : "p-4"}`} onClick={onClose}>
+      <div
+        className={`w-full overflow-y-auto border border-zinc-800 bg-zinc-900 shadow-soft ${
+          isCompact ? "h-[100dvh] max-w-full rounded-none p-4" : "max-w-3xl rounded-2xl p-6"
+        }`}
+        onClick={(event) => event.stopPropagation()}
+      >
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-xs uppercase tracking-[0.28em] text-emerald-300/80">빠른 추가</p>
             <h3 className="mt-2 text-2xl font-semibold text-zinc-50">무엇을 추가할까요?</h3>
-            <p className="mt-1 text-sm text-zinc-500">추가할 항목의 종류를 선택하세요.</p>
+            {isCompact ? null : <p className="mt-1 text-sm text-zinc-500">추가할 항목의 종류를 선택하세요.</p>}
           </div>
           <button type="button" onClick={onClose} className="rounded-2xl border border-zinc-800 p-2 text-zinc-400 hover:text-zinc-50">
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className={`mt-6 grid gap-3 ${isCompact ? "" : "sm:grid-cols-2 lg:grid-cols-3"}`}>
           {categories.map((category) => {
             const Icon = category.icon;
 
@@ -80,7 +90,7 @@ export function QuickAddModal({ isOpen, onClose, onSelectCategory }: QuickAddMod
                   <Icon className="h-5 w-5" />
                 </span>
                 <span className="mt-4 block text-base font-semibold text-zinc-50">{category.title}</span>
-                <span className="mt-2 block text-sm leading-6 text-zinc-500">{category.description}</span>
+                {isCompact ? null : <span className="mt-2 block text-sm leading-6 text-zinc-500">{category.description}</span>}
               </button>
             );
           })}

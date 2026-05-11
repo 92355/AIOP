@@ -5,10 +5,12 @@ import { useState } from "react";
 import { insights } from "@/data/mockData";
 import { AddInsightModal } from "@/components/insights/AddInsightModal";
 import { InsightCard } from "@/components/insights/InsightCard";
+import { useCompactMode } from "@/contexts/CompactModeContext";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import type { Insight } from "@/types";
 
 export function BookInsightsView() {
+  const { isCompact } = useCompactMode();
   const [items, setItems] = useLocalStorage<Insight[]>("aiop:insights", insights);
   const [isAddOpen, setIsAddOpen] = useState(false);
 
@@ -21,11 +23,11 @@ export function BookInsightsView() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className={isCompact ? "space-y-4" : "space-y-6"}>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="text-3xl font-semibold text-zinc-50">인사이트 보관함</h2>
-          <p className="mt-2 text-zinc-500">읽고 본 내용을 내 행동과 소비 판단으로 연결합니다.</p>
+          <h2 className={`font-semibold text-zinc-50 ${isCompact ? "text-2xl" : "text-3xl"}`}>인사이트 보관함</h2>
+          {isCompact ? null : <p className="mt-2 text-zinc-500">읽고 본 내용을 내 행동과 소비 판단으로 연결합니다.</p>}
         </div>
         <button
           type="button"
@@ -36,7 +38,12 @@ export function BookInsightsView() {
           인사이트 추가
         </button>
       </div>
-      <div className="grid gap-4 xl:grid-cols-2">
+      <div className={`grid gap-4 ${isCompact ? "" : "xl:grid-cols-2"}`}>
+        {items.length === 0 ? (
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 text-sm text-zinc-500 shadow-soft xl:col-span-2">
+            등록된 인사이트가 없습니다. 책, 영상, 아티클에서 얻은 실행 문장을 추가하세요.
+          </div>
+        ) : null}
         {items.map((item) => (
           <InsightCard key={item.id} item={item} onDelete={handleDelete} />
         ))}

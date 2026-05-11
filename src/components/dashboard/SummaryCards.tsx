@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { Banknote, BookMarked, CreditCard, NotebookTabs, Sparkles } from "lucide-react";
 import { insights, notes, subscriptions, wants } from "@/data/mockData";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { useCompactMode } from "@/contexts/CompactModeContext";
 import { formatCompactKRW, formatKRW } from "@/lib/formatters";
 import type { Insight, Note, Subscription, WantItem } from "@/types";
 
@@ -12,6 +13,7 @@ function getStoredArray<T>(value: unknown, fallback: T[]): T[] {
 }
 
 export function SummaryCards() {
+  const { isCompact } = useCompactMode();
   const [storedWants] = useLocalStorage<unknown>("aiop:wants", wants);
   const [storedSubscriptions] = useLocalStorage<unknown>("aiop:subscriptions", subscriptions);
   const [storedInsights] = useLocalStorage<unknown>("aiop:insights", insights);
@@ -46,19 +48,19 @@ export function SummaryCards() {
       icon: CreditCard,
     },
     {
-      label: "목표 지출",
+      label: "계획 지출 합계",
       value: formatCompactKRW(coverableSpend),
       helper: "구매 목표 총액",
       icon: Banknote,
     },
     {
-      label: "인사이트",
+      label: "최근 인사이트",
       value: `${insightItems.length}개`,
       helper: "저장한 책, 영상, 생각",
       icon: BookMarked,
     },
     {
-      label: "메모함",
+      label: "수집함",
       value: `${inboxNoteCount}개`,
       helper: "아직 정리하지 않은 메모",
       icon: NotebookTabs,
@@ -66,21 +68,21 @@ export function SummaryCards() {
   ];
 
   return (
-    <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+    <section className={`grid gap-3 ${isCompact ? "grid-cols-2" : "sm:grid-cols-2 xl:grid-cols-5"}`}>
       {cards.map((card) => {
         const Icon = card.icon;
         return (
-          <article key={card.label} className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 shadow-soft">
+          <article key={card.label} className={`rounded-2xl border border-zinc-800 bg-zinc-900 shadow-soft ${isCompact ? "p-3" : "p-5"}`}>
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-sm text-zinc-500">{card.label}</p>
-                <strong className="mt-2 block text-2xl font-semibold text-zinc-50">{card.value}</strong>
+                <strong className={`mt-2 block font-semibold text-zinc-50 ${isCompact ? "text-xl" : "text-2xl"}`}>{card.value}</strong>
               </div>
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-400/10 text-emerald-300">
-                <Icon className="h-5 w-5" />
+              <div className={`flex items-center justify-center rounded-2xl bg-emerald-400/10 text-emerald-300 ${isCompact ? "h-9 w-9" : "h-11 w-11"}`}>
+                <Icon className={isCompact ? "h-4 w-4" : "h-5 w-5"} />
               </div>
             </div>
-            <p className="mt-4 text-sm text-zinc-500">{card.helper}</p>
+            {isCompact ? null : <p className="mt-4 text-sm text-zinc-500">{card.helper}</p>}
           </article>
         );
       })}

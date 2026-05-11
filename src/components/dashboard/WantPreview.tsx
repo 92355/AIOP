@@ -2,6 +2,7 @@
 
 import { wants } from "@/data/mockData";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { useCompactMode } from "@/contexts/CompactModeContext";
 import { formatKRW } from "@/lib/formatters";
 import { getWantCategoryLabel, getWantStatusLabel } from "@/lib/labels";
 import type { WantItem } from "@/types";
@@ -11,16 +12,17 @@ function getStoredWants(value: unknown): WantItem[] {
 }
 
 export function WantPreview() {
+  const { isCompact } = useCompactMode();
   const [storedWants] = useLocalStorage<unknown>("aiop:wants", wants);
   const items = getStoredWants(storedWants);
   const previewItems = items.slice(0, 5);
 
   return (
-    <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 shadow-soft">
+    <section className={`rounded-2xl border border-zinc-800 bg-zinc-900 shadow-soft ${isCompact ? "p-4" : "p-5"}`}>
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-zinc-50">구매 목표 미리보기</h3>
-          <p className="text-sm text-zinc-500">최근에 추가한 구매 목표를 보여줍니다.</p>
+          <h3 className="text-lg font-semibold text-zinc-50">최근 구매 목표</h3>
+          {isCompact ? null : <p className="text-sm text-zinc-500">최근에 추가한 구매 목표를 보여줍니다.</p>}
         </div>
       </div>
       <div className="space-y-3">
@@ -30,18 +32,18 @@ export function WantPreview() {
           </div>
         ) : null}
         {previewItems.map((item) => (
-          <div key={item.id} className="flex items-center justify-between gap-4 rounded-2xl border border-zinc-800 bg-zinc-950/60 p-3">
+            <div key={item.id} className="flex items-center justify-between gap-4 rounded-2xl border border-zinc-800 bg-zinc-950/60 p-3">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <p className="font-medium text-zinc-100">{item.name}</p>
+                <p className="min-w-0 truncate font-medium text-zinc-100">{item.name}</p>
                 <span className="rounded-full bg-zinc-800 px-2 py-1 text-xs text-zinc-400">{getWantCategoryLabel(item.category)}</span>
-                <span className="rounded-full bg-emerald-400/10 px-2 py-1 text-xs text-emerald-300">{getWantStatusLabel(item.status)}</span>
+                {isCompact ? null : <span className="rounded-full bg-emerald-400/10 px-2 py-1 text-xs text-emerald-300">{getWantStatusLabel(item.status)}</span>}
               </div>
               <p className="mt-1 text-sm text-zinc-500">{formatKRW(item.price)}</p>
             </div>
             <div className="text-right">
-              <p className="text-xl font-semibold text-zinc-50">{item.score}</p>
-              <p className="text-xs text-zinc-500">판단 점수</p>
+              <p className={isCompact ? "text-lg font-semibold text-zinc-50" : "text-xl font-semibold text-zinc-50"}>{item.score}</p>
+              {isCompact ? null : <p className="text-xs text-zinc-500">판단 점수</p>}
             </div>
           </div>
         ))}

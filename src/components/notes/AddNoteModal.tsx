@@ -2,6 +2,8 @@
 
 import { FormEvent, useState } from "react";
 import { Send, X } from "lucide-react";
+import { useCompactMode } from "@/contexts/CompactModeContext";
+import { useEscapeKey } from "@/hooks/useEscapeKey";
 import type { Note } from "@/types";
 
 type AddNoteModalProps = {
@@ -13,9 +15,11 @@ type AddNoteModalProps = {
 const quickTags = ["구매목표", "인사이트", "구독", "나중에"];
 
 export function AddNoteModal({ isOpen, onClose, onAdd }: AddNoteModalProps) {
+  const { isCompact } = useCompactMode();
   const [body, setBody] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [errorMessage, setErrorMessage] = useState("");
+  useEscapeKey(isOpen, onClose);
 
   if (!isOpen) return null;
 
@@ -48,12 +52,12 @@ export function AddNoteModal({ isOpen, onClose, onAdd }: AddNoteModalProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/80 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-xl rounded-2xl border border-zinc-800 bg-zinc-900 p-6 shadow-soft">
+    <div className={`fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/80 backdrop-blur-sm ${isCompact ? "p-0" : "p-4"}`}>
+      <div className={`w-full overflow-y-auto border border-zinc-800 bg-zinc-900 shadow-soft ${isCompact ? "h-[100dvh] max-w-full rounded-none p-4" : "max-w-xl rounded-2xl p-6"}`}>
         <div className="flex items-start justify-between gap-4">
           <div>
             <h3 className="text-2xl font-semibold text-zinc-50">메모 추가</h3>
-            <p className="mt-1 text-sm text-zinc-500">나중에 분류할 생각을 빠르게 보관합니다.</p>
+            {isCompact ? null : <p className="mt-1 text-sm text-zinc-500">나중에 분류할 생각을 빠르게 보관합니다.</p>}
           </div>
           <button type="button" onClick={onClose} className="rounded-2xl border border-zinc-800 p-2 text-zinc-400 hover:text-zinc-50">
             <X className="h-5 w-5" />

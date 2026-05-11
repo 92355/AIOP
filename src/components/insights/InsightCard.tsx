@@ -1,6 +1,7 @@
 import { Trash2 } from "lucide-react";
 import type { Insight } from "@/types";
 import { getInsightTypeLabel } from "@/lib/labels";
+import { useCompactMode } from "@/contexts/CompactModeContext";
 
 type InsightCardProps = {
   item: Insight;
@@ -8,15 +9,17 @@ type InsightCardProps = {
 };
 
 export function InsightCard({ item, onDelete }: InsightCardProps) {
+  const { isCompact } = useCompactMode();
+
   return (
-    <article className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 shadow-soft">
+    <article className={`rounded-2xl border border-zinc-800 bg-zinc-900 shadow-soft ${isCompact ? "p-4" : "p-5"}`}>
       <div className="flex items-start justify-between gap-4">
-        <div>
+        <div className="min-w-0">
           <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">{getInsightTypeLabel(item.sourceType)}</p>
-          <h3 className="mt-2 text-xl font-semibold text-zinc-50">{item.title}</h3>
+          <h3 className="mt-2 truncate text-xl font-semibold text-zinc-50">{item.title}</h3>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="rounded-full bg-zinc-800 px-3 py-1 text-xs text-zinc-300">{item.relatedGoal}</span>
+        <div className="flex shrink-0 items-center gap-2">
+          {isCompact ? null : <span className="max-w-32 truncate rounded-full bg-zinc-800 px-3 py-1 text-xs text-zinc-300">{item.relatedGoal}</span>}
           {onDelete ? (
             <button
               aria-label={`${item.title} 삭제`}
@@ -29,11 +32,11 @@ export function InsightCard({ item, onDelete }: InsightCardProps) {
           ) : null}
         </div>
       </div>
-      <p className="mt-5 text-base leading-7 text-zinc-300">{item.keySentence}</p>
-      <p className="mt-4 rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-4 text-sm leading-6 text-emerald-200">
-        {item.actionItem}
-      </p>
-      <div className="mt-4 flex flex-wrap gap-2">
+      <p className={`text-base leading-7 text-zinc-300 ${isCompact ? "mt-4 line-clamp-2" : "mt-5 line-clamp-3"}`}>{item.keySentence}</p>
+      {isCompact ? null : <p className="mt-4 rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-4 text-sm leading-6 text-emerald-200">
+        <span className="line-clamp-3">{item.actionItem}</span>
+      </p>}
+      <div className={`mt-4 flex flex-wrap gap-2 ${isCompact ? "max-h-7 overflow-hidden" : ""}`}>
         {item.tags.map((tag) => (
           <span key={tag} className="rounded-full border border-zinc-800 px-3 py-1 text-xs text-zinc-400">#{tag}</span>
         ))}

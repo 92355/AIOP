@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { subscriptions } from "@/data/mockData";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { useCompactMode } from "@/contexts/CompactModeContext";
 import { formatKRW } from "@/lib/formatters";
 import type { Subscription } from "@/types";
 
@@ -11,6 +12,7 @@ function getStoredSubscriptions(value: unknown): Subscription[] {
 }
 
 export function SubscriptionSummary() {
+  const { isCompact } = useCompactMode();
   const [storedSubscriptions] = useLocalStorage<unknown>("aiop:subscriptions", subscriptions);
   const items = getStoredSubscriptions(storedSubscriptions);
   const summary = useMemo(() => {
@@ -24,15 +26,15 @@ export function SubscriptionSummary() {
   }, [items]);
 
   return (
-    <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 shadow-soft">
+    <section className={`rounded-2xl border border-zinc-800 bg-zinc-900 shadow-soft ${isCompact ? "p-4" : "p-5"}`}>
       <h3 className="text-lg font-semibold text-zinc-50">구독 요약</h3>
-      <p className="mt-1 text-sm text-zinc-500">반복 지출을 상태별로 정리합니다.</p>
-      <div className="mt-5 grid gap-3 sm:grid-cols-4">
-        <div className="rounded-2xl bg-zinc-950/70 p-4">
+      {isCompact ? null : <p className="mt-1 text-sm text-zinc-500">반복 지출을 상태별로 정리합니다.</p>}
+      <div className={`mt-5 grid gap-3 ${isCompact ? "grid-cols-2" : "sm:grid-cols-4"}`}>
+        <div className={`rounded-2xl bg-zinc-950/70 ${isCompact ? "hidden" : "p-4"}`}>
           <p className="text-sm text-zinc-500">월 합계</p>
           <p className="mt-1 text-xl font-semibold text-zinc-50">{formatKRW(summary.total)}</p>
         </div>
-        <div className="rounded-2xl bg-zinc-950/70 p-4">
+        <div className={`rounded-2xl bg-zinc-950/70 p-4 ${isCompact ? "hidden" : ""}`}>
           <p className="text-sm text-zinc-500">유지</p>
           <p className="mt-1 text-xl font-semibold text-emerald-300">{summary.keepCount}개</p>
         </div>
@@ -45,7 +47,7 @@ export function SubscriptionSummary() {
           <p className="mt-1 text-xl font-semibold text-red-300">{summary.cancelCount}개</p>
         </div>
       </div>
-      <div className="mt-4 flex flex-wrap gap-2">
+      <div className={`mt-4 flex flex-wrap gap-2 ${isCompact ? "max-h-16 overflow-hidden" : ""}`}>
         {items.length === 0 ? (
           <span className="rounded-2xl border border-zinc-800 px-3 py-2 text-sm text-zinc-500">
             아직 추가한 구독이 없습니다.

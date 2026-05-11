@@ -7,9 +7,11 @@ import { formatKRW } from "@/lib/formatters";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { AddSubscriptionModal } from "@/components/subscriptions/AddSubscriptionModal";
 import { SubscriptionCard } from "@/components/subscriptions/SubscriptionCard";
+import { useCompactMode } from "@/contexts/CompactModeContext";
 import type { Subscription, SubscriptionStatus } from "@/types";
 
 export function SubscriptionsView() {
+  const { isCompact } = useCompactMode();
   const [items, setItems] = useLocalStorage<Subscription[]>("aiop:subscriptions", subscriptions);
   const [isAddOpen, setIsAddOpen] = useState(false);
 
@@ -35,11 +37,11 @@ export function SubscriptionsView() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className={isCompact ? "space-y-4" : "space-y-6"}>
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h2 className="text-3xl font-semibold text-zinc-50">월 구독 운영판</h2>
-          <p className="mt-2 text-zinc-500">구독을 비용이 아니라 사용 빈도와 효용으로 관리합니다.</p>
+          <h2 className={`font-semibold text-zinc-50 ${isCompact ? "text-2xl" : "text-3xl"}`}>월 구독 운영판</h2>
+          {isCompact ? null : <p className="mt-2 text-zinc-500">구독을 비용이 아니라 사용 빈도와 효용으로 관리합니다.</p>}
         </div>
         <button
           type="button"
@@ -50,25 +52,30 @@ export function SubscriptionsView() {
           구독 추가
         </button>
       </div>
-      <section className="grid gap-4 md:grid-cols-4">
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 shadow-soft">
+      <section className={`grid gap-3 ${isCompact ? "grid-cols-2" : "md:grid-cols-4"}`}>
+        <div className={`rounded-2xl border border-zinc-800 bg-zinc-900 shadow-soft ${isCompact ? "p-4" : "p-5"}`}>
           <p className="text-sm text-zinc-500">이번 달 총 구독비</p>
-          <p className="mt-2 text-3xl font-semibold text-zinc-50">{formatKRW(summary.total)}</p>
+          <p className={`mt-2 font-semibold text-zinc-50 ${isCompact ? "text-xl" : "text-3xl"}`}>{formatKRW(summary.total)}</p>
         </div>
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 shadow-soft">
+        <div className={`rounded-2xl border border-zinc-800 bg-zinc-900 shadow-soft ${isCompact ? "hidden" : "p-5"}`}>
           <p className="text-sm text-zinc-500">유지 추천 구독</p>
           <p className="mt-2 text-3xl font-semibold text-emerald-300">{summary.keepCount}개</p>
         </div>
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 shadow-soft">
+        <div className={`rounded-2xl border border-zinc-800 bg-zinc-900 shadow-soft ${isCompact ? "p-4" : "p-5"}`}>
           <p className="text-sm text-zinc-500">검토 중 구독</p>
-          <p className="mt-2 text-3xl font-semibold text-zinc-50">{summary.reviewCount}개</p>
+          <p className={`mt-2 font-semibold text-zinc-50 ${isCompact ? "text-xl" : "text-3xl"}`}>{summary.reviewCount}개</p>
         </div>
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 shadow-soft">
+        <div className={`rounded-2xl border border-zinc-800 bg-zinc-900 shadow-soft ${isCompact ? "hidden" : "p-5"}`}>
           <p className="text-sm text-zinc-500">해지 예정 구독</p>
           <p className="mt-2 text-3xl font-semibold text-red-300">{summary.cancelCount}개</p>
         </div>
       </section>
-      <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+      <div className={`grid gap-4 ${isCompact ? "" : "lg:grid-cols-2 xl:grid-cols-3"}`}>
+        {items.length === 0 ? (
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 text-sm text-zinc-500 shadow-soft lg:col-span-2 xl:col-span-3">
+            등록된 구독이 없습니다. 구독을 추가하면 월 합계와 상태별 개수가 자동으로 갱신됩니다.
+          </div>
+        ) : null}
         {items.map((item) => (
           <SubscriptionCard key={item.id} item={item} onDelete={handleDelete} onStatusChange={handleStatusChange} />
         ))}

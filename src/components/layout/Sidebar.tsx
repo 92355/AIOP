@@ -1,26 +1,10 @@
 "use client";
 
 import {
-  BarChart3,
-  BookOpen,
-  Calculator,
   ClipboardList,
-  CreditCard,
-  Inbox,
-  Sparkles,
-  TrendingUp,
 } from "lucide-react";
-import type { NavItem, ViewKey } from "@/types";
-
-const navItems: NavItem[] = [
-  { key: "dashboard", label: "대시보드", icon: BarChart3 },
-  { key: "wants", label: "구매 목표", icon: Sparkles },
-  { key: "calculator", label: "자산 구매 계산기", icon: Calculator },
-  { key: "regret", label: "후회 기록장", icon: TrendingUp },
-  { key: "subscriptions", label: "구독 관리", icon: CreditCard },
-  { key: "insights", label: "인사이트 보관함", icon: BookOpen },
-  { key: "notes", label: "노트 / 수집함", icon: Inbox },
-];
+import { navItems, viewTitles } from "@/components/layout/navItems";
+import type { ViewKey } from "@/types";
 
 type SidebarProps = {
   selectedView: ViewKey;
@@ -30,7 +14,12 @@ type SidebarProps = {
 export function Sidebar({ selectedView, onSelectView }: SidebarProps) {
   return (
     <aside className="border-zinc-800 bg-zinc-950/95 px-4 py-5 md:h-screen md:w-72 md:border-r">
-      <div className="mb-6 flex items-center gap-3 px-2">
+      <button
+        type="button"
+        onClick={() => onSelectView("dashboard")}
+        className="mb-6 flex w-full items-center gap-3 rounded-2xl px-2 py-1 text-left transition hover:bg-zinc-900"
+        aria-label="대시보드로 이동"
+      >
         <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-400/30 bg-emerald-400/10 text-lg font-bold text-emerald-300">
           A
         </div>
@@ -38,9 +27,9 @@ export function Sidebar({ selectedView, onSelectView }: SidebarProps) {
           <h1 className="text-xl font-semibold tracking-wide text-zinc-50">AIOP</h1>
           <p className="text-xs text-zinc-500">개인 운영 페이지</p>
         </div>
-      </div>
+      </button>
 
-      <nav className="flex gap-2 overflow-x-auto md:block md:space-y-1 md:overflow-visible">
+      <nav className="thin-scrollbar flex gap-2 overflow-x-auto pb-1 md:block md:space-y-1 md:overflow-visible md:pb-0">
         {navItems.map((item) => {
           const Icon = item.icon;
           const active = selectedView === item.key;
@@ -56,7 +45,7 @@ export function Sidebar({ selectedView, onSelectView }: SidebarProps) {
               }`}
             >
               <Icon className="h-4 w-4" />
-              <span>{item.label}</span>
+              <span className="whitespace-nowrap">{viewTitles[item.key]}</span>
             </button>
           );
         })}

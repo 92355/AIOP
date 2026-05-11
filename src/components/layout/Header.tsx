@@ -1,6 +1,7 @@
 "use client";
 
-import { Bell, Command, Moon, Plus, Search, Sun } from "lucide-react";
+import { Command, Moon, Plus, Search, Smartphone, Sun } from "lucide-react";
+import { useCompactMode } from "@/contexts/CompactModeContext";
 
 type HeaderProps = {
   title: string;
@@ -10,18 +11,19 @@ type HeaderProps = {
 };
 
 export function Header({ title, isDarkMode, onToggleTheme, onOpenQuickAdd }: HeaderProps) {
+  const { isCompact, toggleCompact } = useCompactMode();
   const today = new Intl.DateTimeFormat("ko-KR", {
     dateStyle: "full",
   }).format(new Date());
 
   return (
-    <header className="flex flex-col gap-4 border-b border-zinc-800 bg-zinc-950/80 px-5 py-4 backdrop-blur md:flex-row md:items-center md:justify-between md:px-8">
+    <header className={`flex flex-col gap-4 border-b border-zinc-800 bg-zinc-950/80 backdrop-blur md:flex-row md:items-center md:justify-between ${isCompact ? "px-3 py-3" : "px-5 py-4 md:px-8"}`}>
       <div>
         <p className="text-xs uppercase tracking-[0.28em] text-emerald-300/80">운영 센터</p>
-        <h2 className="mt-1 text-2xl font-semibold text-zinc-50">{title}</h2>
+        <h2 className={`mt-1 font-semibold text-zinc-50 ${isCompact ? "text-xl" : "text-2xl"}`}>{title}</h2>
       </div>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="flex h-11 min-w-0 items-center gap-2 rounded-2xl border border-zinc-800 bg-zinc-900 px-3 text-zinc-500 sm:w-80">
+        <div className={`${isCompact ? "hidden" : "flex"} h-11 min-w-0 items-center gap-2 rounded-2xl border border-zinc-800 bg-zinc-900 px-3 text-zinc-500 sm:w-80`}>
           <Search className="h-4 w-4" />
           <input
             className="min-w-0 flex-1 bg-transparent text-sm text-zinc-200 outline-none placeholder:text-zinc-600"
@@ -41,8 +43,17 @@ export function Header({ title, isDarkMode, onToggleTheme, onOpenQuickAdd }: Hea
           >
             {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
-          <button className="flex h-11 w-11 items-center justify-center rounded-2xl border border-zinc-800 bg-zinc-900 text-zinc-300 hover:text-zinc-50" type="button" title="알림">
-            <Bell className="h-4 w-4" />
+          <button
+            className={`flex h-11 w-11 items-center justify-center rounded-2xl border text-zinc-300 hover:text-zinc-50 ${
+              isCompact ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300" : "border-zinc-800 bg-zinc-900"
+            }`}
+            type="button"
+            title={isCompact ? "일반뷰" : "간단뷰"}
+            aria-label={isCompact ? "일반뷰로 변경" : "간단뷰로 변경"}
+            aria-pressed={isCompact}
+            onClick={toggleCompact}
+          >
+            <Smartphone className="h-4 w-4" />
           </button>
           <button
             className="flex h-11 items-center gap-2 rounded-2xl bg-emerald-400 px-4 text-sm font-semibold text-zinc-950 hover:bg-emerald-300"

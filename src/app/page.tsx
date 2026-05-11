@@ -19,6 +19,7 @@ import { AddSubscriptionModal } from "@/components/subscriptions/AddSubscription
 import { SubscriptionsView } from "@/components/subscriptions/SubscriptionsView";
 import { AddWantModal } from "@/components/wants/AddWantModal";
 import { WantsView } from "@/components/wants/WantsView";
+import { useCompactMode } from "@/contexts/CompactModeContext";
 import { insights, notes, regrets, subscriptions, wants } from "@/data/mockData";
 import type { Insight, Note, RegretItem, Subscription, ViewKey, WantItem } from "@/types";
 
@@ -107,28 +108,30 @@ function prependLocalStorageItem<T>(key: string, item: T, fallbackItems: T[]) {
 }
 
 function DashboardView() {
+  const { isCompact } = useCompactMode();
+
   return (
-    <div className="space-y-6">
-      <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 shadow-soft">
+    <div className={isCompact ? "space-y-4" : "space-y-6"}>
+      <section className={`rounded-2xl border border-zinc-800 bg-zinc-900 shadow-soft ${isCompact ? "p-4" : "p-6"}`}>
         <p className="text-sm uppercase tracking-[0.28em] text-emerald-300">AIOP</p>
         <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h2 className="text-4xl font-semibold text-zinc-50">내 삶의 컨트롤 센터</h2>
-            <p className="mt-3 max-w-2xl text-zinc-400">
+            <h2 className={`font-semibold text-zinc-50 ${isCompact ? "text-2xl" : "text-4xl"}`}>내 삶의 컨트롤 센터</h2>
+            <p className={`mt-3 max-w-2xl text-zinc-400 ${isCompact ? "hidden" : ""}`}>
               내가 필요한 모든 것을 하나의 페이지에서 관리한다.
             </p>
           </div>
-          <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-200">
+          <div className={`rounded-2xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-200 ${isCompact ? "hidden" : ""}`}>
             오늘은 구매 판단 2개와 구독 리뷰 1개를 보면 충분합니다.
           </div>
         </div>
       </section>
       <SummaryCards />
-      <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+      <div className={`grid ${isCompact ? "gap-4" : "gap-6 xl:grid-cols-[1.05fr_0.95fr]"}`}>
         <WantPreview />
         <AssetSnapshot />
       </div>
-      <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+      <div className={`grid ${isCompact ? "gap-4" : "gap-6 xl:grid-cols-[0.95fr_1.05fr]"}`}>
         <SubscriptionSummary />
         <RecentInsights />
       </div>

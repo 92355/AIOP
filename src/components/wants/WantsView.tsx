@@ -5,6 +5,7 @@ import { Plus } from "lucide-react";
 import { wants } from "@/data/mockData";
 import { WantCard } from "@/components/wants/WantCard";
 import { AddWantModal } from "@/components/wants/AddWantModal";
+import { useCompactMode } from "@/contexts/CompactModeContext";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { getWantCategoryLabel } from "@/lib/labels";
 import type { WantItem } from "@/types";
@@ -12,6 +13,7 @@ import type { WantItem } from "@/types";
 const filters: Array<"All" | WantItem["category"]> = ["All", "Productivity", "Lifestyle", "Investment", "Hobby"];
 
 export function WantsView() {
+  const { isCompact } = useCompactMode();
   const [items, setItems] = useLocalStorage<WantItem[]>("aiop:wants", wants);
   const [isAddOpen, setIsAddOpen] = useState(false);
 
@@ -24,11 +26,11 @@ export function WantsView() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className={isCompact ? "space-y-4" : "space-y-6"}>
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h2 className="text-3xl font-semibold text-zinc-50">구매 욕구를 운영 가능한 목표로 바꾸기</h2>
-          <p className="mt-2 text-zinc-500">가격, 이유, 판단 점수, 필요한 자산 규모를 한 번에 봅니다.</p>
+          <h2 className={`font-semibold text-zinc-50 ${isCompact ? "text-2xl" : "text-3xl"}`}>구매 욕구를 운영 가능한 목표로 바꾸기</h2>
+          {isCompact ? null : <p className="mt-2 text-zinc-500">가격, 이유, 판단 점수, 필요한 자산 규모를 한 번에 봅니다.</p>}
         </div>
         <button
           type="button"
@@ -54,7 +56,12 @@ export function WantsView() {
           </button>
         ))}
       </div>
-      <div className="grid gap-4 xl:grid-cols-2">
+      <div className={`grid gap-4 ${isCompact ? "" : "xl:grid-cols-2"}`}>
+        {items.length === 0 ? (
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 text-sm text-zinc-500 shadow-soft xl:col-span-2">
+            등록된 구매 목표가 없습니다. 사고 싶은 항목을 추가하면 필요한 자산과 월 현금흐름을 계산합니다.
+          </div>
+        ) : null}
         {items.map((item) => (
           <WantCard key={item.id} item={item} onDelete={handleDelete} />
         ))}
