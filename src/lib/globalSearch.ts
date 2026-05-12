@@ -19,13 +19,13 @@ export type SearchGroup = {
   hits: SearchHit[];
 };
 
-const STORAGE_KEYS: Record<SearchDomain, string> = {
-  wants: "aiop:wants",
-  subscriptions: "aiop:subscriptions",
-  insights: "aiop:insights",
-  notes: "aiop:notes",
-  todos: "aiop:todos",
-  retros: "aiop:retros",
+export type SearchData = {
+  wants: WantItem[];
+  subscriptions: Subscription[];
+  insights: Insight[];
+  notes: Note[];
+  todos: TodoItem[];
+  retros: KptRetro[];
 };
 
 const GROUP_META: Record<SearchDomain, { viewKey: ViewKey; href: string }> = {
@@ -39,17 +39,6 @@ const GROUP_META: Record<SearchDomain, { viewKey: ViewKey; href: string }> = {
 
 function normalizeSearchTerm(value: string) {
   return value.trim().toLowerCase();
-}
-
-function safeParseArray<T>(value: string | null): T[] {
-  if (!value) return [];
-
-  try {
-    const parsed = JSON.parse(value);
-    return Array.isArray(parsed) ? (parsed as T[]) : [];
-  } catch {
-    return [];
-  }
 }
 
 function getSearchableText(values: Array<string | null | undefined>) {
@@ -126,25 +115,17 @@ function searchRetros(items: KptRetro[], searchTerm: string): SearchHit[] {
     );
 }
 
-export function searchAllDomains(query: string, maxPerDomain = 3): SearchGroup[] {
+export function searchAllDomains(data: SearchData, query: string, maxPerDomain = 3): SearchGroup[] {
   const searchTerm = normalizeSearchTerm(query);
   if (searchTerm.length < 1) return [];
-  if (typeof window === "undefined") return [];
-
-  const wantItems = safeParseArray<WantItem>(window.localStorage.getItem(STORAGE_KEYS.wants));
-  const subscriptionItems = safeParseArray<Subscription>(window.localStorage.getItem(STORAGE_KEYS.subscriptions));
-  const insightItems = safeParseArray<Insight>(window.localStorage.getItem(STORAGE_KEYS.insights));
-  const noteItems = safeParseArray<Note>(window.localStorage.getItem(STORAGE_KEYS.notes));
-  const todoItems = safeParseArray<TodoItem>(window.localStorage.getItem(STORAGE_KEYS.todos));
-  const retroItems = safeParseArray<KptRetro>(window.localStorage.getItem(STORAGE_KEYS.retros));
 
   const allHits: Record<SearchDomain, SearchHit[]> = {
-    wants: searchWants(wantItems, searchTerm),
-    subscriptions: searchSubscriptions(subscriptionItems, searchTerm),
-    insights: searchInsights(insightItems, searchTerm),
-    notes: searchNotes(noteItems, searchTerm),
-    todos: searchTodos(todoItems, searchTerm),
-    retros: searchRetros(retroItems, searchTerm),
+    wants: searchWants(data.wants, searchTerm),
+    subscriptions: searchSubscriptions(data.subscriptions, searchTerm),
+    insights: searchInsights(data.insights, searchTerm),
+    notes: searchNotes(data.notes, searchTerm),
+    todos: searchTodos(data.todos, searchTerm),
+    retros: searchRetros(data.retros, searchTerm),
   };
 
   return (Object.keys(allHits) as SearchDomain[])

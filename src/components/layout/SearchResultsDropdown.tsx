@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronRight, Search as SearchIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { navItems, viewTitles } from "@/components/layout/navItems";
-import { searchAllDomains, type SearchGroup, type SearchHit } from "@/lib/globalSearch";
+import { searchDomains } from "@/app/search/actions";
+import type { SearchGroup, SearchHit } from "@/lib/globalSearch";
 
 type SearchResultsDropdownProps = {
   isOpen: boolean;
@@ -44,19 +45,26 @@ export function SearchResultsDropdown({ isOpen, query, onClose }: SearchResultsD
   const router = useRouter();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const normalizedQuery = query.trim();
-  const groups = useMemo(() => searchAllDomains(normalizedQuery, 3), [normalizedQuery]);
-  const items = useMemo(
-    () =>
-      groups.flatMap((group) =>
-        group.hits.map((hit) => ({
-          key: `${group.domain}:${hit.id}`,
-          group,
-          hit,
-        })),
-      ),
-    [groups],
+  const [groups, setGroups] = useState<SearchGroup[]>([]);
+  const items = groups.flatMap((group) =>
+    group.hits.map((hit) => ({
+      key: `${group.domain}:${hit.id}`,
+      group,
+      hit,
+    })),
   );
   const [activeIndex, setActiveIndex] = useState<number>(-1);
+
+  useEffect(() => {
+    if (normalizedQuery.length < 1) {
+      setGroups([]);
+      return;
+    }
+    const timer = setTimeout(() => {
+      searchDomains(normalizedQuery, 3).then(setGroups).catch(console.error);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [normalizedQuery]);
 
   useEffect(() => {
     if (!isOpen) return;

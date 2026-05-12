@@ -1,20 +1,20 @@
 "use client";
 
-import { wants } from "@/data/mockData";
-import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { useEffect, useState } from "react";
 import { useCompactMode } from "@/contexts/CompactModeContext";
 import { formatKRW } from "@/lib/formatters";
 import { getWantCategoryLabel, getWantStatusLabel } from "@/lib/labels";
+import { getWants } from "@/app/wants/actions";
 import type { WantItem } from "@/types";
-
-function getStoredWants(value: unknown): WantItem[] {
-  return Array.isArray(value) ? (value as WantItem[]) : wants;
-}
 
 export function WantPreview() {
   const { isCompact } = useCompactMode();
-  const [storedWants] = useLocalStorage<unknown>("aiop:wants", wants);
-  const items = getStoredWants(storedWants);
+  const [items, setItems] = useState<WantItem[]>([]);
+
+  useEffect(() => {
+    getWants().then(setItems).catch(console.error);
+  }, []);
+
   const previewItems = items.slice(0, 5);
 
   return (

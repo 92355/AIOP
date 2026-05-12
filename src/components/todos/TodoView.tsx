@@ -4,35 +4,9 @@ import { useMemo, useState } from "react";
 import { Check, ChevronDown, Circle, Clock3, MessageSquareText, Plus, Trash2 } from "lucide-react";
 import { useCompactMode } from "@/contexts/CompactModeContext";
 import { useSearchContext, normalizeSearchTerm } from "@/contexts/SearchContext";
-import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { confirmDelete } from "@/lib/confirmDelete";
+import { createTodo, deleteTodo, updateTodoMemo, updateTodoStatus } from "@/app/todos/actions";
 import type { TodoItem, TodoStatus } from "@/types";
-
-const todoStorageKey = "aiop:todos";
-
-export const defaultTodos: TodoItem[] = [
-  {
-    id: "todo-1",
-    title: "구독 목록에서 해지 후보 1개 정하기",
-    status: "todo",
-    priority: "high",
-    createdAt: "오늘",
-  },
-  {
-    id: "todo-2",
-    title: "구매 목표 우선순위 다시 보기",
-    status: "doing",
-    priority: "medium",
-    createdAt: "오늘",
-  },
-  {
-    id: "todo-3",
-    title: "최근 인사이트 action item 하나 실행하기",
-    status: "done",
-    priority: "low",
-    createdAt: "어제",
-  },
-];
 
 const statusOptions: TodoStatus[] = ["todo", "doing", "done"];
 
@@ -42,10 +16,10 @@ const statusLabels: Record<TodoStatus, string> = {
   done: "완료",
 };
 
-export function TodoView() {
+export function TodoView({ initialItems }: { initialItems: TodoItem[] }) {
   const { isCompact } = useCompactMode();
   const { searchQuery } = useSearchContext();
-  const [items, setItems] = useLocalStorage<TodoItem[]>(todoStorageKey, defaultTodos);
+  const [items, setItems] = useState<TodoItem[]>(initialItems);
   const [title, setTitle] = useState("");
   const [memo, setMemo] = useState("");
   const [priority, setPriority] = useState<TodoItem["priority"]>("medium");
@@ -65,7 +39,7 @@ export function TodoView() {
     [items],
   );
 
-  function handleAdd() {
+  async function handleAdd() {
     const trimmedTitle = title.trim();
 
     if (!trimmedTitle) {
@@ -87,26 +61,23 @@ export function TodoView() {
     setMemo("");
     setPriority("medium");
     setErrorMessage("");
+    await createTodo(nextItem);
   }
 
-  function handleCycleStatus(id: string) {
+  async function handleCycleStatus(id: string) {
+    const nextStatus = getNextStatus(items.find((item) => item.id === id)?.status ?? "todo");
     setItems((currentItems) =>
-      currentItems.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              status: getNextStatus(item.status),
-            }
-          : item,
-      ),
+      currentItems.map((item) => (item.id === id ? { ...item, status: nextStatus } : item)),
     );
+    await updateTodoStatus(id, nextStatus);
   }
 
-  function handleDelete(id: string) {
+  async function handleDelete(id: string) {
     const targetItem = items.find((item) => item.id === id);
     if (!confirmDelete(targetItem?.title ?? "Todo")) return;
 
     setItems((currentItems) => currentItems.filter((item) => item.id !== id));
+    await deleteTodo(id);
   }
 
   function handleUpdateMemo(id: string, nextMemo: string) {
@@ -225,6 +196,7 @@ export function TodoView() {
                     <textarea
                       value={item.memo ?? ""}
                       onChange={(event) => handleUpdateMemo(item.id, event.target.value)}
+                      onBlur={(event) => updateTodoMemo(item.id, getOptionalMemo(event.target.value))}
                       rows={2}
                       className="min-h-10 flex-1 resize-none bg-transparent text-sm leading-5 text-zinc-300 outline-none placeholder:text-zinc-600"
                       placeholder="짧은 메모"
@@ -289,6 +261,7 @@ export function TodoView() {
                         <textarea
                           value={item.memo ?? ""}
                           onChange={(event) => handleUpdateMemo(item.id, event.target.value)}
+                          onBlur={(event) => updateTodoMemo(item.id, getOptionalMemo(event.target.value))}
                           rows={2}
                           className="min-h-10 flex-1 resize-none bg-transparent text-sm leading-5 text-zinc-300 outline-none placeholder:text-zinc-600"
                           placeholder="짧은 메모"

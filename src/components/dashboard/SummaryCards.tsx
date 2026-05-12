@@ -1,17 +1,19 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useState } from "react";
 import { DndContext, PointerSensor, closestCenter, type DragEndEvent, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, arrayMove, rectSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Banknote, BookMarked, CheckSquare, CreditCard, GripVertical, NotebookTabs, Sparkles, type LucideIcon } from "lucide-react";
 import Link from "next/link";
-import { insights, notes, subscriptions, wants } from "@/data/mockData";
-import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useCompactMode } from "@/contexts/CompactModeContext";
 import { useLayoutContext } from "@/contexts/LayoutContext";
 import { formatCompactKRW, formatKRW } from "@/lib/formatters";
-import type { Insight, Note, Subscription, TodoItem, WantItem } from "@/types";
+import { getWants } from "@/app/wants/actions";
+import { getSubscriptions } from "@/app/subscriptions/actions";
+import { getInsights } from "@/app/insights/actions";
+import { getNotes } from "@/app/notes/actions";
+import { getTodos } from "@/app/todos/actions";
 import type { SummaryCardId } from "@/types/layout";
 
 type SummaryCard = {
@@ -23,9 +25,14 @@ type SummaryCard = {
   targetHref: string;
 };
 
-function getStoredArray<T>(value: unknown, fallback: T[]): T[] {
-  return Array.isArray(value) ? (value as T[]) : fallback;
-}
+type SummaryData = {
+  wantCount: number;
+  monthlyTotal: number;
+  coverableSpend: number;
+  insightCount: number;
+  inboxNoteCount: number;
+  activeTodoCount: number;
+};
 
 function sortCardsByOrder(cards: SummaryCard[], order: SummaryCardId[]) {
   const cardsById = new Map(cards.map((card) => [card.id, card]));
@@ -38,37 +45,35 @@ function sortCardsByOrder(cards: SummaryCard[], order: SummaryCardId[]) {
 export function SummaryCards() {
   const { isCompact } = useCompactMode();
   const { isEditMode, layout, setCardsOrder } = useLayoutContext();
-  const [storedWants] = useLocalStorage<unknown>("aiop:wants", wants);
-  const [storedSubscriptions] = useLocalStorage<unknown>("aiop:subscriptions", subscriptions);
-  const [storedInsights] = useLocalStorage<unknown>("aiop:insights", insights);
-  const [storedNotes] = useLocalStorage<unknown>("aiop:notes", notes);
-  const [storedTodos] = useLocalStorage<unknown>("aiop:todos", []);
+  const [summary, setSummary] = useState<SummaryData>({
+    wantCount: 0,
+    monthlyTotal: 0,
+    coverableSpend: 0,
+    insightCount: 0,
+    inboxNoteCount: 0,
+    activeTodoCount: 0,
+  });
 
-  const wantItems = getStoredArray<WantItem>(storedWants, wants);
-  const subscriptionItems = getStoredArray<Subscription>(storedSubscriptions, subscriptions);
-  const insightItems = getStoredArray<Insight>(storedInsights, insights);
-  const noteItems = getStoredArray<Note>(storedNotes, notes);
-  const todoItems = getStoredArray<TodoItem>(storedTodos, []);
-
-  const monthlyTotal = useMemo(
-    () => subscriptionItems.reduce((sum, item) => sum + item.monthlyPrice, 0),
-    [subscriptionItems],
-  );
-  const coverableSpend = useMemo(() => wantItems.reduce((sum, item) => sum + item.price, 0), [wantItems]);
-  const inboxNoteCount = useMemo(
-    () => noteItems.filter((item) => (item.status ?? "inbox") === "inbox").length,
-    [noteItems],
-  );
-  const activeTodoCount = useMemo(
-    () => todoItems.filter((item) => item.status !== "done").length,
-    [todoItems],
-  );
+  useEffect(() => {
+    Promise.all([getWants(), getSubscriptions(), getInsights(), getNotes(), getTodos()])
+      .then(([wants, subscriptions, insights, notes, todos]) => {
+        setSummary({
+          wantCount: wants.length,
+          monthlyTotal: subscriptions.reduce((sum, s) => sum + s.monthlyPrice, 0),
+          coverableSpend: wants.reduce((sum, w) => sum + w.price, 0),
+          insightCount: insights.length,
+          inboxNoteCount: notes.filter((n) => (n.status ?? "inbox") === "inbox").length,
+          activeTodoCount: todos.filter((t) => t.status !== "done").length,
+        });
+      })
+      .catch(console.error);
+  }, []);
 
   const cards: SummaryCard[] = [
     {
       id: "wants-count",
       label: "구매 목표",
-      value: `${wantItems.length}개`,
+      value: `${summary.wantCount}개`,
       helper: "기록 중인 구매 목표",
       icon: Sparkles,
       targetHref: "/wants",
@@ -76,7 +81,7 @@ export function SummaryCards() {
     {
       id: "subscriptions-monthly",
       label: "월 구독비",
-      value: formatKRW(monthlyTotal),
+      value: formatKRW(summary.monthlyTotal),
       helper: "매달 반복되는 지출",
       icon: CreditCard,
       targetHref: "/subscriptions",
@@ -84,7 +89,7 @@ export function SummaryCards() {
     {
       id: "planned-spend",
       label: "계획 지출 합계",
-      value: formatCompactKRW(coverableSpend),
+      value: formatCompactKRW(summary.coverableSpend),
       helper: "구매 목표 총액",
       icon: Banknote,
       targetHref: "/wants",
@@ -92,7 +97,7 @@ export function SummaryCards() {
     {
       id: "recent-insight",
       label: "최근 인사이트",
-      value: `${insightItems.length}개`,
+      value: `${summary.insightCount}개`,
       helper: "저장한 책, 영상, 생각",
       icon: BookMarked,
       targetHref: "/insights",
@@ -100,7 +105,7 @@ export function SummaryCards() {
     {
       id: "inbox-count",
       label: "수집함",
-      value: `${inboxNoteCount}개`,
+      value: `${summary.inboxNoteCount}개`,
       helper: "아직 정리하지 않은 메모",
       icon: NotebookTabs,
       targetHref: "/notes",
@@ -108,7 +113,7 @@ export function SummaryCards() {
     {
       id: "todo-count",
       label: "Todo",
-      value: `${activeTodoCount}개`,
+      value: `${summary.activeTodoCount}개`,
       helper: "완료 전 Todo",
       icon: CheckSquare,
       targetHref: "/todos",

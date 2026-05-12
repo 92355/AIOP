@@ -2,19 +2,20 @@
 
 import { Plus } from "lucide-react";
 import { useState } from "react";
-import { insights } from "@/data/mockData";
 import { AddInsightModal } from "@/components/insights/AddInsightModal";
 import { InsightCard } from "@/components/insights/InsightCard";
 import { useCompactMode } from "@/contexts/CompactModeContext";
 import { useSearchContext, normalizeSearchTerm } from "@/contexts/SearchContext";
-import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { confirmDelete } from "@/lib/confirmDelete";
+import { createInsight, deleteInsight } from "@/app/insights/actions";
 import type { Insight } from "@/types";
 
-export function BookInsightsView() {
+type BookInsightsViewProps = { initialItems: Insight[] };
+
+export function BookInsightsView({ initialItems }: BookInsightsViewProps) {
   const { isCompact } = useCompactMode();
   const { searchQuery } = useSearchContext();
-  const [items, setItems] = useLocalStorage<Insight[]>("aiop:insights", insights);
+  const [items, setItems] = useState<Insight[]>(initialItems);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const searchTerm = normalizeSearchTerm(searchQuery);
   const filteredItems = searchTerm
@@ -25,15 +26,17 @@ export function BookInsightsView() {
       )
     : items;
 
-  const handleAdd = (item: Insight) => {
-    setItems((currentItems) => [item, ...currentItems]);
+  const handleAdd = async (item: Insight) => {
+    setItems((prev) => [item, ...prev]);
+    await createInsight(item);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     const targetItem = items.find((item) => item.id === id);
     if (!confirmDelete(targetItem?.title ?? "인사이트")) return;
 
-    setItems((currentItems) => currentItems.filter((item) => item.id !== id));
+    setItems((prev) => prev.filter((item) => item.id !== id));
+    await deleteInsight(id);
   };
 
   return (

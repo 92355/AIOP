@@ -4,11 +4,11 @@ import { type KeyboardEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ArrowRight, CalendarDays, CheckCircle2, Circle, Flame, Pencil, Plus, RotateCcw, Trash2 } from "lucide-react";
-import { defaultTodos } from "@/components/todos/TodoView";
 import { useCompactMode } from "@/contexts/CompactModeContext";
 import { normalizeSearchTerm, useSearchContext } from "@/contexts/SearchContext";
-import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { confirmDelete } from "@/lib/confirmDelete";
+import { saveRetro, deleteRetroByDate } from "@/app/retros/actions";
+import { createTodo, deleteTodo, updateTodoStatus, updateTodoTitle } from "@/app/todos/actions";
 import {
   calculateStreak,
   carryOverTryItems,
@@ -26,12 +26,9 @@ import {
   updateLinkedTodoTitle,
 } from "@/lib/retros";
 import { normalizeRetros } from "@/lib/storageNormalizers";
-import type { KptRetro, RetroItem, TodoItem } from "@/types";
+import type { KptRetro, RetroItem, TodoItem, TodoStatus } from "@/types";
 
 type RetroSectionKey = "keep" | "problem" | "try";
-
-const retroStorageKey = "aiop:retros";
-const todoStorageKey = "aiop:todos";
 
 const sectionMeta: Record<RetroSectionKey, { title: string; helper: string; placeholder: string }> = {
   keep: {
@@ -57,14 +54,14 @@ const emptyInputs: Record<RetroSectionKey, string> = {
   try: "",
 };
 
-export function RetroView() {
+export function RetroView({ initialRetros, initialTodos }: { initialRetros: KptRetro[]; initialTodos: TodoItem[] }) {
   const today = getLocalDateString(new Date());
   const searchParams = useSearchParams();
   const dateParam = searchParams.get("date");
   const { isCompact } = useCompactMode();
   const { searchQuery } = useSearchContext();
-  const [storedRetros, setStoredRetros] = useLocalStorage<KptRetro[]>(retroStorageKey, []);
-  const [todos, setTodos] = useLocalStorage<TodoItem[]>(todoStorageKey, defaultTodos);
+  const [storedRetros, setStoredRetros] = useState<KptRetro[]>(initialRetros);
+  const [todos, setTodos] = useState<TodoItem[]>(initialTodos);
   const [selectedDate, setSelectedDate] = useState(dateParam || today);
   const [inputs, setInputs] = useState(emptyInputs);
   const [addTryToTodo, setAddTryToTodo] = useState(true);
@@ -98,11 +95,6 @@ export function RetroView() {
     selectedDate === today && !carryoverDismissed && unfinishedTryItems.length > 0 && !hasRetroContent(selectedRetro);
 
   useEffect(() => {
-    if (JSON.stringify(baseRetros) === JSON.stringify(syncedRetros)) return;
-    setStoredRetros(syncedRetros);
-  }, [baseRetros, setStoredRetros, syncedRetros]);
-
-  useEffect(() => {
     if (!dateParam) return;
     setSelectedDate(dateParam);
   }, [dateParam]);
@@ -120,7 +112,7 @@ export function RetroView() {
     }));
   }
 
-  function handleAddItem(section: RetroSectionKey) {
+  async function handleAddItem(section: RetroSectionKey) {
     const trimmedText = inputs[section].trim();
 
     if (!trimmedText) {
@@ -139,7 +131,8 @@ export function RetroView() {
     upsertRetroItems(section, [nextItem]);
 
     if (todo) {
-      setTodos((currentTodos) => [todo, ...currentTodos]);
+      setTodos([todo, ...todos]);
+      await createTodo(todo);
     }
 
     handleInputChange(section, "");
@@ -167,31 +160,33 @@ export function RetroView() {
     }
 
     const now = new Date().toISOString();
+    const safeRetros = normalizeRetros(storedRetros);
+    const existingRetro = safeRetros.find((retro) => retro.date === selectedDate);
 
-    setStoredRetros((currentRetros) =>
-      normalizeRetros(currentRetros)
-        .map((retro) =>
-          retro.date === selectedDate
-            ? {
-                ...retro,
-                [section]: retro[section].map((currentItem) =>
-                  currentItem.id === item.id
-                    ? {
-                        ...currentItem,
-                        text: trimmedText,
-                      }
-                    : currentItem,
-                ),
-                updatedAt: now,
-              }
-            : retro,
-        )
-        .sort(sortRetrosByDateDesc),
-    );
+    if (!existingRetro) {
+      handleCancelEditing();
+      return;
+    }
+
+    const newRetro = {
+      ...existingRetro,
+      [section]: existingRetro[section].map((currentItem) =>
+        currentItem.id === item.id ? { ...currentItem, text: trimmedText } : currentItem,
+      ),
+      updatedAt: now,
+    };
+    const newRetros = safeRetros
+      .map((retro) => (retro.date === selectedDate ? newRetro : retro))
+      .sort(sortRetrosByDateDesc);
+
+    setStoredRetros(newRetros);
+    saveRetro(newRetro);
 
     if (section === "try" && item.linkedTodoId) {
       const linkedTodoId = item.linkedTodoId;
-      setTodos((currentTodos) => updateLinkedTodoTitle(currentTodos, linkedTodoId, trimmedText));
+      const newTodos = updateLinkedTodoTitle(todos, linkedTodoId, trimmedText);
+      setTodos(newTodos);
+      updateTodoTitle(linkedTodoId, trimmedText);
     }
 
     handleCancelEditing();
@@ -217,23 +212,31 @@ export function RetroView() {
 
     if (section === "try" && targetItem?.linkedTodoId) {
       const linkedTodoId = targetItem.linkedTodoId;
-      setTodos((currentTodos) => currentTodos.filter((todo) => todo.id !== linkedTodoId));
+      setTodos(todos.filter((todo) => todo.id !== linkedTodoId));
+      deleteTodo(linkedTodoId);
     }
 
-    setStoredRetros((currentRetros) =>
-      normalizeRetros(currentRetros)
-        .map((retro) =>
-          retro.date === selectedDate
-            ? {
-                ...retro,
-                [section]: retro[section].filter((item) => item.id !== itemId),
-                updatedAt: now,
-              }
-            : retro,
-        )
+    const safeRetros = normalizeRetros(storedRetros);
+    const existingRetro = safeRetros.find((retro) => retro.date === selectedDate);
+    if (!existingRetro) return;
+
+    const newRetro = {
+      ...existingRetro,
+      [section]: existingRetro[section].filter((item) => item.id !== itemId),
+      updatedAt: now,
+    };
+
+    if (!hasRetroContent(newRetro)) {
+      setStoredRetros(safeRetros.filter((retro) => retro.date !== selectedDate));
+      deleteRetroByDate(selectedDate);
+    } else {
+      const newRetros = safeRetros
+        .map((retro) => (retro.date === selectedDate ? newRetro : retro))
         .filter(hasRetroContent)
-        .sort(sortRetrosByDateDesc),
-    );
+        .sort(sortRetrosByDateDesc);
+      setStoredRetros(newRetros);
+      saveRetro(newRetro);
+    }
   }
 
   function handleToggleTryItem(itemId: string) {
@@ -241,45 +244,37 @@ export function RetroView() {
     const nextDone = !targetItem?.done;
     const now = new Date().toISOString();
 
-    setStoredRetros((currentRetros) =>
-      normalizeRetros(currentRetros)
-        .map((retro) =>
-          retro.date === selectedDate
-            ? {
-                ...retro,
-                try: retro.try.map((item) =>
-                  item.id === itemId
-                    ? {
-                        ...item,
-                        done: nextDone,
-                      }
-                    : item,
-                ),
-                updatedAt: now,
-              }
-            : retro,
-        )
-        .sort(sortRetrosByDateDesc),
-    );
+    const safeRetros = normalizeRetros(storedRetros);
+    const existingRetro = safeRetros.find((retro) => retro.date === selectedDate);
+    if (!existingRetro) return;
+
+    const newRetro = {
+      ...existingRetro,
+      try: existingRetro.try.map((item) =>
+        item.id === itemId ? { ...item, done: nextDone } : item,
+      ),
+      updatedAt: now,
+    };
+    const newRetros = safeRetros
+      .map((retro) => (retro.date === selectedDate ? newRetro : retro))
+      .sort(sortRetrosByDateDesc);
+
+    setStoredRetros(newRetros);
+    saveRetro(newRetro);
 
     if (targetItem?.linkedTodoId) {
-      setTodos((currentTodos) =>
-        currentTodos.map((todo) =>
-          todo.id === targetItem.linkedTodoId
-            ? {
-                ...todo,
-                status: nextDone ? "done" : "todo",
-              }
-            : todo,
-        ),
-      );
+      const linkedTodoId = targetItem.linkedTodoId;
+      const nextStatus: TodoStatus = nextDone ? "done" : "todo";
+      setTodos(todos.map((todo) => (todo.id === linkedTodoId ? { ...todo, status: nextStatus } : todo)));
+      updateTodoStatus(linkedTodoId, nextStatus);
     }
   }
 
   function handleDeleteRetro(date: string) {
     if (!confirmDelete(`${formatDateLabel(date)} 회고`)) return;
 
-    setStoredRetros((currentRetros) => normalizeRetros(currentRetros).filter((retro) => retro.date !== date));
+    setStoredRetros(normalizeRetros(storedRetros).filter((retro) => retro.date !== date));
+    deleteRetroByDate(date);
 
     if (date === selectedDate) {
       setSelectedDate(today);
@@ -290,36 +285,33 @@ export function RetroView() {
     if (nextItems.length === 0) return;
 
     const now = new Date().toISOString();
+    const safeRetros = normalizeRetros(storedRetros);
+    const existingRetro = safeRetros.find((retro) => retro.date === selectedDate);
 
-    setStoredRetros((currentRetros) => {
-      const safeRetros = normalizeRetros(currentRetros);
-      const existingRetro = safeRetros.find((retro) => retro.date === selectedDate);
+    let updatedRetro: KptRetro;
+    let newRetros: KptRetro[];
 
-      if (!existingRetro) {
-        return [
-          {
-            ...createEmptyRetro(selectedDate),
-            [section]: nextItems,
-            createdAt: now,
-            updatedAt: now,
-          },
-          ...safeRetros,
-        ].sort(sortRetrosByDateDesc);
-      }
-
-      return safeRetros
-        .map((retro) =>
-          retro.date === selectedDate
-            ? {
-                ...retro,
-                [section]: [...retro[section], ...nextItems],
-                updatedAt: now,
-              }
-            : retro,
-        )
+    if (!existingRetro) {
+      updatedRetro = {
+        ...createEmptyRetro(selectedDate),
+        [section]: nextItems,
+        createdAt: now,
+        updatedAt: now,
+      };
+      newRetros = [updatedRetro, ...safeRetros].sort(sortRetrosByDateDesc);
+    } else {
+      updatedRetro = {
+        ...existingRetro,
+        [section]: [...existingRetro[section], ...nextItems],
+        updatedAt: now,
+      };
+      newRetros = safeRetros
+        .map((retro) => (retro.date === selectedDate ? updatedRetro : retro))
         .sort(sortRetrosByDateDesc);
-    });
+    }
 
+    setStoredRetros(newRetros);
+    saveRetro(updatedRetro);
     setCarryoverDismissed(false);
   }
 

@@ -1,19 +1,19 @@
 "use client";
 
-import { insights } from "@/data/mockData";
-import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { useEffect, useState } from "react";
 import { useCompactMode } from "@/contexts/CompactModeContext";
 import { getInsightTypeLabel } from "@/lib/labels";
+import { getInsights } from "@/app/insights/actions";
 import type { Insight } from "@/types";
-
-function getStoredInsights(value: unknown): Insight[] {
-  return Array.isArray(value) ? (value as Insight[]) : insights;
-}
 
 export function RecentInsights() {
   const { isCompact } = useCompactMode();
-  const [storedInsights] = useLocalStorage<unknown>("aiop:insights", insights);
-  const items = getStoredInsights(storedInsights);
+  const [items, setItems] = useState<Insight[]>([]);
+
+  useEffect(() => {
+    getInsights().then(setItems).catch(console.error);
+  }, []);
+
   const recentItems = items.slice(0, 3);
 
   return (

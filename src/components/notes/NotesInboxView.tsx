@@ -2,18 +2,16 @@
 
 import { useState } from "react";
 import { Archive, CheckCircle2, Inbox, ListTodo, Send, Trash2 } from "lucide-react";
-import { notes } from "@/data/mockData";
 import { useCompactMode } from "@/contexts/CompactModeContext";
 import { useSearchContext, normalizeSearchTerm } from "@/contexts/SearchContext";
-import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { confirmDelete } from "@/lib/confirmDelete";
 import { getNoteStatusLabel } from "@/lib/labels";
+import { createNote, deleteNote, updateNoteStatus } from "@/app/notes/actions";
+import { createTodo } from "@/app/todos/actions";
 import type { Note, NoteStatus, TodoItem } from "@/types";
 
 const quickTags = ["구매목표", "인사이트", "구독", "나중에"];
 const statusFilters: Array<"all" | NoteStatus> = ["all", "inbox", "processed", "archived"];
-const todoStorageKey = "aiop:todos";
-const defaultTodos: TodoItem[] = [];
 
 function getNextStatus(status: NoteStatus | undefined): NoteStatus {
   if (status === "inbox" || status === undefined) return "processed";
@@ -33,11 +31,10 @@ function getStatusClassName(status: NoteStatus | undefined) {
   return "border-zinc-800 bg-zinc-950/70 text-zinc-300";
 }
 
-export function NotesInboxView() {
+export function NotesInboxView({ initialItems }: { initialItems: Note[] }) {
   const { isCompact } = useCompactMode();
   const { searchQuery } = useSearchContext();
-  const [items, setItems] = useLocalStorage<Note[]>("aiop:notes", notes);
-  const [, setTodos] = useLocalStorage<TodoItem[]>(todoStorageKey, defaultTodos);
+  const [items, setItems] = useState<Note[]>(initialItems);
   const [body, setBody] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [errorMessage, setErrorMessage] = useState("");
@@ -55,7 +52,7 @@ export function NotesInboxView() {
     setSelectedTags((prevTags) => (prevTags.includes(tag) ? prevTags.filter((item) => item !== tag) : [...prevTags, tag]));
   }
 
-  function handleAdd() {
+  async function handleAdd() {
     const trimmedBody = body.trim();
     if (!trimmedBody) {
       setErrorMessage("내용을 입력해 주세요.");
@@ -74,22 +71,26 @@ export function NotesInboxView() {
     setBody("");
     setSelectedTags([]);
     setErrorMessage("");
+    await createNote(nextItem);
   }
 
-  function handleDelete(id: string) {
+  async function handleDelete(id: string) {
     const targetItem = items.find((item) => item.id === id);
     if (!confirmDelete(targetItem?.title ?? getNotePreview(targetItem?.body ?? "") ?? "노트")) return;
 
     setItems((prevItems) => prevItems.filter((item) => item.id !== id));
+    await deleteNote(id);
   }
 
-  function handleCycleStatus(id: string) {
+  async function handleCycleStatus(id: string) {
+    const nextStatus = getNextStatus(items.find((item) => item.id === id)?.status);
     setItems((prevItems) =>
-      prevItems.map((item) => (item.id === id ? { ...item, status: getNextStatus(item.status) } : item)),
+      prevItems.map((item) => (item.id === id ? { ...item, status: nextStatus } : item)),
     );
+    await updateNoteStatus(id, nextStatus);
   }
 
-  function handleAddToTodo(note: Note) {
+  async function handleAddToTodo(note: Note) {
     const nextTodo: TodoItem = {
       id: getTodoId(),
       title: getTodoTitleFromNote(note),
@@ -99,8 +100,8 @@ export function NotesInboxView() {
       createdAt: formatCreatedAt(new Date()),
     };
 
-    setTodos((prevTodos) => [nextTodo, ...prevTodos]);
     setTodoAddedNoteIds((prevIds) => (prevIds.includes(note.id) ? prevIds : [...prevIds, note.id]));
+    await createTodo(nextTodo);
   }
 
   return (

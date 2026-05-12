@@ -1,21 +1,21 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Target } from "lucide-react";
-import { wants } from "@/data/mockData";
-import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useCompactMode } from "@/contexts/CompactModeContext";
 import { calculateRequiredCapital } from "@/lib/calculations";
 import { formatKRW } from "@/lib/formatters";
+import { getWants } from "@/app/wants/actions";
 import type { WantItem } from "@/types";
-
-function getStoredWants(value: unknown): WantItem[] {
-  return Array.isArray(value) ? (value as WantItem[]) : wants;
-}
 
 export function AssetSnapshot() {
   const { isCompact } = useCompactMode();
-  const [storedWants] = useLocalStorage<unknown>("aiop:wants", wants);
-  const items = getStoredWants(storedWants);
+  const [items, setItems] = useState<WantItem[]>([]);
+
+  useEffect(() => {
+    getWants().then(setItems).catch(console.error);
+  }, []);
+
   const targetItem = items[0];
   const expectedYield = targetItem?.expectedYield ?? 0;
   const requiredCapital = targetItem ? calculateRequiredCapital(targetItem.price, expectedYield) : 0;

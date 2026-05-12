@@ -1,20 +1,19 @@
 "use client";
 
-import { useMemo } from "react";
-import { subscriptions } from "@/data/mockData";
-import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { useEffect, useMemo, useState } from "react";
 import { useCompactMode } from "@/contexts/CompactModeContext";
 import { formatKRW } from "@/lib/formatters";
+import { getSubscriptions } from "@/app/subscriptions/actions";
 import type { Subscription } from "@/types";
-
-function getStoredSubscriptions(value: unknown): Subscription[] {
-  return Array.isArray(value) ? (value as Subscription[]) : subscriptions;
-}
 
 export function SubscriptionSummary() {
   const { isCompact } = useCompactMode();
-  const [storedSubscriptions] = useLocalStorage<unknown>("aiop:subscriptions", subscriptions);
-  const items = getStoredSubscriptions(storedSubscriptions);
+  const [items, setItems] = useState<Subscription[]>([]);
+
+  useEffect(() => {
+    getSubscriptions().then(setItems).catch(console.error);
+  }, []);
+
   const summary = useMemo(() => {
     return {
       total: items.reduce((sum, item) => sum + item.monthlyPrice, 0),

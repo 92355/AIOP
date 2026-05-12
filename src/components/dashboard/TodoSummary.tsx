@@ -1,25 +1,21 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { DndContext, PointerSensor, closestCenter, type DragEndEvent, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, arrayMove, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { CheckCircle2, CheckSquare, GripVertical } from "lucide-react";
 import { useCompactMode } from "@/contexts/CompactModeContext";
 import { useLayoutContext } from "@/contexts/LayoutContext";
-import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { getTodos, updateTodoStatus } from "@/app/todos/actions";
 import type { TodoItem } from "@/types";
 
-const defaultTodos: TodoItem[] = [];
 const maxPreviewItemCount = 4;
 const priorityRank: Record<TodoItem["priority"], number> = {
   high: 0,
   medium: 1,
   low: 2,
 };
-
-function getStoredTodos(value: unknown): TodoItem[] {
-  return Array.isArray(value) ? (value as TodoItem[]) : defaultTodos;
-}
 
 function sortTodosByPriorityAndCreatedOrder(items: TodoItem[]) {
   return items
@@ -47,8 +43,12 @@ function applyCustomTodoOrder(items: TodoItem[], order: string[]) {
 export function TodoSummary() {
   const { isCompact } = useCompactMode();
   const { isEditMode, layout, setTodoSummaryOrder } = useLayoutContext();
-  const [storedTodos, setStoredTodos] = useLocalStorage<unknown>("aiop:todos", defaultTodos);
-  const items = getStoredTodos(storedTodos);
+  const [items, setItems] = useState<TodoItem[]>([]);
+
+  useEffect(() => {
+    getTodos().then(setItems).catch(console.error);
+  }, []);
+
   const activeItems = items.filter((item) => item.status !== "done");
   const doneCount = items.filter((item) => item.status === "done").length;
   const prioritySortedItems = sortTodosByPriorityAndCreatedOrder(activeItems);
@@ -65,22 +65,14 @@ export function TodoSummary() {
 
     if (oldIndex < 0 || newIndex < 0) return;
 
-    // Preserve all active todos, not only the visible preview subset.
-    // 보이는 요약 항목뿐 아니라 전체 진행 중 Todo 순서를 함께 보존합니다.
     setTodoSummaryOrder(arrayMove(orderedItems, oldIndex, newIndex).map((item) => item.id));
   }
 
-  function handleCompleteTodo(id: string) {
-    setStoredTodos((currentValue: unknown) =>
-      getStoredTodos(currentValue).map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              status: "done",
-            }
-          : item,
-      ),
+  async function handleCompleteTodo(id: string) {
+    setItems((current) =>
+      current.map((item) => (item.id === id ? { ...item, status: "done" } : item)),
     );
+    await updateTodoStatus(id, "done");
   }
 
   return (

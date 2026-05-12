@@ -2,20 +2,21 @@
 
 import { useMemo, useState } from "react";
 import { Plus } from "lucide-react";
-import { subscriptions } from "@/data/mockData";
 import { confirmDelete } from "@/lib/confirmDelete";
 import { formatKRW } from "@/lib/formatters";
-import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { AddSubscriptionModal } from "@/components/subscriptions/AddSubscriptionModal";
 import { SubscriptionCard } from "@/components/subscriptions/SubscriptionCard";
 import { useCompactMode } from "@/contexts/CompactModeContext";
 import { useSearchContext, normalizeSearchTerm } from "@/contexts/SearchContext";
+import { createSubscription, updateSubscriptionStatus, deleteSubscription } from "@/app/subscriptions/actions";
 import type { Subscription, SubscriptionStatus } from "@/types";
 
-export function SubscriptionsView() {
+type SubscriptionsViewProps = { initialItems: Subscription[] };
+
+export function SubscriptionsView({ initialItems }: SubscriptionsViewProps) {
   const { isCompact } = useCompactMode();
   const { searchQuery } = useSearchContext();
-  const [items, setItems] = useLocalStorage<Subscription[]>("aiop:subscriptions", subscriptions);
+  const [items, setItems] = useState<Subscription[]>(initialItems);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const searchTerm = normalizeSearchTerm(searchQuery);
   const filteredItems = searchTerm
@@ -34,19 +35,22 @@ export function SubscriptionsView() {
     };
   }, [items]);
 
-  function handleAdd(item: Subscription) {
-    setItems((prevItems) => [item, ...prevItems]);
+  async function handleAdd(item: Subscription) {
+    setItems((prev) => [item, ...prev]);
+    await createSubscription(item);
   }
 
-  function handleDelete(id: string) {
+  async function handleDelete(id: string) {
     const targetItem = items.find((item) => item.id === id);
     if (!confirmDelete(targetItem?.service ?? "구독")) return;
 
-    setItems((prevItems) => prevItems.filter((item) => item.id !== id));
+    setItems((prev) => prev.filter((item) => item.id !== id));
+    await deleteSubscription(id);
   }
 
-  function handleStatusChange(id: string, status: SubscriptionStatus) {
-    setItems((prevItems) => prevItems.map((item) => (item.id === id ? { ...item, status } : item)));
+  async function handleStatusChange(id: string, status: SubscriptionStatus) {
+    setItems((prev) => prev.map((item) => (item.id === id ? { ...item, status } : item)));
+    await updateSubscriptionStatus(id, status);
   }
 
   return (

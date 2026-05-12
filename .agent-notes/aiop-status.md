@@ -8,15 +8,14 @@
 
 ## 1. 한눈에 요약
 
-- 버전: **v1.4** (회고 인라인 편집 / README 정합성 / 전역 검색 드롭다운 완료)
-- 상태: frontend-only MVP, 9개 도메인 모두 동작
-- 데이터: 브라우저 `localStorage` 영속화
-- 백엔드: 없음 (v2.0 1단계 진행 예정)
-- 인증: 없음
-- 외부 API: 없음
+- 버전: **v2.0** (Supabase + Google OAuth + RSC/Server Actions 전환 완료)
+- 상태: 9개 도메인 모두 Supabase DB 연동 완료
+- 데이터: **Supabase Postgres** (RLS 적용)
+- 인증: **Google OAuth** (Supabase Auth)
+- 백엔드: **Supabase** + Next.js Server Actions
+- 외부 API: 없음 (exchange_rates 미구현)
 - 자동 테스트: 없음 (수동 QA만)
-- Supabase 프로젝트: 아직 생성 안 됨
-- 다음 큰 목표: v2.0 Supabase + Google OAuth + RSC/Server Actions
+- 다음 큰 목표: exchange_rates 캐시 + localStorage export/import → Supabase import 도구, v2.1 AI 기능
 
 ---
 
@@ -43,52 +42,56 @@
 
 ```txt
 src/
-├── app/                        # 10개 라우트 + globals.css + layout.tsx
+├── app/
+│   ├── wants/actions.ts          # Server Actions (Supabase CRUD)
+│   ├── subscriptions/actions.ts
+│   ├── insights/actions.ts
+│   ├── notes/actions.ts
+│   ├── regret/actions.ts
+│   ├── todos/actions.ts
+│   ├── retros/actions.ts
+│   ├── search/actions.ts         # searchDomains (전 도메인 Promise.all + searchAllDomains)
+│   └── settings/actions.ts       # getDashboardLayout / saveDashboardLayout / resetDashboardLayout
 ├── components/
-│   ├── dashboard/              # Hero, SummaryCards, WantPreview, AssetSnapshot,
-│   │                           # SubscriptionSummary, RecentInsights, TodoSummary
+│   ├── dashboard/                # Hero, SummaryCards, WantPreview, AssetSnapshot,
+│   │                             # SubscriptionSummary, RecentInsights, TodoSummary
 │   ├── layout/
-│   │   ├── AppShell.tsx        # 테마/컴팩트/레이아웃 Provider + QuickAdd wiring
-│   │   ├── Header.tsx
-│   │   ├── Sidebar.tsx
-│   │   ├── BottomTabBar.tsx    # 컴팩트뷰 전용
-│   │   ├── UpdateNoticeModal.tsx
-│   │   ├── navItems.ts
-│   │   ├── grid/               # DashboardGrid, WidgetFrame, defaultLayout
-│   │   └── settings/           # HeaderSettingsButton, SidebarSettingsButton, SettingsMenu
-│   ├── inputs/                 # MoneyInputField (공통 금액 입력)
-│   ├── quick-add/              # QuickAddModal
-│   ├── wants/                  # WantsView, WantCard, AddWantModal
-│   ├── calculator/             # AssetCalculatorView
-│   ├── regret/                 # RegretTrackerView, RegretCard, AddRegretItemModal
-│   ├── subscriptions/          # SubscriptionsView, SubscriptionCard, AddSubscriptionModal
-│   ├── insights/               # BookInsightsView, InsightCard, AddInsightModal
-│   ├── notes/                  # NotesInboxView, AddNoteModal
-│   ├── todos/                  # TodoView, AddTodoModal
-│   └── retros/                 # RetroView, WeeklyRollupView, AddRetroModal
-├── contexts/                   # CompactModeContext, LayoutContext, SearchContext
-├── hooks/                      # useLocalStorage, useDashboardLayout, useEscapeKey
-├── lib/                        # calculations, formatters, labels, storage,
-│                               # storageNormalizers, dataPortability, retros
-├── types/                      # index.ts (도메인), layout.ts (위젯/카드)
-└── data/mockData.ts            # 초기 / fallback mock data
+│   │   ├── AppShell.tsx          # 테마/컴팩트/레이아웃 Provider + QuickAdd wiring (Server Actions)
+│   │   ├── SearchResultsDropdown.tsx  # 300ms debounce + searchDomains Server Action
+│   │   ├── grid/                 # DashboardGrid, WidgetFrame, defaultLayout
+│   │   └── settings/             # HeaderSettingsButton, SidebarSettingsButton, SettingsMenu
+│   ├── inputs/                   # MoneyInputField (공통 금액 입력)
+│   ├── quick-add/                # QuickAddModal
+│   ├── wants/ subscriptions/ insights/ notes/ todos/ retros/ regret/
+├── contexts/                     # CompactModeContext, LayoutContext, SearchContext
+├── hooks/
+│   ├── useLocalStorage.ts        # 테마/컴팩트 UI 설정 전용으로 범위 축소
+│   └── useDashboardLayout.ts     # useState + useEffect + getDashboardLayout/saveDashboardLayout
+├── lib/
+│   ├── supabase/                 # server.ts, client.ts (@supabase/ssr)
+│   ├── db/mappers.ts             # snake_case DB ↔ camelCase TS 변환
+│   ├── globalSearch.ts           # searchAllDomains(data: SearchData, query, maxPerDomain)
+│   ├── calculations.ts formatters.ts labels.ts retros.ts storageNormalizers.ts
+│   └── dataPortability.ts        # ⏸ export/import 미전환 (localStorage 기반 유지)
+├── types/                        # index.ts (도메인), layout.ts (위젯/카드)
+└── data/mockData.ts              # 초기 / fallback (현재 미사용)
 ```
 
 ---
 
 ## 4. 도메인 상태
 
-| 도메인 | CRUD | localStorage | 검색 | 대시보드 위젯 | 비고 |
+| 도메인 | CRUD | 저장소 | 검색 | 대시보드 위젯 | 비고 |
 |---|---:|---|---:|---|---|
-| Dashboard | - | `aiop:layout`, `aiop:hero-message` | - | 위젯 7개 | 드래그/리사이즈/visibility |
-| Wants | ✅ | `aiop:wants` | ✅ | `want-preview`, `asset-snapshot` | 구매 목표, 카테고리 필터 AND 검색 |
+| Dashboard layout | - | **Supabase** `user_settings` | - | 위젯 7개 | useDashboardLayout → DB upsert |
+| Wants | ✅ | **Supabase** `wants` | ✅ | `want-preview`, `asset-snapshot` | |
 | Calculator | - | - | - | - | 계산 전용 (저장 없음) |
-| Regret | ✅ | `aiop:regret-items` | - | - | 후회 기록, KRW/USD |
-| Subscriptions | ✅ | `aiop:subscriptions` | ✅ | `subscription-summary` | keep/review/cancel |
-| Insights | ✅ | `aiop:insights` | ✅ | `recent-insights` | book/video/article/thought |
-| Notes | ✅ | `aiop:notes` | ✅ | - | inbox → processed → archived |
-| Todos | ✅ | `aiop:todos` | ✅ | `todo-summary` | todo → doing → done |
-| Retros | ✅ | `aiop:retros` | ✅ | - | K.P.T, Try↔Todo, 이월, Streak, 주간 |
+| Regret | ✅ | **Supabase** `regret_items` | - | - | |
+| Subscriptions | ✅ | **Supabase** `subscriptions` | ✅ | `subscription-summary` | |
+| Insights | ✅ | **Supabase** `insights` | ✅ | `recent-insights` | |
+| Notes | ✅ | **Supabase** `notes` | ✅ | - | |
+| Todos | ✅ | **Supabase** `todos` | ✅ | `todo-summary` | |
+| Retros | ✅ | **Supabase** `retros` | ✅ | - | UNIQUE(user_id, date) upsert |
 
 ---
 
@@ -101,178 +104,125 @@ src/
 | Icons | `lucide-react` |
 | Dashboard grid | `react-grid-layout` 2.2.3 (Responsive) |
 | Summary card reorder | `@dnd-kit/core`, `@dnd-kit/sortable` |
-| Persistence | `window.localStorage` + custom `useLocalStorage` (same-tab event 포함) |
-| Backend / Auth | 없음 |
+| Backend / DB | Supabase (Postgres + Auth + RLS) |
+| Auth | Google OAuth (Supabase Auth) |
+| 데이터 접근 | Next.js Server Actions (`'use server'`) |
+| Persistence (UI) | `window.localStorage` — 테마/컴팩트 2개 키만 유지 |
 | External API | 없음 |
 | Test | 없음 |
 
 ---
 
-## 6. localStorage 키 (전체 11개)
+## 6. localStorage 잔존 키 (UI 설정 2개만)
 
-`src/lib/dataPortability.ts` 가 단일 출처.
+도메인 데이터는 전부 Supabase로 이전. 아래 2개는 per-device UI 설정으로 유지.
 
-| Key | Value | Normalizer |
+| Key | Value | 위치 |
 |---|---|---|
-| `aiop:wants` | `WantItem[]` | `normalizeWants` |
-| `aiop:subscriptions` | `Subscription[]` | `normalizeSubscriptions` |
-| `aiop:insights` | `Insight[]` | `normalizeInsights` |
-| `aiop:notes` | `Note[]` | `normalizeNotes` |
-| `aiop:regret-items` | `RegretItem[]` | `normalizeRegretItems` |
-| `aiop:todos` | `TodoItem[]` | `normalizeTodos` |
-| `aiop:retros` | `KptRetro[]` | `normalizeRetros` (date desc 정렬) |
-| `aiop:layout` | `DashboardLayout` | 객체 가드만 |
-| `aiop:hero-message` | `string` | - |
-| `aiop-compact-mode` | `boolean` | - |
-| `aiop-theme-mode` | `"light" \| "dark"` | - |
+| `aiop-compact-mode` | `boolean` | `CompactModeContext` |
+| `aiop-theme-mode` | `"light" \| "dark"` | `AppShell.tsx` |
 
-Export / Import (`buildExportPayload` / `applyImport`)은 11개 키 모두 포함. `version: 1` JSON.
-
-도메인 키는 normalizer 통과한 결과만 저장. 환경 키는 타입 가드 후 그대로 저장.
+> `dataPortability.ts`의 export/import는 아직 localStorage 기반 그대로 유지 (⏸ 미전환).
 
 ---
 
-## 7. 핵심 타입
+## 7. Supabase 스키마 (테이블 목록)
 
-`src/types/index.ts`
+| 테이블 | PK | 주요 컬럼 |
+|---|---|---|
+| `wants` | `id` (uuid) | `user_id`, `name`, `price`, `expected_yield`, ... |
+| `subscriptions` | `id` (uuid) | `user_id`, `service`, `monthly_price`, `status`, ... |
+| `insights` | `id` (uuid) | `user_id`, `title`, `key_sentence`, `tags` (text[]), ... |
+| `notes` | `id` (uuid) | `user_id`, `title`, `body`, `tags` (text[]), `status`, ... |
+| `regret_items` | `id` (uuid) | `user_id`, `name`, `watched_price`, `current_price`, ... |
+| `todos` | `id` (uuid) | `user_id`, `title`, `status`, `priority`, `memo`, ... |
+| `retros` | `id` (uuid) | `user_id`, `date` (text), `keep`/`problem`/`try` (jsonb) — UNIQUE(user_id, date) |
+| `user_settings` | `user_id` (uuid) | `dashboard_layout` (jsonb) — UNIQUE(user_id) |
 
-```txt
-ViewKey         // dashboard | wants | calculator | regret | subscriptions
-                // | insights | notes | todos | retros
-Currency        // "KRW" | "USD"
-WantItem        // 구매 목표 (price, requiredCapital, score, priority, currency 등)
-RegretItem      // 후회 기록 (watchedPrice, currentPrice, quantity, resultPercent, profitAmount)
-Subscription    // 구독 (monthlyPrice, valueScore, status: keep/review/cancel)
-Insight         // 책/영상/아티클/생각 (keySentence, actionItem, tags, relatedGoal)
-Note            // 인박스 메모 (body, tags, status: inbox/processed/archived)
-TodoItem        // 할 일 (status, priority, dueDate?)
-RetroItem       // K.P.T 항목 (text, done?, linkedTodoId?, carriedFrom?)
-KptRetro        // 날짜별 회고 (keep/problem/try: RetroItem[])
-NavItem         // 사이드바 nav 메타
-```
-
-`src/types/layout.ts`
-
-```txt
-WidgetId        // hero | summary-cards | want-preview | asset-snapshot
-                // | subscription-summary | recent-insights | todo-summary
-SummaryCardId   // wants-count | subscriptions-monthly | planned-spend
-                // | recent-insight | inbox-count | todo-count
-DashboardLayout // version, breakpoint, widgets, summaryCardsOrder,
-                // narrowWidgetsOrder, narrowWidgetHeights,
-                // hidden, hiddenSummaryCards
-```
+모든 테이블 RLS 활성화. `user_id = auth.uid()` 조건.
 
 ---
 
-## 8. K.P.T 회고 기능
+## 8. Server Actions 패턴
+
+```txt
+src/app/<domain>/actions.ts
+  'use server'
+  getAuthenticatedUser() → { supabase, userId }
+  get<Domain>()         → DB select → mapper → TS type[]
+  create<Domain>(item)  → DB insert → mapper → TS type
+  update<Domain>*(id, ...) → DB update
+  delete<Domain>(id)    → DB delete
+```
+
+- **page.tsx**: async RSC → Server Action 호출 → `initialItems` prop 전달
+- **View.tsx**: `useState(initialItems)` + 핸들러에서 Server Action 호출
+- **Dashboard 위젯**: `useEffect` + Server Action (RSC 불가 클라이언트 컴포넌트)
+- **globalSearch**: `searchAllDomains(data: SearchData, query, maxPerDomain)` — 순수 함수
+- **검색 드롭다운**: `useEffect` + 300ms debounce + `searchDomains` Server Action
+- **레이아웃 저장**: `saveDashboardLayout` fire-and-forget (로컬 상태 즉시 반영)
+- **Retros upsert**: `saveRetro` — UNIQUE(user_id, date) 기준 upsert
+
+---
+
+## 9. K.P.T 회고 기능
 
 ### 화면
 - `/retros` 오늘 회고 + 과거 회고 목록 + Streak + 이월 안내
-- `/retros/weekly` 주간 롤업 (월~일)
+- `/retros/weekly` 주간 롤업 (월~일) — `useEffect + getRetros()`
 
 ### 통합 기능
 | 기능 | 위치 | 상태 |
 |---|---|---|
 | K/P/T 항목 추가/삭제 | `RetroView.tsx` | ✅ |
-| Try 체크박스 토글 | `RetroView.tsx` | ✅ |
-| Try ↔ Todo 양방향 연동 | `retros.ts` `syncTryWithTodos` | ✅ |
+| Try 체크박스 토글 | `RetroView.tsx` + `updateTodoStatus` | ✅ |
+| Try ↔ Todo 양방향 연동 | `saveRetro` + `updateTodoStatus` | ✅ |
 | 어제 미완료 Try 이월 | `findPreviousRetro` + `carryOverTryItems` | ✅ |
 | 연속 작성 Streak | `calculateStreak`, `getWeekProgress` | ✅ |
 | 주간 롤업 | `WeeklyRollupView.tsx` + `buildWeeklyRollup` | ✅ |
-| Problem 키워드 Top 3 | `extractProblemKeywords` (단순 토큰화) | ✅ |
-| 검색 통합 | `SearchContext` | ✅ |
-| 과거 회고 편집/삭제 | `RetroView.tsx` (날짜 선택) | ✅ |
-| QuickAdd에 retro 카테고리 통합 | `AppShell.tsx` `handleAddedRetro` | ✅ |
-
-### 헬퍼 모듈 (`src/lib/retros.ts`)
-```txt
-createTodoFromTry, syncTryWithTodos
-findPreviousRetro, getUnfinishedTryItems, carryOverTryItems
-calculateStreak, getWeekProgress, getWeekRange
-buildWeeklyRollup, extractProblemKeywords
-hasRetroContent, createEmptyRetro, sortRetrosByDateDesc
-getLocalDateString, formatDateLabel, parseLocalDate, addDays, createId
-```
+| Problem 키워드 Top 3 | `extractProblemKeywords` | ✅ |
+| QuickAdd retro | `AppShell.tsx` → `addRetroItem` Server Action | ✅ |
 
 ---
 
-## 9. 금액 입력 (`MoneyInputField`)
-
-`src/components/inputs/MoneyInputField.tsx`
-
-- 내부 저장값은 항상 base value 숫자.
-- 입력창은 숫자 직접 입력 가능.
-- KRW 입력 시 누적 버튼 `+1만 / +5만 / +10만 / +100만`.
-- USD 입력 시 누적 버튼 `+10 / +100 / +1k / +10k`.
-- 입력창 아래 `formatKRW` / `formatCurrency` 미리보기(emerald 색).
-
-적용 위치:
-```txt
-구매 목표 추가 (AddWantModal)
-구독 추가 (AddSubscriptionModal)
-후회 기록 추가 (AddRegretItemModal)
-자산 구매 계산기 (AssetCalculatorView)
-```
-
-UX 개선 후보 (확정 작업 아님):
-- 단위 버튼을 입력창 내부에 더 밀착
-- 선택 단위 / 저장값 / 미리보기의 시각적 구분 강화
-- KRW / USD 입력 UX 분리
-
----
-
-## 10. v2.0 백엔드 확정 사항
-
-| ID | 항목 | 결정 |
-|---|---|---|
-| D1 | 데이터 흐름 | RSC + Server Actions (SWR 미도입) |
-| D2 | 네이밍 | snake_case DB + camelCase TS + `src/lib/db/mappers.ts` |
-| D3 | 통화 | Frankfurter 환율 API, KRW 기준 자동 환산 |
-| D4 | 태그 | Postgres `text[]` + GIN index |
-| D5 | 삭제 | Hard delete |
-| D6 | URL | App Router 라우트 분리 (이미 완료) |
-| D7 | Auth provider | Google OAuth |
-| D8 | Backend | Supabase (Postgres + Auth + RLS) |
-
-### 진행 순서
-
-> `▶` = 현재 단계
+## 10. v2.0 진행 현황
 
 ```txt
-▶ 1. Supabase 프로젝트 생성 + 환경변수 x
-  2. Postgres 스키마 + RLS (도메인 8개 + dashboard_layouts + user_settings) x
-  3. Google OAuth 설정 x
-  4. @supabase/ssr 서버/클라이언트 세팅
-  5. DB ↔ TS mappers
-  6. Wants 도메인부터 RSC + Server Action 전환
-  7. 나머지 도메인 순차 전환 (Retros 포함)
-  8. exchange_rates 캐시 테이블 + Cron
-  9. localStorage export JSON → Supabase import 도구
-  10. 서버 기반 export
-  11. dashboard layout / user settings 동기화
-  12. localStorage 사용 코드 제거
-  13. v2.1+ AI Route Handler
+✅  1. Supabase 프로젝트 생성 + 환경변수
+✅  2. Postgres 스키마 + RLS (도메인 8개 + user_settings)
+✅  3. Google OAuth 설정
+✅  4. @supabase/ssr 서버/클라이언트 세팅
+✅  5. DB ↔ TS mappers (src/lib/db/mappers.ts)
+✅  6. Wants 도메인 RSC + Server Action 전환
+✅  7. 나머지 도메인 전환 (Subscriptions, Insights, Regret, Notes, Todos, Retros)
+✅  8. Dashboard 위젯 DB 전환 (SummaryCards, TodoSummary, RecentInsights, AssetSnapshot)
+✅  9. AppShell QuickAdd → Server Actions
+✅ 10. Dashboard layout → user_settings DB 저장
+✅ 11. WeeklyRollupView → getRetros()
+✅ 12. 전역 검색 → searchDomains Server Action (300ms debounce)
+⏸ 13. localStorage export JSON → Supabase import 도구 (미전환)
+⬜ 14. exchange_rates 캐시 테이블 + Cron
+⬜ 15. 서버 기반 export
+⬜ 16. v2.1+ AI Route Handler
 ```
-
-### v2.1+ AI 기능 (순차)
-입력 자동분류 → 오늘의 할일 추천 → 투자종목 추천 → 뉴스 추천
 
 ---
 
 ## 11. 현재 우선순위
 
-v2.0 백엔드 작업 시작. `aiop-plan.md`에는 한 번에 하나만 옮긴다. 진행 순서 전체는 §10 참고.
+v2.0 핵심 DB 전환 완료. 남은 항목:
 
-**▶ 현재: v2.0 1단계 — Supabase 프로젝트 생성 + 환경변수 + 스키마 SQL 작성**
+- **단기**: exchange_rates 캐시 + Frankfurter API 연동 (통화 환산 실데이터)
+- **중기**: localStorage → Supabase 데이터 이전 도구 (`dataPortability.ts` 전환)
+- **장기**: v2.1 AI 기능 (입력 자동분류 → 오늘의 할일 추천 → 투자종목 추천)
 
 ---
 
 ## 12. 주의사항
 
-- 백엔드 연결 전에는 기존 localStorage 동작을 깨지 않는다.
-- 라우트는 이미 App Router 구조다. `?view=` / `popstate` 흔적이 보이면 잔재이므로 제거 대상.
-- v2.0 문서에 SWR 흔적이 있으면 RSC + Server Actions 결정(D1)이 우선이다.
-- Retros는 신규 도메인이므로 v2.0 스키마/마이그레이션에 반드시 포함한다.
-- `aiop:layout`은 별도 정규화 로직(`useDashboardLayout`)을 거친다. 임의 변경 금지.
-- `tsconfig.tsbuildinfo`는 빌드 산출물 — gitignore 여부 확인 필요.
+- `dataPortability.ts`는 아직 localStorage 기반. export/import 기능은 현재 사용 불가 상태로 간주.
+- `aiop-compact-mode`, `aiop-theme-mode` 2개 키는 의도적으로 localStorage 유지 (per-device UI 설정).
+- `globalSearch.ts`의 `searchAllDomains`는 더 이상 `window.localStorage`를 읽지 않음. `SearchData` 객체를 인자로 받는 순수 함수로 변경됨.
+- `useDashboardLayout`은 초기값이 `defaultDashboardLayout`이고, mount 후 DB에서 로드해 덮어씀 — 짧은 레이아웃 플래시 발생 가능.
+- Retros는 `UNIQUE(user_id, date)` 기준 upsert. `saveRetro` 호출 시 date 값이 정확해야 함.
+- 라우트는 이미 App Router 구조. `?view=` / `popstate` 흔적이 보이면 잔재이므로 제거 대상.

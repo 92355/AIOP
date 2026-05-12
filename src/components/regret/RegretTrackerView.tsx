@@ -2,28 +2,31 @@
 
 import { Plus } from "lucide-react";
 import { useState } from "react";
-import { regrets } from "@/data/mockData";
 import { AddRegretItemModal } from "@/components/regret/AddRegretItemModal";
 import { RegretCard } from "@/components/regret/RegretCard";
 import { useCompactMode } from "@/contexts/CompactModeContext";
-import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { confirmDelete } from "@/lib/confirmDelete";
+import { createRegretItem, deleteRegretItem } from "@/app/regret/actions";
 import type { RegretItem } from "@/types";
 
-export function RegretTrackerView() {
+type RegretTrackerViewProps = { initialItems: RegretItem[] };
+
+export function RegretTrackerView({ initialItems }: RegretTrackerViewProps) {
   const { isCompact } = useCompactMode();
-  const [items, setItems] = useLocalStorage<RegretItem[]>("aiop:regret-items", regrets);
+  const [items, setItems] = useState<RegretItem[]>(initialItems);
   const [isAddOpen, setIsAddOpen] = useState(false);
 
-  const handleAdd = (item: RegretItem) => {
-    setItems((currentItems) => [item, ...currentItems]);
+  const handleAdd = async (item: RegretItem) => {
+    setItems((prev) => [item, ...prev]);
+    await createRegretItem(item);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     const targetItem = items.find((item) => item.id === id);
     if (!confirmDelete(targetItem?.name ?? "후회 기록")) return;
 
-    setItems((currentItems) => currentItems.filter((item) => item.id !== id));
+    setItems((prev) => prev.filter((item) => item.id !== id));
+    await deleteRegretItem(id);
   };
 
   return (

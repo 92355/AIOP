@@ -1,15 +1,14 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useState } from "react";
 import {
-  DASHBOARD_LAYOUT_STORAGE_KEY,
   defaultDashboardLayout,
   defaultWidgetLayouts,
   editableWidgetIds,
   summaryCardIds,
   widgetIds,
 } from "@/components/layout/grid/defaultLayout";
-import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { getDashboardLayout, resetDashboardLayout, saveDashboardLayout } from "@/app/settings/actions";
 import type { DashboardLayout, SummaryCardId, WidgetId, WidgetLayout } from "@/types/layout";
 
 function isWidgetId(value: unknown): value is WidgetId {
@@ -154,15 +153,16 @@ function normalizeDashboardLayout(value: unknown): DashboardLayout {
 }
 
 export function useDashboardLayout() {
-  const [storedLayout, setStoredLayout] = useLocalStorage<unknown>(
-    DASHBOARD_LAYOUT_STORAGE_KEY,
-    defaultDashboardLayout,
-  );
+  const [layout, setLayout] = useState<DashboardLayout>(defaultDashboardLayout);
 
-  const layout = useMemo(() => normalizeDashboardLayout(storedLayout), [storedLayout]);
+  useEffect(() => {
+    getDashboardLayout()
+      .then((loaded) => setLayout(normalizeDashboardLayout(loaded)))
+      .catch(console.error);
+  }, []);
 
   function saveLayout(nextLayout: DashboardLayout) {
-    setStoredLayout({
+    const normalized: DashboardLayout = {
       ...nextLayout,
       widgets: normalizeWidgetLayouts(nextLayout.widgets),
       summaryCardsOrder: normalizeSummaryCardsOrder(nextLayout.summaryCardsOrder),
@@ -171,11 +171,14 @@ export function useDashboardLayout() {
       narrowWidgetHeights: normalizeWidgetHeights(nextLayout.narrowWidgetHeights),
       hidden: Array.isArray(nextLayout.hidden) ? nextLayout.hidden.filter(isWidgetId) : undefined,
       hiddenSummaryCards: normalizeHiddenSummaryCards(nextLayout.hiddenSummaryCards),
-    });
+    };
+    setLayout(normalized);
+    saveDashboardLayout(normalized).catch(console.error);
   }
 
   function resetLayout() {
-    setStoredLayout(defaultDashboardLayout);
+    setLayout(defaultDashboardLayout);
+    resetDashboardLayout().catch(console.error);
   }
 
   function normalizeLayout(nextLayout: DashboardLayout) {

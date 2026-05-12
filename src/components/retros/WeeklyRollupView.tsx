@@ -1,21 +1,24 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, CalendarDays } from "lucide-react";
 import { useCompactMode } from "@/contexts/CompactModeContext";
-import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { addDays, buildWeeklyRollup, formatDateLabel, getLocalDateString, getWeekRange, parseLocalDate } from "@/lib/retros";
 import { normalizeRetros } from "@/lib/storageNormalizers";
+import { getRetros } from "@/app/retros/actions";
 import type { KptRetro } from "@/types";
-
-const retroStorageKey = "aiop:retros";
 
 export function WeeklyRollupView() {
   const { isCompact } = useCompactMode();
-  const [storedRetros] = useLocalStorage<KptRetro[]>(retroStorageKey, []);
+  const [storedRetros, setStoredRetros] = useState<KptRetro[]>([]);
   const [weekAnchor, setWeekAnchor] = useState(() => getLocalDateString(new Date()));
-  const retros = useMemo(() => normalizeRetros(storedRetros), [storedRetros]);
+
+  useEffect(() => {
+    getRetros().then(setStoredRetros).catch(console.error);
+  }, []);
+
+  const retros = normalizeRetros(storedRetros);
   const weekRange = getWeekRange(parseLocalDate(weekAnchor));
   const rollup = buildWeeklyRollup(retros, weekRange.start);
   const completionPercent = Math.round(rollup.completionRate * 100);

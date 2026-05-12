@@ -2,24 +2,24 @@
 
 import { useMemo, useState } from "react";
 import { Plus } from "lucide-react";
-import { wants } from "@/data/mockData";
 import { WantCard } from "@/components/wants/WantCard";
 import { AddWantModal } from "@/components/wants/AddWantModal";
 import { useCompactMode } from "@/contexts/CompactModeContext";
 import { useSearchContext, normalizeSearchTerm } from "@/contexts/SearchContext";
-import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { confirmDelete } from "@/lib/confirmDelete";
 import { getWantCategoryLabel, getWantPriorityLabel, getWantStatusLabel } from "@/lib/labels";
+import { createWant, deleteWant } from "@/app/wants/actions";
 import type { WantItem } from "@/types";
 
 type WantCategoryFilter = "All" | WantItem["category"];
+type WantsViewProps = { initialItems: WantItem[] };
 
 const filters: WantCategoryFilter[] = ["All", "Productivity", "Lifestyle", "Investment", "Hobby"];
 
-export function WantsView() {
+export function WantsView({ initialItems }: WantsViewProps) {
   const { isCompact } = useCompactMode();
   const { searchQuery } = useSearchContext();
-  const [items, setItems] = useLocalStorage<WantItem[]>("aiop:wants", wants);
+  const [items, setItems] = useState<WantItem[]>(initialItems);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<WantCategoryFilter>("All");
   const searchTerm = normalizeSearchTerm(searchQuery);
@@ -29,15 +29,17 @@ export function WantsView() {
   );
   const hasActiveFilter = selectedCategory !== "All" || searchTerm.length > 0;
 
-  function handleAdd(item: WantItem) {
-    setItems((prevItems) => [item, ...prevItems]);
+  async function handleAdd(item: WantItem) {
+    setItems((prev) => [item, ...prev]);
+    await createWant(item);
   }
 
-  function handleDelete(id: string) {
+  async function handleDelete(id: string) {
     const targetItem = items.find((item) => item.id === id);
     if (!confirmDelete(targetItem?.name ?? "구매 목표")) return;
 
-    setItems((prevItems) => prevItems.filter((item) => item.id !== id));
+    setItems((prev) => prev.filter((item) => item.id !== id));
+    await deleteWant(id);
   }
 
   return (
