@@ -25,8 +25,27 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // 세션 갱신 (토큰 만료 시 자동 refresh)
-  await supabase.auth.getUser()
+  // 세션 갱신 (토큰 만료 시 자동 refresh) / Refresh session if needed
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  // 미인증이면 로그인 페이지로 redirect (login / auth callback 자체는 제외)
+  // Redirect unauthenticated users to /login (excluding /login and /auth/* themselves)
+  const pathname = request.nextUrl.pathname
+  const isPublicPath = pathname === '/login' || pathname.startsWith('/auth/')
+  if (!user && !isPublicPath) {
+    const loginUrl = request.nextUrl.clone()
+    loginUrl.pathname = '/login'
+    return NextResponse.redirect(loginUrl)
+  }
+
+  // 이미 로그인한 상태에서 /login 접근 시 홈으로 / Authed user visiting /login goes home
+  if (user && pathname === '/login') {
+    const homeUrl = request.nextUrl.clone()
+    homeUrl.pathname = '/'
+    return NextResponse.redirect(homeUrl)
+  }
 
   return supabaseResponse
 }

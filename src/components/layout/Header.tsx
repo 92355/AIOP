@@ -8,6 +8,7 @@ import { useCompactMode } from "@/contexts/CompactModeContext";
 import { useSearchContext } from "@/contexts/SearchContext";
 import { SearchResultsDropdown } from "@/components/layout/SearchResultsDropdown";
 import { HeaderSettingsButton } from "@/components/layout/settings/HeaderSettingsButton";
+import { ProfileBadge } from "@/components/layout/ProfileBadge";
 import { getActiveNavItem, isDashboardPathname, viewTitles } from "@/components/layout/navItems";
 
 type HeaderProps = {
@@ -27,7 +28,7 @@ export function Header({ isDarkMode, onToggleTheme, onOpenQuickAdd }: HeaderProp
   const today = new Intl.DateTimeFormat("ko-KR", {
     dateStyle: "full",
   }).format(new Date());
-  const headerLayoutClass = isCompact ? "px-3 py-2.5" : "px-5 py-4 md:flex-row md:items-center md:justify-between md:px-8";
+  const headerLayoutClass = isCompact ? "px-3 py-2.5" : "flex items-center justify-end px-5 py-4 md:px-8";
   const controlsLayoutClass = isCompact ? "flex w-full flex-col items-stretch gap-3" : "flex flex-col items-end gap-3 sm:flex-row sm:items-center";
   const headerInnerClass = isCompact ? "mx-auto w-full max-w-md" : "";
   const searchPlaceholder = isCompact ? "검색..." : "구매 목표, 노트, 인사이트 검색...";
@@ -63,11 +64,7 @@ export function Header({ isDarkMode, onToggleTheme, onOpenQuickAdd }: HeaderProp
             <h2 className="mt-1 text-xl font-semibold text-zinc-50">{title}</h2>
           </Link>
         ) : null}
-        <div className={isCompact ? "hidden" : undefined}>
-          <p className="text-xs uppercase tracking-[0.28em] text-emerald-300/80">운영 센터</p>
-          <h2 className={`mt-1 font-semibold text-zinc-50 ${isCompact ? "text-xl" : "text-2xl"}`}>{title}</h2>
-        </div>
-        <div className={controlsLayoutClass}>
+<div className={controlsLayoutClass}>
           <div className={`${isCompact ? "w-full" : "sm:w-80"} relative min-w-0`}>
             <div className={searchBoxClass}>
               <Search className="h-4 w-4" />
@@ -139,6 +136,7 @@ export function Header({ isDarkMode, onToggleTheme, onOpenQuickAdd }: HeaderProp
               <Plus className="h-4 w-4" />
               빠른 추가
             </button>
+            <ProfileBadge />
           </div>
         </div>
       </div>
