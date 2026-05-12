@@ -2,7 +2,7 @@
 
 **All-In-One Page / 개인 운영 대시보드**
 
-AIOP는 한 페이지 안에서 사고 싶은 것, 자산 기준 구매 판단, 월 구독, 책/영상 인사이트, 빠른 메모, "그때 살걸" 기록, Todo까지 한꺼번에 관리하기 위한 개인용 운영 대시보드입니다.
+AIOP는 한 페이지 안에서 사고 싶은 것, 자산 기준 구매 판단, 월 구독, 책/영상 인사이트, 빠른 메모, "그때 살걸" 기록, Todo, K.P.T 회고까지 한꺼번에 관리하기 위한 개인용 운영 대시보드입니다.
 
 > 이 페이지 하나만 켜두면 내가 필요한 기능이 모두 들어있다.
 
@@ -16,7 +16,7 @@ AIOP는 한 페이지 안에서 사고 싶은 것, 자산 기준 구매 판단, 
 
 - 백엔드, 인증, 데이터베이스, 외부 API, AI API는 사용하지 않습니다.
 - 모든 사용자 데이터는 브라우저 `localStorage`에 저장됩니다.
-- 8개 주요 화면(Dashboard / Wants / Calculator / Subscriptions / Insights / Notes / Regret / Todo) 모두 최소 CRUD가 동작합니다.
+- 9개 주요 화면(Dashboard / Wants / Calculator / Subscriptions / Insights / Notes / Regret / Todo / K.P.T 회고) + 주간 회고 롤업(`/retros/weekly`) — 총 10개 라우트가 동작합니다.
 - Dashboard는 다른 화면이 쓰는 localStorage 데이터를 직접 읽어 갱신됩니다.
 - Header의 **빠른 추가** 버튼으로 구매 목표 / 구독 / 인사이트 / 후회 기록 / 메모를 한 곳에서 추가합니다.
 - **레이아웃 커스터마이징**: Dashboard 위젯과 Summary 카드의 위치 / 크기 / 표시 여부를 직접 조정하고 `localStorage`에 저장합니다.
@@ -36,6 +36,7 @@ AIOP는 가계부도, 투자 앱도, 메모 앱도 아닙니다.
 - 빠른 생각은 Inbox로 던져 두고, 나중에 Wants / Insights / Subscriptions로 정리합니다.
 - "그때 살걸" 기록을 남겨 자기 의사결정 패턴을 되돌아봅니다.
 - 오늘 처리할 일은 Todo로 가볍게 끊어둡니다.
+- 하루의 K(Keep) / P(Problem) / T(Try)를 적고, Try는 Todo로 자동 연결해 다음 행동까지 이어둡니다.
 
 ---
 
@@ -118,7 +119,16 @@ AIOP는 가계부도, 투자 앱도, 메모 앱도 아닙니다.
 - 진행 전 / 진행 중 / 완료 카운트 자동 갱신.
 - 저장 키: `aiop:todos`.
 
-### 컴팩트뷰 (간단뷰)
+### K.P.T 회고 (Retros)
+
+- 라우트: `/retros` (오늘 회고 + 과거 회고 목록), `/retros/weekly` (주간 롤업).
+- Keep / Problem / Try 세 칸에 항목을 추가 / 삭제하고, Try는 체크박스로 완료 토글합니다.
+- **Try ↔ Todo 양방향 연동**: Try 추가 시 옵션으로 Todo를 동시에 생성하고, Todo가 `done`이 되면 Try도 자동 체크됩니다 (`syncTryWithTodos`).
+- **어제 미완료 Try 이월**: 마지막으로 작성한 회고의 미완료 Try를 오늘 회고에 새 항목으로 옮길 수 있습니다 (`carryOverTryItems`).
+- **연속 작성 Streak**: 연속으로 회고를 작성한 일수를 자동 계산합니다 (`calculateStreak`).
+- **주간 롤업**: 월~일 7일치 회고를 모아 작성률, Try 완료율, Problem 키워드 Top 3를 보여줍니다 (`buildWeeklyRollup`).
+- 과거 회고는 날짜 선택으로 편집 / 삭제 가능.
+- 저장 키: `aiop:retros`.
 
 - Header의 `Smartphone` 버튼으로 토글.
 - 활성화 시 사이드바가 사라지고 하단 탭바(`BottomTabBar`)가 노출됩니다. 본문 최대 폭이 `max-w-md`로 좁아져 데스크탑에서도 모바일 레이아웃을 확인할 수 있습니다.
@@ -134,8 +144,9 @@ AIOP는 가계부도, 투자 앱도, 메모 앱도 아닙니다.
 ### 빠른 추가 (QuickAdd)
 
 - Header의 `빠른 추가` 버튼으로 QuickAddModal 오픈.
-- 구매 목표 / 구독 / 인사이트 / 후회 기록 / 메모 5개 카테고리.
+- 구매 목표 / 구독 / 인사이트 / 후회 기록 / 메모 / Todo / K.P.T 회고 — **총 7개 카테고리**.
 - 선택한 카테고리의 기존 Add Modal을 그대로 사용 → 저장 시 localStorage에 prepend 되고 해당 App Router 라우트로 이동합니다.
+- 회고 카테고리는 `AppShell.handleAddedRetro`가 오늘 날짜의 회고를 찾아 해당 섹션(Keep / Problem / Try)에 항목을 upsert 합니다 (없으면 새 회고 생성).
 
 ---
 
@@ -143,26 +154,18 @@ AIOP는 가계부도, 투자 앱도, 메모 앱도 아닙니다.
 
 다음 순서를 따릅니다. 앞 단계가 끝나야 다음 단계로 진행합니다.
 
-### v1.1 ~ v1.2 마무리
+### v1.4 후보
 
-- 컴팩트뷰에서 위젯 순서 변경 UX 확정 (현재 위/아래 버튼 props는 정의돼 있으나 미연결).
-- 편집 모드 진입 / 이탈 / 초기화 시각 검증.
-- Dashboard layout 정규화 로직 (`minY` 보정) 의도와 일치하는지 재검토.
+상세 우선순위는 [`.agent-notes/aiop-status.md`](./.agent-notes/aiop-status.md) §11 참고.
 
-### v1.3 — 데이터 export / import (백엔드 이전 안전망)
-
-- 모든 `aiop:*` localStorage 키를 JSON 1개 파일로 내보내기.
-- JSON 파일을 업로드해 복원 (덮어쓰기 / 머지 선택).
-- v2.0 백엔드 마이그레이션 시 데이터 이관 경로 확보.
-
-### v1.x 보조 작업
-
+- 회고 항목 인라인 텍스트 편집 (현재는 추가 / 삭제만 가능).
+- K.P.T 회고 텍스트 입력칸 확장 (긴 글 작성 대응).
 - Wants 카테고리 필터 실제 동작 연결 (현재 시각만 존재).
-- Sidebar / Header / BottomTabBar에 노출되는 Regret 라벨 정상화.
 - Notes status 변경 UI (`inbox / processed / archived`).
-- localStorage 도메인 데이터 schema guard 강화.
+- 대시보드 위젯 커스터마이징 — 위젯 삭제 / 추가 기능.
+- Sidebar / Header / BottomTabBar에 노출되는 Regret 라벨 정상화.
+- 컴팩트뷰에서 위젯 순서 변경 UX 확정 (위/아래 버튼 props는 정의돼 있으나 미연결).
 - 모달 공통 컴포넌트 추상화 검토.
-- Header 검색창 실제 동작 연결.
 
 ### v2.0 — Supabase 백엔드 + 인증 + AI API 라우트 (한 묶음)
 
@@ -218,12 +221,13 @@ v2.0 인프라가 자리 잡은 뒤 다음 순서로 도입합니다.
 | `aiop:notes` | Quick Capture 메모 |
 | `aiop:regret-items` | "그때 살걸" 기록 |
 | `aiop:todos` | Todo 항목 |
+| `aiop:retros` | K.P.T 회고 (날짜별 Keep / Problem / Try) |
 | `aiop:layout` | Dashboard 위젯 배치 / 표시 여부 |
 | `aiop:hero-message` | Hero 위젯 제목 문구 |
 | `aiop-compact-mode` | 컴팩트뷰 토글 (`true` / `false`) |
 | `aiop-theme-mode` | 라이트 / 다크 테마 (`light` / `dark`) |
 
-`aiop:*` 도메인 데이터는 비어 있거나 손상되면 mock data로 자동 fallback됩니다. `aiop:layout`은 별도 schema 정규화 로직(`useDashboardLayout`)을 거칩니다. 초기화하고 싶으면 브라우저 DevTools → Application → Local Storage에서 해당 키를 삭제하세요.
+`aiop:*` 도메인 데이터는 비어 있거나 손상되면 mock data로 자동 fallback됩니다. 모든 도메인 데이터는 `src/lib/storageNormalizers.ts`의 normalizer를 통과한 결과만 저장됩니다. `aiop:layout`은 별도 schema 정규화 로직(`useDashboardLayout`)을 거칩니다. 11개 키 전체는 설정 메뉴의 "데이터 내보내기 / 가져오기"로 JSON 1개 파일로 백업 / 복원할 수 있습니다 (`src/lib/dataPortability.ts`). 초기화하고 싶으면 브라우저 DevTools → Application → Local Storage에서 해당 키를 삭제하세요.
 
 ---
 
@@ -245,23 +249,19 @@ npx tsc --noEmit     # 타입 체크만
 ```text
 src/
 ├── app/
-│   ├── calculator/
-│   │   └── page.tsx
+│   ├── calculator/page.tsx
 │   ├── globals.css
-│   ├── insights/
-│   │   └── page.tsx
-│   ├── layout.tsx
-│   ├── notes/
-│   │   └── page.tsx
-│   ├── page.tsx                         # Dashboard 라우트
-│   ├── regret/
-│   │   └── page.tsx
-│   ├── subscriptions/
-│   │   └── page.tsx
-│   ├── todos/
-│   │   └── page.tsx
-│   └── wants/
-│       └── page.tsx
+│   ├── insights/page.tsx
+│   ├── layout.tsx                      # AppShell로 감싸는 root layout
+│   ├── notes/page.tsx
+│   ├── page.tsx                        # Dashboard 라우트
+│   ├── regret/page.tsx
+│   ├── retros/
+│   │   ├── page.tsx                    # 오늘 회고 + 과거 회고
+│   │   └── weekly/page.tsx             # 주간 회고 롤업
+│   ├── subscriptions/page.tsx
+│   ├── todos/page.tsx
+│   └── wants/page.tsx
 ├── components/
 │   ├── calculator/
 │   │   └── AssetCalculatorView.tsx
@@ -273,15 +273,18 @@ src/
 │   │   ├── SummaryCards.tsx            # dnd-kit 기반 카드 reorder + visibility
 │   │   ├── TodoSummary.tsx
 │   │   └── WantPreview.tsx
+│   ├── inputs/
+│   │   └── MoneyInputField.tsx         # KRW 원/천/만/억 단위 버튼 + USD 입력 공용
 │   ├── insights/
 │   │   ├── AddInsightModal.tsx
 │   │   ├── BookInsightsView.tsx
 │   │   └── InsightCard.tsx
 │   ├── layout/
-│   │   ├── AppShell.tsx                # 테마 / 컴팩트 / 레이아웃 Provider wiring
+│   │   ├── AppShell.tsx                # 테마 / 컴팩트 / 레이아웃 / QuickAdd Provider wiring
 │   │   ├── BottomTabBar.tsx            # 컴팩트뷰 전용 하단 탭
 │   │   ├── Header.tsx
 │   │   ├── Sidebar.tsx
+│   │   ├── UpdateNoticeModal.tsx       # 업데이트 안내 모달
 │   │   ├── navItems.ts
 │   │   ├── grid/
 │   │   │   ├── DashboardGrid.tsx       # react-grid-layout Responsive 래퍼
@@ -289,22 +292,27 @@ src/
 │   │   │   └── defaultLayout.ts        # 기본 widget / summary card 배치
 │   │   └── settings/
 │   │       ├── HeaderSettingsButton.tsx
-│   │       ├── SettingsMenu.tsx        # 편집 / 저장 / 초기화 / visibility
+│   │       ├── SettingsMenu.tsx        # 편집 / 저장 / 초기화 / visibility / export·import
 │   │       └── SidebarSettingsButton.tsx
 │   ├── notes/
 │   │   ├── AddNoteModal.tsx
 │   │   └── NotesInboxView.tsx
 │   ├── quick-add/
-│   │   └── QuickAddModal.tsx
+│   │   └── QuickAddModal.tsx           # 7개 카테고리 진입점
 │   ├── regret/
 │   │   ├── AddRegretItemModal.tsx
 │   │   ├── RegretCard.tsx
 │   │   └── RegretTrackerView.tsx
+│   ├── retros/
+│   │   ├── AddRetroModal.tsx           # QuickAdd 진입 시 K/P/T 섹션 + Todo 동시생성 옵션
+│   │   ├── RetroView.tsx               # 오늘 회고 + 과거 회고 + Streak + 이월
+│   │   └── WeeklyRollupView.tsx        # 7일 작성률 + Try 완료율 + Problem 키워드
 │   ├── subscriptions/
 │   │   ├── AddSubscriptionModal.tsx
 │   │   ├── SubscriptionCard.tsx
 │   │   └── SubscriptionsView.tsx
 │   ├── todos/
+│   │   ├── AddTodoModal.tsx            # QuickAdd 진입 시 Todo 추가
 │   │   └── TodoView.tsx
 │   └── wants/
 │       ├── AddWantModal.tsx
@@ -312,20 +320,24 @@ src/
 │       └── WantsView.tsx
 ├── contexts/
 │   ├── CompactModeContext.tsx          # 간단뷰 토글
-│   └── LayoutContext.tsx               # 편집 모드 + draft layout + visibility
+│   ├── LayoutContext.tsx               # 편집 모드 + draft layout + visibility
+│   └── SearchContext.tsx               # 통합 검색
 ├── data/
 │   └── mockData.ts                     # 초기 / fallback mock data
 ├── hooks/
 │   ├── useDashboardLayout.ts           # layout 정규화 + localStorage 영속화
 │   ├── useEscapeKey.ts
-│   └── useLocalStorage.ts              # SSR-safe 제네릭 훅
+│   └── useLocalStorage.ts              # SSR-safe 제네릭 훅 (same-tab event 처리 포함)
 ├── lib/
 │   ├── calculations.ts                 # Required Capital / Months to Buy / Regret %
+│   ├── dataPortability.ts              # 11개 localStorage 키 export / import (JSON v1)
 │   ├── formatters.ts                   # KRW / USD / Compact / Percent / Date
 │   ├── labels.ts                       # enum → 한국어 라벨
-│   └── storage.ts                      # localStorage prepend helper
+│   ├── retros.ts                       # K.P.T 헬퍼 (Streak, 이월, 주간 롤업, Try↔Todo)
+│   ├── storage.ts                      # localStorage prepend helper
+│   └── storageNormalizers.ts           # 도메인별 schema guard
 └── types/
-    ├── index.ts                        # 도메인 타입 (WantItem, Subscription, Insight, Note, RegretItem, TodoItem, ViewKey)
+    ├── index.ts                        # 도메인 타입 (WantItem, Subscription, Insight, Note, RegretItem, TodoItem, RetroItem, KptRetro, ViewKey)
     └── layout.ts                       # WidgetId, SummaryCardId, DashboardLayout
 ```
 
@@ -343,9 +355,10 @@ src/
 - v0.8 — Regret Tracker 로컬 계산 (완료)
 - v0.9 — Dashboard 데이터 통합 (완료)
 - v1.0 — UI 품질 정리 + 빠른 추가 + 컴팩트뷰 + Todo + 라이트/다크 (완료)
-- v1.1 ~ v1.2 — Dashboard 레이아웃 드래그&드롭 + visibility (코드 대부분 완료, 마무리 진행 중)
-- v1.3 — 데이터 export / import (예정)
-- v2.0 — Supabase 백엔드 + Google OAuth + AI API 라우트 (예정)
+- v1.1 ~ v1.2 — Dashboard 레이아웃 드래그&드롭 + visibility (완료)
+- v1.3 — 데이터 export / import + localStorage schema guard (완료)
+- v1.4 후보 — K.P.T 회고 도메인 추가 (완료) + 회고 / 위젯 UX 정리 (진행)
+- v2.0 — Supabase 백엔드 + Google OAuth + RSC/Server Actions + 환율 API + AI Route Handler 기반 (예정)
 - v2.1+ — AI 기능 4종 (자동분류 → 오늘의 할일 추천 → 투자종목 추천 → 뉴스 추천)
 
-상세 작업 항목과 진행 순서는 [`AGENTS.md`](./AGENTS.md) 와 [`.agent-notes/aiop-next-steps.md`](./.agent-notes/aiop-next-steps.md) 를 참고하세요.
+상세 작업 항목과 진행 순서는 [`AGENTS.md`](./AGENTS.md), [`.agent-notes/aiop-status.md`](./.agent-notes/aiop-status.md), [`.agent-notes/aiop-plan.md`](./.agent-notes/aiop-plan.md) 를 참고하세요.

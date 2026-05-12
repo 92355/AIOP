@@ -1,217 +1,282 @@
 # AIOP Status
 
 > 목적: 현재 프로젝트 상태 단일 기준 문서.
-> Claude와 Codex는 작업 전 이 문서를 읽고, 문서와 실제 코드가 다르면 실제 코드를 우선한다.
+> Claude / Codex는 작업 전 이 문서를 읽고, 문서와 실제 코드가 다르면 실제 코드를 우선한다.
+> 작성 기준: 2026-05-12, branch `main`, working tree clean.
 
 ---
 
 ## 1. 한눈에 요약
 
-- 버전: v1.3 + K.P.T 회고 도메인 반영 중, v1.4 후보
-- 상태: frontend-only MVP
-- 데이터: localStorage 영속화
-- 백엔드: 아직 미연결
-- 인증: 아직 없음
-- 외부 API: 아직 없음
-- 자동 테스트: 없음. 수동 QA 중심
-- 다음 큰 목표: v2.0 Supabase 백엔드 + Google OAuth + RSC/Server Actions
+- 버전: v1.3 + K.P.T 회고 반영 완료 (v1.4 후보 진입)
+- 상태: frontend-only MVP, 9개 도메인 모두 동작
+- 데이터: 브라우저 `localStorage` 영속화
+- 백엔드: 없음
+- 인증: 없음
+- 외부 API: 없음
+- 자동 테스트: 없음 (수동 QA만)
+- working tree: clean (모든 변경분 커밋됨, 최신 `f9a8e8f`)
+- Supabase 프로젝트: 아직 생성 안 됨 (v2.0 1단계 미착수)
+- 다음 큰 목표: v2.0 Supabase + Google OAuth + RSC/Server Actions
 
 ---
 
-## 2. 현재 라우트
+## 2. 라우트 (Next.js App Router)
 
 ```txt
-/
- /wants
- /calculator
- /regret
- /subscriptions
- /insights
- /notes
- /todos
- /retros
- /retros/weekly
+/                 Dashboard
+/wants            구매 목표
+/calculator       자산 구매 계산기
+/regret           그때 살걸 기록장
+/subscriptions    구독 관리
+/insights         인사이트 보관함
+/notes            노트 / 인박스
+/todos            Todo
+/retros           K.P.T 회고
+/retros/weekly    주간 회고 롤업
 ```
 
-`AppShell`은 `src/app/layout.tsx`에서 공통 shell로 감싼다.
+`src/app/layout.tsx` → `AppShell`(클라이언트 컴포넌트)이 공통 셸로 감싼다.
 
 ---
 
-## 3. 주요 도메인 상태
+## 3. 디렉토리 구조 (요지)
 
-| 도메인 | CRUD | localStorage | 검색 | 비고 |
-|---|---:|---|---:|---|
-| Dashboard | - | `aiop:layout`, `aiop:hero-message` | - | 위젯 드래그/리사이즈/visibility |
-| Wants | ✅ | `aiop:wants` | ✅ | 구매 목표 |
-| Calculator | - | - | - | 계산 전용 |
-| Regret | ✅ | `aiop:regret-items` | - | 후회 기록 |
-| Subscriptions | ✅ | `aiop:subscriptions` | ✅ | 구독 관리 |
-| Insights | ✅ | `aiop:insights` | ✅ | 인사이트 보관 |
-| Notes | ✅ | `aiop:notes` | ✅ | inbox → processed → archived |
-| Todos | ✅ | `aiop:todos` | ✅ | 할 일 |
-| Retros | ✅ | `aiop:retros` | ✅ | K.P.T, Try↔Todo, 이월, Streak, 주간 롤업 |
+```txt
+src/
+├── app/                        # 10개 라우트 + globals.css + layout.tsx
+├── components/
+│   ├── dashboard/              # Hero, SummaryCards, WantPreview, AssetSnapshot,
+│   │                           # SubscriptionSummary, RecentInsights, TodoSummary
+│   ├── layout/
+│   │   ├── AppShell.tsx        # 테마/컴팩트/레이아웃 Provider + QuickAdd wiring
+│   │   ├── Header.tsx
+│   │   ├── Sidebar.tsx
+│   │   ├── BottomTabBar.tsx    # 컴팩트뷰 전용
+│   │   ├── UpdateNoticeModal.tsx
+│   │   ├── navItems.ts
+│   │   ├── grid/               # DashboardGrid, WidgetFrame, defaultLayout
+│   │   └── settings/           # HeaderSettingsButton, SidebarSettingsButton, SettingsMenu
+│   ├── inputs/                 # MoneyInputField (공통 금액 입력)
+│   ├── quick-add/              # QuickAddModal
+│   ├── wants/                  # WantsView, WantCard, AddWantModal
+│   ├── calculator/             # AssetCalculatorView
+│   ├── regret/                 # RegretTrackerView, RegretCard, AddRegretItemModal
+│   ├── subscriptions/          # SubscriptionsView, SubscriptionCard, AddSubscriptionModal
+│   ├── insights/               # BookInsightsView, InsightCard, AddInsightModal
+│   ├── notes/                  # NotesInboxView, AddNoteModal
+│   ├── todos/                  # TodoView, AddTodoModal
+│   └── retros/                 # RetroView, WeeklyRollupView, AddRetroModal
+├── contexts/                   # CompactModeContext, LayoutContext, SearchContext
+├── hooks/                      # useLocalStorage, useDashboardLayout, useEscapeKey
+├── lib/                        # calculations, formatters, labels, storage,
+│                               # storageNormalizers, dataPortability, retros
+├── types/                      # index.ts (도메인), layout.ts (위젯/카드)
+└── data/mockData.ts            # 초기 / fallback mock data
+```
 
 ---
 
-## 4. 기술 스택
+## 4. 도메인 상태
+
+| 도메인 | CRUD | localStorage | 검색 | 대시보드 위젯 | 비고 |
+|---|---:|---|---:|---|---|
+| Dashboard | - | `aiop:layout`, `aiop:hero-message` | - | 위젯 7개 | 드래그/리사이즈/visibility |
+| Wants | ✅ | `aiop:wants` | ✅ | `want-preview`, `asset-snapshot` | 구매 목표 |
+| Calculator | - | - | - | - | 계산 전용 (저장 없음) |
+| Regret | ✅ | `aiop:regret-items` | - | - | 후회 기록, KRW/USD |
+| Subscriptions | ✅ | `aiop:subscriptions` | ✅ | `subscription-summary` | keep/review/cancel |
+| Insights | ✅ | `aiop:insights` | ✅ | `recent-insights` | book/video/article/thought |
+| Notes | ✅ | `aiop:notes` | ✅ | - | inbox → processed → archived |
+| Todos | ✅ | `aiop:todos` | ✅ | `todo-summary` | todo → doing → done |
+| Retros | ✅ | `aiop:retros` | ✅ | - | K.P.T, Try↔Todo, 이월, Streak, 주간 |
+
+---
+
+## 5. 기술 스택
 
 | 영역 | 사용 |
 |---|---|
-| Framework | Next.js App Router |
-| UI | React + TypeScript + Tailwind CSS |
+| Framework | Next.js 15 (App Router) |
+| UI | React 19 + TypeScript 5.7 + Tailwind 3.4 |
 | Icons | `lucide-react` |
-| Dashboard grid | `react-grid-layout` |
+| Dashboard grid | `react-grid-layout` 2.2.3 (Responsive) |
 | Summary card reorder | `@dnd-kit/core`, `@dnd-kit/sortable` |
-| Persistence | `window.localStorage`, custom `useLocalStorage` |
-| Backend/Auth | 없음 |
-| Test | 자동화 없음 |
+| Persistence | `window.localStorage` + custom `useLocalStorage` (same-tab event 포함) |
+| Backend / Auth | 없음 |
+| External API | 없음 |
+| Test | 없음 |
 
 ---
 
-## 5. localStorage 키
+## 6. localStorage 키 (전체 11개)
 
-| Key | Value |
-|---|---|
-| `aiop:wants` | `WantItem[]` |
-| `aiop:subscriptions` | `Subscription[]` |
-| `aiop:insights` | `Insight[]` |
-| `aiop:notes` | `Note[]` |
-| `aiop:regret-items` | `RegretItem[]` |
-| `aiop:todos` | `TodoItem[]` |
-| `aiop:retros` | `KptRetro[]` |
-| `aiop:layout` | `DashboardLayout` |
-| `aiop:hero-message` | `string` |
-| `aiop-compact-mode` | `boolean` |
-| `aiop-theme-mode` | `"light" | "dark"` |
+`src/lib/dataPortability.ts` 가 단일 출처.
 
-Export / Import은 위 키들을 기준으로 관리한다.
+| Key | Value | Normalizer |
+|---|---|---|
+| `aiop:wants` | `WantItem[]` | `normalizeWants` |
+| `aiop:subscriptions` | `Subscription[]` | `normalizeSubscriptions` |
+| `aiop:insights` | `Insight[]` | `normalizeInsights` |
+| `aiop:notes` | `Note[]` | `normalizeNotes` |
+| `aiop:regret-items` | `RegretItem[]` | `normalizeRegretItems` |
+| `aiop:todos` | `TodoItem[]` | `normalizeTodos` |
+| `aiop:retros` | `KptRetro[]` | `normalizeRetros` (date desc 정렬) |
+| `aiop:layout` | `DashboardLayout` | 객체 가드만 |
+| `aiop:hero-message` | `string` | - |
+| `aiop-compact-mode` | `boolean` | - |
+| `aiop-theme-mode` | `"light" \| "dark"` | - |
+
+Export / Import (`buildExportPayload` / `applyImport`)은 11개 키 모두 포함. `version: 1` JSON.
+
+도메인 키는 normalizer 통과한 결과만 저장. 환경 키는 타입 가드 후 그대로 저장.
 
 ---
 
-## 6. 핵심 타입
+## 7. 핵심 타입
 
-위치는 주로 `src/types/index.ts`, `src/types/layout.ts`.
+`src/types/index.ts`
 
 ```txt
-WantItem
-RegretItem
-Subscription
-Insight
-Note
-TodoItem
-RetroItem
-KptRetro
-WidgetId
-SummaryCardId
-DashboardLayout
+ViewKey         // dashboard | wants | calculator | regret | subscriptions
+                // | insights | notes | todos | retros
+Currency        // "KRW" | "USD"
+WantItem        // 구매 목표 (price, requiredCapital, score, priority, currency 등)
+RegretItem      // 후회 기록 (watchedPrice, currentPrice, quantity, resultPercent, profitAmount)
+Subscription    // 구독 (monthlyPrice, valueScore, status: keep/review/cancel)
+Insight         // 책/영상/아티클/생각 (keySentence, actionItem, tags, relatedGoal)
+Note            // 인박스 메모 (body, tags, status: inbox/processed/archived)
+TodoItem        // 할 일 (status, priority, dueDate?)
+RetroItem       // K.P.T 항목 (text, done?, linkedTodoId?, carriedFrom?)
+KptRetro        // 날짜별 회고 (keep/problem/try: RetroItem[])
+NavItem         // 사이드바 nav 메타
 ```
 
-현재 실제 타입명과 과거 명세가 다를 수 있다.  
-항상 현재 코드의 타입 정의를 우선한다.
-
----
-
-## 7. K.P.T 회고 기능 상태
-
-구현된 기능:
-
-- `/retros` 오늘 회고 + 과거 회고 목록
-- `/retros/weekly` 주간 롤업
-- Keep / Problem / Try 항목 추가, 삭제
-- Try 체크박스 토글
-- Try → Todo 자동 연동
-- 어제 미완료 Try 이월
-- Streak 계산
-- Problem 키워드 Top 3
-- 검색 통합
-- 과거 회고 날짜 선택 / 편집 / 삭제
-
-핵심 파일 후보:
+`src/types/layout.ts`
 
 ```txt
-src/app/retros/
-src/components/retros/
-src/lib/retros.ts
-src/lib/storageNormalizers.ts
-src/lib/dataPortability.ts
-src/types/index.ts
+WidgetId        // hero | summary-cards | want-preview | asset-snapshot
+                // | subscription-summary | recent-insights | todo-summary
+SummaryCardId   // wants-count | subscriptions-monthly | planned-spend
+                // | recent-insight | inbox-count | todo-count
+DashboardLayout // version, breakpoint, widgets, summaryCardsOrder,
+                // narrowWidgetsOrder, narrowWidgetHeights,
+                // hidden, hiddenSummaryCards
 ```
 
 ---
 
-## 8. 금액 입력 상태
+## 8. K.P.T 회고 기능
 
-공통 금액 입력 컴포넌트가 있다.
+### 화면
+- `/retros` 오늘 회고 + 과거 회고 목록 + Streak + 이월 안내
+- `/retros/weekly` 주간 롤업 (월~일)
+
+### 통합 기능
+| 기능 | 위치 | 상태 |
+|---|---|---|
+| K/P/T 항목 추가/삭제 | `RetroView.tsx` | ✅ |
+| Try 체크박스 토글 | `RetroView.tsx` | ✅ |
+| Try ↔ Todo 양방향 연동 | `retros.ts` `syncTryWithTodos` | ✅ |
+| 어제 미완료 Try 이월 | `findPreviousRetro` + `carryOverTryItems` | ✅ |
+| 연속 작성 Streak | `calculateStreak`, `getWeekProgress` | ✅ |
+| 주간 롤업 | `WeeklyRollupView.tsx` + `buildWeeklyRollup` | ✅ |
+| Problem 키워드 Top 3 | `extractProblemKeywords` (단순 토큰화) | ✅ |
+| 검색 통합 | `SearchContext` | ✅ |
+| 과거 회고 편집/삭제 | `RetroView.tsx` (날짜 선택) | ✅ |
+| QuickAdd에 retro 카테고리 통합 | `AppShell.tsx` `handleAddedRetro` | ✅ |
+
+### 헬퍼 모듈 (`src/lib/retros.ts`)
+```txt
+createTodoFromTry, syncTryWithTodos
+findPreviousRetro, getUnfinishedTryItems, carryOverTryItems
+calculateStreak, getWeekProgress, getWeekRange
+buildWeeklyRollup, extractProblemKeywords
+hasRetroContent, createEmptyRetro, sortRetrosByDateDesc
+getLocalDateString, formatDateLabel, parseLocalDate, addDays, createId
+```
+
+---
+
+## 9. 금액 입력 (`MoneyInputField`)
+
+`src/components/inputs/MoneyInputField.tsx`
+
+- KRW 입력 시 `원 / 천 / 만 / 억` 단위 버튼 표시.
+- 내부 저장값은 항상 원 단위 숫자 (`base value`).
+- 단위는 입력값 크기에 따라 **자동 선택** (`getAutoUnit`), 사용자가 버튼을 누르면 **수동 모드** 고정.
+- 입력창 아래 `formatKRW` / `formatCurrency` 미리보기 (emerald 색).
+- USD 입력 시 단위 버튼 대신 `USD` 라벨만 표시.
 
 적용 위치:
-
 ```txt
-구매 목표 추가
-구독 추가
-후회 기록 추가
-자산 구매 계산기
+구매 목표 추가 (AddWantModal)
+구독 추가 (AddSubscriptionModal)
+후회 기록 추가 (AddRegretItemModal)
+자산 구매 계산기 (AssetCalculatorView)
 ```
 
-현재 판단:
-
-- KRW 입력 시 `원 / 천 / 만 / 억` 단위 버튼을 제공한다.
-- 입력값은 내부적으로 원 단위 숫자로 유지한다.
-- UX는 개선 여지가 있다.
-- 단위 버튼과 입력값의 관계가 초보 사용자에게 약간 헷갈릴 수 있다.
-- 다음 개선 후보는 입력 내부에 단위 선택을 더 밀착시키는 것.
+UX 개선 후보 (확정 작업 아님):
+- 단위 버튼을 입력창 내부에 더 밀착
+- 선택 단위 / 저장값 / 미리보기의 시각적 구분 강화
+- KRW / USD 입력 UX 분리
 
 ---
 
-## 9. v2.0 확정 방향
+## 10. v2.0 백엔드 확정 사항
 
-| 항목 | 결정 |
-|---|---|
-| Backend/Auth | Supabase |
-| Auth provider | Google OAuth |
-| Data flow | RSC + Server Actions |
-| DB naming | snake_case |
-| TS naming | camelCase |
-| Mapper | `src/lib/db/mappers.ts` |
-| Currency | KRW 기준 자동 환산 |
-| FX API | Frankfurter 1순위 |
-| Tags | Postgres `text[]` + GIN index |
-| Delete | Hard delete |
-| URL | App Router route-based pages |
+| ID | 항목 | 결정 |
+|---|---|---|
+| D1 | 데이터 흐름 | RSC + Server Actions (SWR 미도입) |
+| D2 | 네이밍 | snake_case DB + camelCase TS + `src/lib/db/mappers.ts` |
+| D3 | 통화 | Frankfurter 환율 API, KRW 기준 자동 환산 |
+| D4 | 태그 | Postgres `text[]` + GIN index |
+| D5 | 삭제 | Hard delete |
+| D6 | URL | App Router 라우트 분리 (이미 완료) |
+| D7 | Auth provider | Google OAuth |
+| D8 | Backend | Supabase (Postgres + Auth + RLS) |
 
----
-
-## 10. v2.0 진행 순서 요약
-
+### 진행 순서
+```txt
 1. Supabase 프로젝트 생성 + 환경변수
-2. Postgres 스키마 + RLS
-3. Google OAuth
-4. `@supabase/ssr` 서버/클라이언트 세팅
+2. Postgres 스키마 + RLS (도메인 8개 + dashboard_layouts + user_settings)
+3. Google OAuth 설정
+4. @supabase/ssr 서버/클라이언트 세팅
 5. DB ↔ TS mappers
-6. Wants 도메인부터 Server Component + Server Action으로 전환
-7. 나머지 도메인 순차 전환
-8. 환율 캐시 테이블 + Cron
-9. localStorage export JSON import 도구
+6. Wants 도메인부터 RSC + Server Action 전환
+7. 나머지 도메인 순차 전환 (Retros 포함)
+8. exchange_rates 캐시 테이블 + Cron
+9. localStorage export JSON → Supabase import 도구
 10. 서버 기반 export
 11. dashboard layout / user settings 동기화
 12. localStorage 사용 코드 제거
-13. v2.1+ AI Route Handler 추가
+13. v2.1+ AI Route Handler
+```
+
+### v2.1+ AI 기능 (순차)
+입력 자동분류 → 오늘의 할일 추천 → 투자종목 추천 → 뉴스 추천
 
 ---
 
 ## 11. 현재 우선순위
 
-1. 미커밋 변경분 정리
-2. 라우트 분리 / K.P.T / 금액 입력 수동 QA
-3. README 현재 상태 반영
-4. `tsconfig.tsbuildinfo` gitignore 여부 확인
-5. v2.0 Supabase 외부 설정
-6. v2.0 스키마 SQL 작성
+위에서 아래 순서로 진행한다. `aiop-plan.md`에는 한 번에 하나만 옮긴다.
+
+1. README 현재 상태 반영 (KPT 도메인 / QuickAdd retro 카테고리 / 11개 키)
+2. 회고 항목 인라인 텍스트 편집
+3. Wants 카테고리 필터 실제 동작 연결
+4. Notes status 변경 UI 정리
+5. kpt 회고 더길게 쓰일수도있으니 텍스트 인풋칸 확장
+6. 대쉬보드 위젯 커스터마이징 (삭제, 추가 기능)
+7. v2.0 Supabase 프로젝트 생성 / 스키마 SQL 작성
 
 ---
 
 ## 12. 주의사항
 
 - 백엔드 연결 전에는 기존 localStorage 동작을 깨지 않는다.
-- 라우트는 이미 App Router 구조로 분리된 것으로 본다.
-- v2.0 문서에 SWR 흔적이 있으면 RSC + Server Actions 결정을 우선한다.
-- `Retros` 신규 도메인이 v2.0 스키마에도 포함되어야 한다.
+- 라우트는 이미 App Router 구조다. `?view=` / `popstate` 흔적이 보이면 잔재이므로 제거 대상.
+- v2.0 문서에 SWR 흔적이 있으면 RSC + Server Actions 결정(D1)이 우선이다.
+- Retros는 신규 도메인이므로 v2.0 스키마/마이그레이션에 반드시 포함한다.
+- `aiop:layout`은 별도 정규화 로직(`useDashboardLayout`)을 거친다. 임의 변경 금지.
+- `tsconfig.tsbuildinfo`는 빌드 산출물 — gitignore 여부 확인 필요.
