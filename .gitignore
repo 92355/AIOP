@@ -17,3 +17,16 @@ yarn-error.log*
 pnpm-debug.log*
 
 *.log
+
+
+# allow shared agent docs in this repo
+!.agent-notes/
+!.agent-notes/aiop-status.md
+!.agent-notes/aiop-plan.md
+!.agent-notes/aiop-archive.md
+
+# keep local-only agent notes ignored
+.agent-notes/aiop-local.md
+.agent-notes/scratch/
+.agent-notes/*.local.md
+.agent-notes/*.tmp.md
