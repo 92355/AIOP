@@ -2,21 +2,20 @@
 
 > 목적: 현재 프로젝트 상태 단일 기준 문서.
 > Claude / Codex는 작업 전 이 문서를 읽고, 문서와 실제 코드가 다르면 실제 코드를 우선한다.
-> 작성 기준: 2026-05-12, branch `main`, working tree dirty.
+> 작성 기준: 2026-05-12, branch `main`.
 
 ---
 
 ## 1. 한눈에 요약
 
-- 버전: v1.3 + K.P.T 회고 반영 완료 (v1.4 후보 진입)
+- 버전: **v1.4** (회고 인라인 편집 / README 정합성 / 전역 검색 드롭다운 완료)
 - 상태: frontend-only MVP, 9개 도메인 모두 동작
 - 데이터: 브라우저 `localStorage` 영속화
-- 백엔드: 없음
+- 백엔드: 없음 (v2.0 1단계 진행 예정)
 - 인증: 없음
 - 외부 API: 없음
 - 자동 테스트: 없음 (수동 QA만)
-- working tree: dirty (`src/components/wants/WantsView.tsx`, `.agent-notes/*`, `tsconfig.tsbuildinfo` 변경 중)
-- Supabase 프로젝트: 아직 생성 안 됨 (v2.0 1단계 미착수)
+- Supabase 프로젝트: 아직 생성 안 됨
 - 다음 큰 목표: v2.0 Supabase + Google OAuth + RSC/Server Actions
 
 ---
@@ -237,20 +236,23 @@ UX 개선 후보 (확정 작업 아님):
 | D8 | Backend | Supabase (Postgres + Auth + RLS) |
 
 ### 진행 순서
+
+> `▶` = 현재 단계
+
 ```txt
-1. Supabase 프로젝트 생성 + 환경변수
-2. Postgres 스키마 + RLS (도메인 8개 + dashboard_layouts + user_settings)
-3. Google OAuth 설정
-4. @supabase/ssr 서버/클라이언트 세팅
-5. DB ↔ TS mappers
-6. Wants 도메인부터 RSC + Server Action 전환
-7. 나머지 도메인 순차 전환 (Retros 포함)
-8. exchange_rates 캐시 테이블 + Cron
-9. localStorage export JSON → Supabase import 도구
-10. 서버 기반 export
-11. dashboard layout / user settings 동기화
-12. localStorage 사용 코드 제거
-13. v2.1+ AI Route Handler
+▶ 1. Supabase 프로젝트 생성 + 환경변수 x
+  2. Postgres 스키마 + RLS (도메인 8개 + dashboard_layouts + user_settings) x
+  3. Google OAuth 설정 x
+  4. @supabase/ssr 서버/클라이언트 세팅
+  5. DB ↔ TS mappers
+  6. Wants 도메인부터 RSC + Server Action 전환
+  7. 나머지 도메인 순차 전환 (Retros 포함)
+  8. exchange_rates 캐시 테이블 + Cron
+  9. localStorage export JSON → Supabase import 도구
+  10. 서버 기반 export
+  11. dashboard layout / user settings 동기화
+  12. localStorage 사용 코드 제거
+  13. v2.1+ AI Route Handler
 ```
 
 ### v2.1+ AI 기능 (순차)
@@ -260,9 +262,9 @@ UX 개선 후보 (확정 작업 아님):
 
 ## 11. 현재 우선순위
 
-위에서 아래 순서로 진행한다. `aiop-plan.md`에는 한 번에 하나만 옮긴다.
+v2.0 백엔드 작업 시작. `aiop-plan.md`에는 한 번에 하나만 옮긴다. 진행 순서 전체는 §10 참고.
 
-6. v2.0 Supabase 프로젝트 생성 / 스키마 SQL 작성
+**▶ 현재: v2.0 1단계 — Supabase 프로젝트 생성 + 환경변수 + 스키마 SQL 작성**
 
 ---
 
