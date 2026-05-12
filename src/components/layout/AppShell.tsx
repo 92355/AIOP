@@ -10,15 +10,20 @@ import { UpdateNoticeModal } from "@/components/layout/UpdateNoticeModal";
 import { AddNoteModal } from "@/components/notes/AddNoteModal";
 import { QuickAddModal, type QuickAddCategory } from "@/components/quick-add/QuickAddModal";
 import { AddRegretItemModal } from "@/components/regret/AddRegretItemModal";
+import { AddRetroModal, type QuickRetroInput } from "@/components/retros/AddRetroModal";
 import { AddSubscriptionModal } from "@/components/subscriptions/AddSubscriptionModal";
+import { AddTodoModal } from "@/components/todos/AddTodoModal";
+import { defaultTodos } from "@/components/todos/TodoView";
 import { AddWantModal } from "@/components/wants/AddWantModal";
 import { CompactModeProvider, useCompactMode } from "@/contexts/CompactModeContext";
 import { LayoutProvider } from "@/contexts/LayoutContext";
 import { SearchProvider } from "@/contexts/SearchContext";
 import { insights, notes, regrets, subscriptions, wants } from "@/data/mockData";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { createEmptyRetro, createId, createTodoFromTry, getLocalDateString, sortRetrosByDateDesc } from "@/lib/retros";
 import { prependLocalStorageItem } from "@/lib/storage";
-import type { Insight, Note, RegretItem, Subscription, WantItem } from "@/types";
+import { normalizeRetros } from "@/lib/storageNormalizers";
+import type { Insight, KptRetro, Note, RegretItem, RetroItem, Subscription, TodoItem, WantItem } from "@/types";
 
 type AppShellProps = {
   children: React.ReactNode;
@@ -32,6 +37,8 @@ const storageKeys = {
   insights: "aiop:insights",
   notes: "aiop:notes",
   regrets: "aiop:regret-items",
+  todos: "aiop:todos",
+  retros: "aiop:retros",
 } as const;
 
 const categoryRoutes: Record<QuickAddCategory, string> = {
@@ -40,6 +47,8 @@ const categoryRoutes: Record<QuickAddCategory, string> = {
   insight: "/insights",
   regret: "/regret",
   note: "/notes",
+  todo: "/todos",
+  retro: "/retros",
 };
 
 export function AppShell({ children }: AppShellProps) {
@@ -97,6 +106,39 @@ function AppShellContent({ children }: AppShellProps) {
     router.push(targetHref);
   }
 
+  function handleAddedTodo(item: TodoItem) {
+    handleAddedItem<TodoItem>(categoryRoutes.todo, storageKeys.todos, item, defaultTodos);
+  }
+
+  function handleAddedRetro(input: QuickRetroInput) {
+    const today = getLocalDateString(new Date());
+    const todo = input.addToTodo ? createTodoFromTry(input.text) : null;
+    const retroItem: RetroItem = {
+      id: createId(),
+      text: input.text,
+      done: input.section === "try" ? false : undefined,
+      linkedTodoId: todo?.id,
+    };
+    const retros = readLocalStorageArray<KptRetro>(storageKeys.retros);
+    const nextRetros = upsertTodayRetro(retros, today, input.section, retroItem);
+
+    writeLocalStorageValue(storageKeys.retros, nextRetros);
+
+    if (todo) {
+      const todos = readLocalStorageArray<TodoItem>(storageKeys.todos, defaultTodos);
+      writeLocalStorageValue(storageKeys.todos, [todo, ...todos]);
+    }
+
+    setActiveCategory(null);
+
+    if (pathname === categoryRoutes.retro) {
+      router.refresh();
+      return;
+    }
+
+    router.push(categoryRoutes.retro);
+  }
+
   return (
     <div className={`min-h-screen bg-zinc-950 text-zinc-100 ${isCompact ? "" : "md:flex"} ${isDarkMode ? "theme-dark" : "theme-light"}`}>
       {isCompact ? null : <Sidebar />}
@@ -144,6 +186,70 @@ function AppShellContent({ children }: AppShellProps) {
         onClose={handleCloseItemModal}
         onAdd={(item) => handleAddedItem<Note>(categoryRoutes.note, storageKeys.notes, item, notes)}
       />
+      <AddTodoModal
+        isOpen={activeCategory === "todo"}
+        onClose={handleCloseItemModal}
+        onAdd={handleAddedTodo}
+      />
+      <AddRetroModal
+        isOpen={activeCategory === "retro"}
+        onClose={handleCloseItemModal}
+        onAdd={handleAddedRetro}
+      />
     </div>
   );
+}
+
+function readLocalStorageArray<T>(key: string, fallbackItems: T[] = []): T[] {
+  if (typeof window === "undefined") return fallbackItems;
+
+  try {
+    const storedValue = window.localStorage.getItem(key);
+    const parsedValue = storedValue ? (JSON.parse(storedValue) as unknown) : null;
+    return Array.isArray(parsedValue) ? (parsedValue as T[]) : fallbackItems;
+  } catch (error) {
+    console.warn(`Failed to parse localStorage key: ${key}`, error);
+    return fallbackItems;
+  }
+}
+
+function writeLocalStorageValue<T>(key: string, value: T) {
+  if (typeof window === "undefined") return;
+
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+    window.dispatchEvent(new CustomEvent("aiop:local-storage-change", { detail: { key, value } }));
+  } catch (error) {
+    console.warn(`Failed to write localStorage key: ${key}`, error);
+  }
+}
+
+function upsertTodayRetro(retros: KptRetro[], today: string, section: QuickRetroInput["section"], item: RetroItem): KptRetro[] {
+  const now = new Date().toISOString();
+  const safeRetros = normalizeRetros(retros);
+  const existingRetro = safeRetros.find((retro) => retro.date === today);
+
+  if (!existingRetro) {
+    return [
+      {
+        ...createEmptyRetro(today),
+        [section]: [item],
+        createdAt: now,
+        updatedAt: now,
+      },
+      ...safeRetros,
+    ].sort(sortRetrosByDateDesc);
+  }
+
+  return safeRetros
+    .map((retro) =>
+      retro.date === today
+        ? {
+            ...retro,
+            [section]: [...retro[section], item],
+            updatedAt: now,
+          }
+        : retro,
+    )
+    .sort(sortRetrosByDateDesc);
 }

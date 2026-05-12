@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Check, Circle, Clock3, Plus, Trash2 } from "lucide-react";
+import { Check, ChevronDown, Circle, Clock3, MessageSquareText, Plus, Trash2 } from "lucide-react";
 import { useCompactMode } from "@/contexts/CompactModeContext";
 import { useSearchContext, normalizeSearchTerm } from "@/contexts/SearchContext";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
@@ -9,7 +9,7 @@ import type { TodoItem, TodoStatus } from "@/types";
 
 const todoStorageKey = "aiop:todos";
 
-const defaultTodos: TodoItem[] = [
+export const defaultTodos: TodoItem[] = [
   {
     id: "todo-1",
     title: "구독 목록에서 해지 후보 1개 정하기",
@@ -46,12 +46,14 @@ export function TodoView() {
   const { searchQuery } = useSearchContext();
   const [items, setItems] = useLocalStorage<TodoItem[]>(todoStorageKey, defaultTodos);
   const [title, setTitle] = useState("");
+  const [memo, setMemo] = useState("");
   const [priority, setPriority] = useState<TodoItem["priority"]>("medium");
   const [errorMessage, setErrorMessage] = useState("");
+  const [showCompleted, setShowCompleted] = useState(false);
   const searchTerm = normalizeSearchTerm(searchQuery);
-  const filteredItems = searchTerm
-    ? items.filter((item) => item.title.toLowerCase().includes(searchTerm))
-    : items;
+  const visibleItems = searchTerm ? items.filter((item) => matchesTodoSearch(item, searchTerm)) : items;
+  const activeItems = visibleItems.filter((item) => item.status !== "done");
+  const completedItems = visibleItems.filter((item) => item.status === "done");
 
   const summary = useMemo(
     () => ({
@@ -73,6 +75,7 @@ export function TodoView() {
     const nextItem: TodoItem = {
       id: crypto.randomUUID?.() ?? Date.now().toString(),
       title: trimmedTitle,
+      memo: getOptionalMemo(memo),
       status: "todo",
       priority,
       createdAt: formatCreatedAt(new Date()),
@@ -80,6 +83,7 @@ export function TodoView() {
 
     setItems((currentItems) => [nextItem, ...currentItems]);
     setTitle("");
+    setMemo("");
     setPriority("medium");
     setErrorMessage("");
   }
@@ -101,6 +105,19 @@ export function TodoView() {
     setItems((currentItems) => currentItems.filter((item) => item.id !== id));
   }
 
+  function handleUpdateMemo(id: string, nextMemo: string) {
+    setItems((currentItems) =>
+      currentItems.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              memo: getOptionalMemo(nextMemo),
+            }
+          : item,
+      ),
+    );
+  }
+
   return (
     <div className={`grid gap-4 ${isCompact ? "" : "xl:grid-cols-[0.8fr_1.2fr] xl:gap-6"}`}>
       <section className={`rounded-2xl border border-zinc-800 bg-zinc-900 shadow-soft ${isCompact ? "p-4" : "p-6"}`}>
@@ -118,6 +135,13 @@ export function TodoView() {
             }}
             className="h-12 w-full rounded-2xl border border-zinc-800 bg-zinc-950/70 px-4 text-sm text-zinc-100 outline-none placeholder:text-zinc-600"
             placeholder="할 일을 입력하세요"
+          />
+
+          <textarea
+            value={memo}
+            onChange={(event) => setMemo(event.target.value)}
+            className="min-h-20 w-full resize-none rounded-2xl border border-zinc-800 bg-zinc-950/70 px-4 py-3 text-sm leading-6 text-zinc-100 outline-none placeholder:text-zinc-600"
+            placeholder="짧은 메모를 남겨두세요"
           />
 
           <div className="grid grid-cols-3 gap-2">
@@ -160,17 +184,19 @@ export function TodoView() {
       </section>
 
       <section className={`rounded-2xl border border-zinc-800 bg-zinc-900 shadow-soft ${isCompact ? "p-4" : "p-6"}`}>
-        <h3 className="text-xl font-semibold text-zinc-50">Todo 목록</h3>
+        <h3 className="text-xl font-semibold text-zinc-50">해야 할 Todo</h3>
         <div className="mt-5 space-y-3">
-          {filteredItems.length === 0 ? (
+          {activeItems.length === 0 ? (
             <div className="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4 text-sm text-zinc-500">
               {items.length === 0
                 ? "등록된 Todo가 없습니다."
-                : `"${searchQuery}" 검색 결과가 없습니다.`}
+                : searchQuery
+                  ? `"${searchQuery}" 검색 결과가 없습니다.`
+                  : "해야 할 Todo가 없습니다."}
             </div>
           ) : null}
 
-          {filteredItems.map((item) => (
+          {activeItems.map((item) => (
             <article key={item.id} className={`rounded-2xl border border-zinc-800 bg-zinc-950/70 ${isCompact ? "p-3" : "p-4"}`}>
               <div className="flex items-start gap-3">
                 <button
@@ -190,6 +216,16 @@ export function TodoView() {
                     <span className="rounded-full bg-zinc-800 px-2 py-1 text-xs text-zinc-400">{statusLabels[item.status]}</span>
                   </div>
                   {isCompact ? null : <p className="mt-2 text-sm text-zinc-500">{item.createdAt}</p>}
+                  <label className="mt-3 flex items-start gap-2 rounded-2xl border border-zinc-800 bg-zinc-900/70 px-3 py-2">
+                    <MessageSquareText className="mt-1 h-4 w-4 shrink-0 text-zinc-500" />
+                    <textarea
+                      value={item.memo ?? ""}
+                      onChange={(event) => handleUpdateMemo(item.id, event.target.value)}
+                      rows={2}
+                      className="min-h-10 flex-1 resize-none bg-transparent text-sm leading-5 text-zinc-300 outline-none placeholder:text-zinc-600"
+                      placeholder="짧은 메모"
+                    />
+                  </label>
                 </div>
                 <button
                   type="button"
@@ -203,6 +239,72 @@ export function TodoView() {
             </article>
           ))}
         </div>
+
+        <div className="mt-5 rounded-2xl border border-zinc-800 bg-zinc-950/40">
+          <button
+            type="button"
+            onClick={() => setShowCompleted((currentValue) => !currentValue)}
+            className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
+            aria-expanded={showCompleted}
+          >
+            <span>
+              <span className="font-medium text-zinc-100">완료된 Todo</span>
+              <span className="ml-2 text-sm text-zinc-500">{completedItems.length}</span>
+            </span>
+            <ChevronDown className={`h-4 w-4 text-zinc-500 transition ${showCompleted ? "rotate-180" : ""}`} />
+          </button>
+
+          {showCompleted ? (
+            <div className="space-y-3 border-t border-zinc-800 p-3">
+              {completedItems.length === 0 ? (
+                <div className="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4 text-sm text-zinc-500">
+                  완료된 Todo가 없습니다.
+                </div>
+              ) : null}
+
+              {completedItems.map((item) => (
+                <article key={item.id} className={`rounded-2xl border border-zinc-800 bg-zinc-950/70 ${isCompact ? "p-3" : "p-4"}`}>
+                  <div className="flex items-start gap-3">
+                    <button
+                      type="button"
+                      onClick={() => handleCycleStatus(item.id)}
+                      className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-zinc-800 text-zinc-400 hover:border-emerald-400/40 hover:text-emerald-300"
+                      aria-label="Todo 상태 변경"
+                    >
+                      {getStatusIcon(item.status)}
+                    </button>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h4 className="min-w-0 truncate font-medium text-zinc-500 line-through">{item.title}</h4>
+                        <span className={`rounded-full px-2 py-1 text-xs ${getPriorityClassName(item.priority)}`}>{getPriorityLabel(item.priority)}</span>
+                        <span className="rounded-full bg-zinc-800 px-2 py-1 text-xs text-zinc-400">{statusLabels[item.status]}</span>
+                      </div>
+                      {isCompact ? null : <p className="mt-2 text-sm text-zinc-500">{item.createdAt}</p>}
+                      <label className="mt-3 flex items-start gap-2 rounded-2xl border border-zinc-800 bg-zinc-900/70 px-3 py-2">
+                        <MessageSquareText className="mt-1 h-4 w-4 shrink-0 text-zinc-500" />
+                        <textarea
+                          value={item.memo ?? ""}
+                          onChange={(event) => handleUpdateMemo(item.id, event.target.value)}
+                          rows={2}
+                          className="min-h-10 flex-1 resize-none bg-transparent text-sm leading-5 text-zinc-300 outline-none placeholder:text-zinc-600"
+                          placeholder="짧은 메모"
+                        />
+                      </label>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(item.id)}
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-zinc-800 text-zinc-500 hover:border-red-400/40 hover:text-red-300"
+                      aria-label="Todo 삭제"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : null}
+        </div>
       </section>
     </div>
   );
@@ -212,6 +314,10 @@ function getNextStatus(status: TodoStatus): TodoStatus {
   if (status === "todo") return "doing";
   if (status === "doing") return "done";
   return "todo";
+}
+
+function matchesTodoSearch(item: TodoItem, searchTerm: string) {
+  return [item.title, item.memo ?? ""].some((value) => value.toLowerCase().includes(searchTerm));
 }
 
 function getStatusIcon(status: TodoStatus) {
@@ -230,6 +336,10 @@ function getPriorityClassName(priority: TodoItem["priority"]) {
   if (priority === "high") return "bg-red-400/10 text-red-300";
   if (priority === "medium") return "bg-emerald-400/10 text-emerald-300";
   return "bg-zinc-800 text-zinc-400";
+}
+
+function getOptionalMemo(value: string) {
+  return value.trim().length > 0 ? value : undefined;
 }
 
 function formatCreatedAt(date: Date) {

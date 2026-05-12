@@ -1,0 +1,524 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { ArrowRight, CalendarDays, CheckCircle2, Circle, Flame, Plus, RotateCcw, Trash2 } from "lucide-react";
+import { defaultTodos } from "@/components/todos/TodoView";
+import { useCompactMode } from "@/contexts/CompactModeContext";
+import { normalizeSearchTerm, useSearchContext } from "@/contexts/SearchContext";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
+import {
+  calculateStreak,
+  carryOverTryItems,
+  createEmptyRetro,
+  createId,
+  createTodoFromTry,
+  findPreviousRetro,
+  formatDateLabel,
+  getLocalDateString,
+  getUnfinishedTryItems,
+  getWeekProgress,
+  hasRetroContent,
+  sortRetrosByDateDesc,
+  syncTryWithTodos,
+} from "@/lib/retros";
+import { normalizeRetros } from "@/lib/storageNormalizers";
+import type { KptRetro, RetroItem, TodoItem } from "@/types";
+
+type RetroSectionKey = "keep" | "problem" | "try";
+
+const retroStorageKey = "aiop:retros";
+const todoStorageKey = "aiop:todos";
+
+const sectionMeta: Record<RetroSectionKey, { title: string; helper: string; placeholder: string }> = {
+  keep: {
+    title: "Keep",
+    helper: "계속 유지할 행동",
+    placeholder: "유지하고 싶은 일을 적어주세요.",
+  },
+  problem: {
+    title: "Problem",
+    helper: "막혔거나 불편했던 점",
+    placeholder: "오늘의 문제를 적어주세요.",
+  },
+  try: {
+    title: "Try",
+    helper: "다음에 시도할 일",
+    placeholder: "다음 액션을 적어주세요.",
+  },
+};
+
+const emptyInputs: Record<RetroSectionKey, string> = {
+  keep: "",
+  problem: "",
+  try: "",
+};
+
+export function RetroView() {
+  const today = getLocalDateString(new Date());
+  const searchParams = useSearchParams();
+  const dateParam = searchParams.get("date");
+  const { isCompact } = useCompactMode();
+  const { searchQuery } = useSearchContext();
+  const [storedRetros, setStoredRetros] = useLocalStorage<KptRetro[]>(retroStorageKey, []);
+  const [todos, setTodos] = useLocalStorage<TodoItem[]>(todoStorageKey, defaultTodos);
+  const [selectedDate, setSelectedDate] = useState(dateParam || today);
+  const [inputs, setInputs] = useState(emptyInputs);
+  const [addTryToTodo, setAddTryToTodo] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [carryoverDismissed, setCarryoverDismissed] = useState(false);
+  const baseRetros = useMemo(() => normalizeRetros(storedRetros), [storedRetros]);
+  const syncedRetros = useMemo(() => syncTryWithTodos(baseRetros, todos), [baseRetros, todos]);
+  const selectedRetro = syncedRetros.find((retro) => retro.date === selectedDate) ?? createEmptyRetro(selectedDate);
+  const sortedRetros = useMemo(() => [...syncedRetros].sort(sortRetrosByDateDesc), [syncedRetros]);
+  const searchTerm = normalizeSearchTerm(searchQuery);
+  const visibleRetros = searchTerm
+    ? sortedRetros.filter((retro) =>
+        [
+          retro.date,
+          ...retro.keep.map((item) => item.text),
+          ...retro.problem.map((item) => item.text),
+          ...retro.try.map((item) => item.text),
+        ].some((value) => value.toLowerCase().includes(searchTerm)),
+      )
+    : sortedRetros;
+  const streak = calculateStreak(syncedRetros, today);
+  const weekProgress = getWeekProgress(syncedRetros, today);
+  const previousRetro = findPreviousRetro(syncedRetros, today);
+  const unfinishedTryItems = getUnfinishedTryItems(previousRetro).filter(
+    (item) => !selectedRetro.try.some((todayItem) => todayItem.carriedFrom === item.id),
+  );
+  const shouldShowCarryover =
+    selectedDate === today && !carryoverDismissed && unfinishedTryItems.length > 0 && !hasRetroContent(selectedRetro);
+
+  useEffect(() => {
+    if (JSON.stringify(baseRetros) === JSON.stringify(syncedRetros)) return;
+    setStoredRetros(syncedRetros);
+  }, [baseRetros, setStoredRetros, syncedRetros]);
+
+  useEffect(() => {
+    if (!dateParam) return;
+    setSelectedDate(dateParam);
+  }, [dateParam]);
+
+  function handleInputChange(section: RetroSectionKey, value: string) {
+    setInputs((currentInputs) => ({
+      ...currentInputs,
+      [section]: value,
+    }));
+  }
+
+  function handleAddItem(section: RetroSectionKey) {
+    const trimmedText = inputs[section].trim();
+
+    if (!trimmedText) {
+      setErrorMessage(`${sectionMeta[section].title} 항목을 입력하세요.`);
+      return;
+    }
+
+    const todo = section === "try" && addTryToTodo ? createTodoFromTry(trimmedText) : null;
+    const nextItem: RetroItem = {
+      id: createId(),
+      text: trimmedText,
+      done: false,
+      linkedTodoId: todo?.id,
+    };
+
+    upsertRetroItems(section, [nextItem]);
+
+    if (todo) {
+      setTodos((currentTodos) => [todo, ...currentTodos]);
+    }
+
+    handleInputChange(section, "");
+    setErrorMessage("");
+  }
+
+  function handleCarryOverAll() {
+    upsertRetroItems("try", carryOverTryItems(unfinishedTryItems));
+  }
+
+  function handleCarryOverOne(item: RetroItem) {
+    upsertRetroItems("try", carryOverTryItems([item]));
+  }
+
+  function handleDeleteItem(section: RetroSectionKey, itemId: string) {
+    const now = new Date().toISOString();
+
+    setStoredRetros((currentRetros) =>
+      normalizeRetros(currentRetros)
+        .map((retro) =>
+          retro.date === selectedDate
+            ? {
+                ...retro,
+                [section]: retro[section].filter((item) => item.id !== itemId),
+                updatedAt: now,
+              }
+            : retro,
+        )
+        .filter(hasRetroContent)
+        .sort(sortRetrosByDateDesc),
+    );
+  }
+
+  function handleToggleTryItem(itemId: string) {
+    const targetItem = selectedRetro.try.find((item) => item.id === itemId);
+    const nextDone = !targetItem?.done;
+    const now = new Date().toISOString();
+
+    setStoredRetros((currentRetros) =>
+      normalizeRetros(currentRetros)
+        .map((retro) =>
+          retro.date === selectedDate
+            ? {
+                ...retro,
+                try: retro.try.map((item) =>
+                  item.id === itemId
+                    ? {
+                        ...item,
+                        done: nextDone,
+                      }
+                    : item,
+                ),
+                updatedAt: now,
+              }
+            : retro,
+        )
+        .sort(sortRetrosByDateDesc),
+    );
+
+    if (targetItem?.linkedTodoId) {
+      setTodos((currentTodos) =>
+        currentTodos.map((todo) =>
+          todo.id === targetItem.linkedTodoId
+            ? {
+                ...todo,
+                status: nextDone ? "done" : "todo",
+              }
+            : todo,
+        ),
+      );
+    }
+  }
+
+  function handleDeleteRetro(date: string) {
+    setStoredRetros((currentRetros) => normalizeRetros(currentRetros).filter((retro) => retro.date !== date));
+
+    if (date === selectedDate) {
+      setSelectedDate(today);
+    }
+  }
+
+  function upsertRetroItems(section: RetroSectionKey, nextItems: RetroItem[]) {
+    if (nextItems.length === 0) return;
+
+    const now = new Date().toISOString();
+
+    setStoredRetros((currentRetros) => {
+      const safeRetros = normalizeRetros(currentRetros);
+      const existingRetro = safeRetros.find((retro) => retro.date === selectedDate);
+
+      if (!existingRetro) {
+        return [
+          {
+            ...createEmptyRetro(selectedDate),
+            [section]: nextItems,
+            createdAt: now,
+            updatedAt: now,
+          },
+          ...safeRetros,
+        ].sort(sortRetrosByDateDesc);
+      }
+
+      return safeRetros
+        .map((retro) =>
+          retro.date === selectedDate
+            ? {
+                ...retro,
+                [section]: [...retro[section], ...nextItems],
+                updatedAt: now,
+              }
+            : retro,
+        )
+        .sort(sortRetrosByDateDesc);
+    });
+
+    setCarryoverDismissed(false);
+  }
+
+  return (
+    <div className="space-y-5">
+      <section className={`rounded-2xl border border-zinc-800 bg-zinc-900 shadow-soft ${isCompact ? "p-4" : "p-6"}`}>
+        <div className={`flex gap-3 ${isCompact ? "flex-col" : "items-start justify-between"}`}>
+          <div>
+            <h2 className={`font-semibold text-zinc-50 ${isCompact ? "text-2xl" : "text-3xl"}`}>K.P.T 회고</h2>
+            {isCompact ? null : <p className="mt-2 text-zinc-500">오늘의 Keep, Problem, Try를 짧게 남깁니다.</p>}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href="/retros/weekly"
+              className="flex h-11 items-center gap-2 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-3 text-sm font-medium text-emerald-300 hover:bg-emerald-400/15"
+            >
+              주간 보기
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+            <label className="flex h-11 items-center gap-2 rounded-2xl border border-zinc-800 bg-zinc-950/70 px-3 text-sm text-zinc-300">
+              <CalendarDays className="h-4 w-4 text-zinc-500" />
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(event) => setSelectedDate(event.target.value || today)}
+                className="bg-transparent text-sm text-zinc-100 outline-none"
+                aria-label="회고 날짜"
+              />
+            </label>
+            {syncedRetros.some((retro) => retro.date === selectedDate) ? (
+              <button
+                type="button"
+                onClick={() => handleDeleteRetro(selectedDate)}
+                className="flex h-11 items-center gap-2 rounded-2xl border border-zinc-800 px-3 text-sm text-zinc-400 hover:border-red-400/40 hover:text-red-300"
+              >
+                <Trash2 className="h-4 w-4" />
+                전체 삭제
+              </button>
+            ) : null}
+          </div>
+        </div>
+
+        <div className={`mt-5 grid gap-3 ${isCompact ? "grid-cols-2" : "grid-cols-5"}`}>
+          <SummaryBox label="Keep" value={selectedRetro.keep.length} />
+          <SummaryBox label="Problem" value={selectedRetro.problem.length} />
+          <SummaryBox label="Try 완료" value={selectedRetro.try.filter((item) => item.done).length} />
+          <SummaryBox label="연속 작성" value={streak} suffix="일" />
+          <SummaryBox label="이번 주" value={weekProgress.written} suffix={`/${weekProgress.total}`} />
+        </div>
+
+        <div className="mt-4 flex items-center gap-2 rounded-2xl border border-zinc-800 bg-zinc-950/60 px-3 py-2 text-sm text-zinc-400">
+          <Flame className="h-4 w-4 text-emerald-300" />
+          <span>{streak > 0 ? `${streak}일 연속 작성 중` : "오늘 첫 회고를 작성하면 streak가 시작됩니다."}</span>
+        </div>
+
+        {errorMessage ? <p className="mt-4 text-sm text-red-300">{errorMessage}</p> : null}
+      </section>
+
+      {shouldShowCarryover ? (
+        <section className="rounded-2xl border border-amber-400/25 bg-amber-400/10 p-4 shadow-soft">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h3 className="font-semibold text-amber-200">이전 회고에서 못 끝낸 Try {unfinishedTryItems.length}개</h3>
+              <p className="mt-1 text-sm text-amber-100/70">{previousRetro ? formatDateLabel(previousRetro.date) : ""} 항목을 오늘로 이월할 수 있습니다.</p>
+            </div>
+            <button type="button" onClick={() => setCarryoverDismissed(true)} className="text-sm text-amber-100/70 hover:text-amber-100">
+              닫기
+            </button>
+          </div>
+          <div className="mt-4 space-y-2">
+            {unfinishedTryItems.map((item) => (
+              <div key={item.id} className="flex items-center justify-between gap-3 rounded-2xl border border-amber-300/15 bg-zinc-950/40 px-3 py-2">
+                <span className="min-w-0 break-words text-sm text-amber-50">{item.text}</span>
+                <button
+                  type="button"
+                  onClick={() => handleCarryOverOne(item)}
+                  className="shrink-0 rounded-full border border-amber-300/25 px-3 py-1 text-xs text-amber-100 hover:bg-amber-300/10"
+                >
+                  이월
+                </button>
+              </div>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={handleCarryOverAll}
+            className="mt-4 flex h-10 items-center gap-2 rounded-2xl bg-amber-300 px-4 text-sm font-semibold text-zinc-950 hover:bg-amber-200"
+          >
+            <RotateCcw className="h-4 w-4" />
+            이번에 이월
+          </button>
+        </section>
+      ) : null}
+
+      <section className={`grid gap-4 ${isCompact ? "" : "xl:grid-cols-3"}`}>
+        {(["keep", "problem", "try"] as const).map((section) => (
+          <RetroSection
+            key={section}
+            section={section}
+            items={selectedRetro[section]}
+            inputValue={inputs[section]}
+            addTryToTodo={addTryToTodo}
+            isCompact={isCompact}
+            onInputChange={(value) => handleInputChange(section, value)}
+            onToggleAddTryToTodo={setAddTryToTodo}
+            onAdd={() => handleAddItem(section)}
+            onDelete={(itemId) => handleDeleteItem(section, itemId)}
+            onToggleTry={handleToggleTryItem}
+          />
+        ))}
+      </section>
+
+      <section className={`rounded-2xl border border-zinc-800 bg-zinc-900 shadow-soft ${isCompact ? "p-4" : "p-6"}`}>
+        <h3 className="text-xl font-semibold text-zinc-50">과거 회고</h3>
+        <div className="mt-5 space-y-3">
+          {visibleRetros.length === 0 ? (
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4 text-sm text-zinc-500">
+              {syncedRetros.length === 0 ? "아직 저장된 회고가 없습니다." : `"${searchQuery}" 검색 결과가 없습니다.`}
+            </div>
+          ) : null}
+
+          {visibleRetros.map((retro) => {
+            const doneTryCount = retro.try.filter((item) => item.done).length;
+            const isSelected = retro.date === selectedDate;
+
+            return (
+              <article
+                key={retro.id}
+                className={`rounded-2xl border bg-zinc-950/70 p-4 ${
+                  isSelected ? "border-emerald-400/35" : "border-zinc-800"
+                }`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <button type="button" onClick={() => setSelectedDate(retro.date)} className="min-w-0 flex-1 text-left">
+                    <h4 className="font-medium text-zinc-100">{formatDateLabel(retro.date)}</h4>
+                    <p className="mt-2 text-sm text-zinc-500">
+                      K {retro.keep.length} / P {retro.problem.length} / T {retro.try.length} ({doneTryCount} 완료)
+                    </p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteRetro(retro.date)}
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-zinc-800 text-zinc-500 hover:border-red-400/40 hover:text-red-300"
+                    aria-label="회고 삭제"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function RetroSection({
+  section,
+  items,
+  inputValue,
+  addTryToTodo,
+  isCompact,
+  onInputChange,
+  onToggleAddTryToTodo,
+  onAdd,
+  onDelete,
+  onToggleTry,
+}: {
+  section: RetroSectionKey;
+  items: RetroItem[];
+  inputValue: string;
+  addTryToTodo: boolean;
+  isCompact: boolean;
+  onInputChange: (value: string) => void;
+  onToggleAddTryToTodo: (value: boolean) => void;
+  onAdd: () => void;
+  onDelete: (itemId: string) => void;
+  onToggleTry: (itemId: string) => void;
+}) {
+  const meta = sectionMeta[section];
+
+  return (
+    <article className={`rounded-2xl border border-zinc-800 bg-zinc-900 shadow-soft ${isCompact ? "p-4" : "p-5"}`}>
+      <div>
+        <h3 className="text-lg font-semibold text-zinc-50">{meta.title}</h3>
+        <p className="mt-1 text-sm text-zinc-500">{meta.helper}</p>
+      </div>
+
+      <div className="mt-4 space-y-3">
+        {items.length === 0 ? (
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-3 text-sm text-zinc-500">아직 항목이 없습니다.</div>
+        ) : null}
+
+        {items.map((item) => (
+          <div key={item.id} className="flex items-start gap-2 rounded-2xl border border-zinc-800 bg-zinc-950/70 p-3">
+            {section === "try" ? (
+              <button
+                type="button"
+                onClick={() => onToggleTry(item.id)}
+                className="mt-0.5 text-zinc-500 hover:text-emerald-300"
+                aria-label={item.done ? "Try 미완료로 변경" : "Try 완료로 변경"}
+              >
+                {item.done ? <CheckCircle2 className="h-4 w-4 text-emerald-300" /> : <Circle className="h-4 w-4" />}
+              </button>
+            ) : null}
+            <div className="min-w-0 flex-1">
+              <p className={`break-words text-sm leading-6 ${item.done ? "text-zinc-500 line-through" : "text-zinc-200"}`}>
+                {item.text}
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {item.carriedFrom ? <span className="rounded-full bg-amber-400/10 px-2 py-1 text-xs text-amber-200">이월</span> : null}
+                {item.linkedTodoId ? <span className="rounded-full bg-emerald-400/10 px-2 py-1 text-xs text-emerald-300">Todo 연동</span> : null}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => onDelete(item.id)}
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-zinc-500 hover:bg-zinc-900 hover:text-red-300"
+              aria-label={`${meta.title} 항목 삭제`}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-4 space-y-3">
+        <div className="flex gap-2">
+          <input
+            value={inputValue}
+            onChange={(event) => onInputChange(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                onAdd();
+              }
+            }}
+            className="h-11 min-w-0 flex-1 rounded-2xl border border-zinc-800 bg-zinc-950/70 px-3 text-sm text-zinc-100 outline-none placeholder:text-zinc-600"
+            placeholder={meta.placeholder}
+          />
+          <button
+            type="button"
+            onClick={onAdd}
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-400 text-zinc-950 hover:bg-emerald-300"
+            aria-label={`${meta.title} 항목 추가`}
+          >
+            <Plus className="h-4 w-4" />
+          </button>
+        </div>
+
+        {section === "try" ? (
+          <label className="flex items-center gap-2 text-sm text-zinc-400">
+            <input
+              type="checkbox"
+              checked={addTryToTodo}
+              onChange={(event) => onToggleAddTryToTodo(event.target.checked)}
+              className="h-4 w-4 accent-emerald-400"
+            />
+            Todo로도 추가
+          </label>
+        ) : null}
+      </div>
+    </article>
+  );
+}
+
+function SummaryBox({ label, value, suffix = "" }: { label: string; value: number; suffix?: string }) {
+  return (
+    <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-3">
+      <p className="text-xs text-zinc-500">{label}</p>
+      <p className="mt-1 text-xl font-semibold text-zinc-50">
+        {value}
+        {suffix ? <span className="ml-1 text-sm text-zinc-500">{suffix}</span> : null}
+      </p>
+    </div>
+  );
+}

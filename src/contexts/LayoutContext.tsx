@@ -10,6 +10,7 @@ type LayoutContextValue = {
   setLayout: (nextWidgets: WidgetLayout[]) => void;
   setNarrowLayout: (nextWidgets: WidgetLayout[]) => void;
   setCardsOrder: (nextOrder: SummaryCardId[]) => void;
+  setTodoSummaryOrder: (nextOrder: string[]) => void;
   toggleWidgetVisibility: (widgetId: WidgetId) => void;
   toggleSummaryCardVisibility: (cardId: SummaryCardId) => void;
   saveLayout: () => void;
@@ -67,6 +68,16 @@ export function LayoutProvider({ children }: { children: React.ReactNode }) {
       normalizeLayout({
         ...(currentLayout ?? savedLayout),
         summaryCardsOrder: nextOrder,
+      }),
+    );
+    setHasUnsavedChanges(true);
+  }
+
+  function setTodoSummaryOrder(nextOrder: string[]) {
+    setDraftLayout((currentLayout) =>
+      normalizeLayout({
+        ...(currentLayout ?? savedLayout),
+        todoSummaryOrder: nextOrder,
       }),
     );
     setHasUnsavedChanges(true);
@@ -144,6 +155,7 @@ export function LayoutProvider({ children }: { children: React.ReactNode }) {
         setLayout,
         setNarrowLayout,
         setCardsOrder,
+        setTodoSummaryOrder,
         toggleWidgetVisibility,
         toggleSummaryCardVisibility,
         saveLayout,

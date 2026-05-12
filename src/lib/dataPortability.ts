@@ -2,6 +2,7 @@ import {
   normalizeInsights,
   normalizeNotes,
   normalizeRegretItems,
+  normalizeRetros,
   normalizeSubscriptions,
   normalizeTodos,
   normalizeWants,
@@ -14,6 +15,7 @@ const STORAGE_KEYS = {
   notes: "aiop:notes",
   regretItems: "aiop:regret-items",
   todos: "aiop:todos",
+  retros: "aiop:retros",
   layout: "aiop:layout",
   heroMessage: "aiop:hero-message",
   compactMode: "aiop-compact-mode",
@@ -32,6 +34,7 @@ export type AiopExportPayload = {
     notes: unknown;
     regretItems: unknown;
     todos: unknown;
+    retros: unknown;
     layout: unknown;
     heroMessage: unknown;
     compactMode: unknown;
@@ -76,6 +79,7 @@ export function buildExportPayload(): AiopExportPayload {
       notes: readKey(STORAGE_KEYS.notes),
       regretItems: readKey(STORAGE_KEYS.regretItems),
       todos: readKey(STORAGE_KEYS.todos),
+      retros: readKey(STORAGE_KEYS.retros),
       layout: readKey(STORAGE_KEYS.layout),
       heroMessage: readKey(STORAGE_KEYS.heroMessage),
       compactMode: readKey(STORAGE_KEYS.compactMode),
@@ -115,6 +119,7 @@ export type ImportResult = {
     notes: number;
     regretItems: number;
     todos: number;
+    retros: number;
   };
 };
 
@@ -139,6 +144,7 @@ function parsePayload(raw: string): AiopExportPayload | null {
         notes: parsed.data.notes,
         regretItems: parsed.data.regretItems,
         todos: parsed.data.todos,
+        retros: parsed.data.retros,
         layout: parsed.data.layout,
         heroMessage: parsed.data.heroMessage,
         compactMode: parsed.data.compactMode,
@@ -169,6 +175,7 @@ export function applyImport(raw: string): ImportResult {
   const notes = normalizeNotes(payload.data.notes);
   const regretItems = normalizeRegretItems(payload.data.regretItems);
   const todos = normalizeTodos(payload.data.todos);
+  const retros = normalizeRetros(payload.data.retros);
 
   writeKey(STORAGE_KEYS.wants, wants);
   writeKey(STORAGE_KEYS.subscriptions, subscriptions);
@@ -176,6 +183,7 @@ export function applyImport(raw: string): ImportResult {
   writeKey(STORAGE_KEYS.notes, notes);
   writeKey(STORAGE_KEYS.regretItems, regretItems);
   writeKey(STORAGE_KEYS.todos, todos);
+  writeKey(STORAGE_KEYS.retros, retros);
 
   if (isObject(payload.data.layout)) {
     writeKey(STORAGE_KEYS.layout, payload.data.layout);
@@ -203,6 +211,7 @@ export function applyImport(raw: string): ImportResult {
       notes: notes.length,
       regretItems: regretItems.length,
       todos: todos.length,
+      retros: retros.length,
     },
   };
 }

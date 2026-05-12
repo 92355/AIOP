@@ -1,10 +1,10 @@
 "use client";
 
-import { BarChart3, BookOpen, CreditCard, FileText, ShoppingBag, X } from "lucide-react";
+import { BarChart3, BookOpen, CheckSquare, CreditCard, FileText, NotebookPen, ShoppingBag, X } from "lucide-react";
 import { useCompactMode } from "@/contexts/CompactModeContext";
 import { useEscapeKey } from "@/hooks/useEscapeKey";
 
-export type QuickAddCategory = "want" | "subscription" | "insight" | "regret" | "note";
+export type QuickAddCategory = "want" | "subscription" | "insight" | "regret" | "note" | "todo" | "retro";
 
 type QuickAddModalProps = {
   isOpen: boolean;
@@ -47,6 +47,18 @@ const categories: Array<{
     title: "메모",
     description: "나중에 분류할 생각을 빠르게 보관합니다.",
     icon: FileText,
+  },
+  {
+    key: "todo",
+    title: "Todo",
+    description: "오늘 처리할 일을 바로 추가합니다.",
+    icon: CheckSquare,
+  },
+  {
+    key: "retro",
+    title: "K.P.T",
+    description: "오늘 회고의 Keep, Problem, Try를 빠르게 남깁니다.",
+    icon: NotebookPen,
   },
 ];
 

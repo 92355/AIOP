@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { DndContext, PointerSensor, closestCenter, type DragEndEvent, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, arrayMove, rectSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Banknote, BookMarked, CheckSquare, CreditCard, NotebookTabs, Sparkles, type LucideIcon } from "lucide-react";
+import { Banknote, BookMarked, CheckSquare, CreditCard, GripVertical, NotebookTabs, Sparkles, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { insights, notes, subscriptions, wants } from "@/data/mockData";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
@@ -189,12 +189,9 @@ function SortableSummaryCard({ card, isCompact }: { card: SummaryCard; isCompact
     <div
       ref={setNodeRef}
       style={style}
-      {...attributes}
-      {...listeners}
-      onPointerDown={(event) => event.stopPropagation()}
-      className={`cursor-grab active:cursor-grabbing ${isDragging ? "z-30 opacity-80" : ""}`}
+      className={isDragging ? "z-30 opacity-80" : ""}
     >
-      <SummaryCardItem card={card} isCompact={isCompact} isEditable />
+      <SummaryCardItem card={card} isCompact={isCompact} isEditable dragHandleProps={{ attributes, listeners }} />
     </div>
   );
 }
@@ -204,11 +201,16 @@ function SummaryCardItem({
   isCompact,
   isEditable = false,
   isLinked = false,
+  dragHandleProps,
 }: {
   card: SummaryCard;
   isCompact: boolean;
   isEditable?: boolean;
   isLinked?: boolean;
+  dragHandleProps?: {
+    attributes: ReturnType<typeof useSortable>["attributes"];
+    listeners: ReturnType<typeof useSortable>["listeners"];
+  };
 }) {
   const Icon = card.icon;
   const className = `group block h-full w-full rounded-2xl border bg-zinc-900 text-left shadow-soft transition duration-200 ${
@@ -227,9 +229,21 @@ function SummaryCardItem({
           <p className="text-sm text-zinc-500 transition-colors group-hover:text-zinc-400">{card.label}</p>
           <strong className={`mt-2 block font-semibold text-zinc-50 transition-colors group-hover:text-emerald-200 ${isCompact ? "text-xl" : "text-2xl"}`}>{card.value}</strong>
         </div>
-        <div className={`flex items-center justify-center rounded-2xl bg-emerald-400/10 text-emerald-300 transition duration-200 group-hover:scale-105 group-hover:bg-emerald-400/15 group-hover:text-emerald-200 ${isCompact ? "h-9 w-9" : "h-11 w-11"}`}>
-          <Icon className={isCompact ? "h-4 w-4" : "h-5 w-5"} />
-        </div>
+        {dragHandleProps ? (
+          <button
+            type="button"
+            {...dragHandleProps.attributes}
+            {...dragHandleProps.listeners}
+            className={`flex shrink-0 cursor-grab items-center justify-center rounded-2xl border border-emerald-400/30 bg-emerald-400/10 text-emerald-200 active:cursor-grabbing ${isCompact ? "h-9 w-9" : "h-11 w-11"}`}
+            aria-label={`${card.label} 순서 변경`}
+          >
+            <GripVertical className={isCompact ? "h-4 w-4" : "h-5 w-5"} />
+          </button>
+        ) : (
+          <div className={`flex items-center justify-center rounded-2xl bg-emerald-400/10 text-emerald-300 transition duration-200 group-hover:scale-105 group-hover:bg-emerald-400/15 group-hover:text-emerald-200 ${isCompact ? "h-9 w-9" : "h-11 w-11"}`}>
+            <Icon className={isCompact ? "h-4 w-4" : "h-5 w-5"} />
+          </div>
+        )}
       </div>
       {isCompact ? null : <p className="mt-4 text-sm text-zinc-500 transition-colors group-hover:text-zinc-400">{card.helper}</p>}
     </>

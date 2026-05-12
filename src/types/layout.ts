@@ -30,6 +30,7 @@ export type DashboardLayout = {
   breakpoint: "lg" | "md" | "sm";
   widgets: WidgetLayout[];
   summaryCardsOrder: SummaryCardId[];
+  todoSummaryOrder?: string[];
   narrowWidgetsOrder?: WidgetId[];
   narrowWidgetHeights?: Partial<Record<WidgetId, number>>;
   hidden?: WidgetId[];

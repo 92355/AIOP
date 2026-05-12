@@ -1,16 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { Archive, CheckCircle2, Inbox, Send, Trash2 } from "lucide-react";
+import { Archive, CheckCircle2, Inbox, ListTodo, Send, Trash2 } from "lucide-react";
 import { notes } from "@/data/mockData";
 import { useCompactMode } from "@/contexts/CompactModeContext";
 import { useSearchContext, normalizeSearchTerm } from "@/contexts/SearchContext";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { getNoteStatusLabel } from "@/lib/labels";
-import type { Note, NoteStatus } from "@/types";
+import type { Note, NoteStatus, TodoItem } from "@/types";
 
 const quickTags = ["구매목표", "인사이트", "구독", "나중에"];
 const statusFilters: Array<"all" | NoteStatus> = ["all", "inbox", "processed", "archived"];
+const todoStorageKey = "aiop:todos";
+const defaultTodos: TodoItem[] = [];
 
 function getNextStatus(status: NoteStatus | undefined): NoteStatus {
   if (status === "inbox" || status === undefined) return "processed";
@@ -34,10 +36,12 @@ export function NotesInboxView() {
   const { isCompact } = useCompactMode();
   const { searchQuery } = useSearchContext();
   const [items, setItems] = useLocalStorage<Note[]>("aiop:notes", notes);
+  const [, setTodos] = useLocalStorage<TodoItem[]>(todoStorageKey, defaultTodos);
   const [body, setBody] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [errorMessage, setErrorMessage] = useState("");
   const [statusFilter, setStatusFilter] = useState<(typeof statusFilters)[number]>("all");
+  const [todoAddedNoteIds, setTodoAddedNoteIds] = useState<string[]>([]);
   const searchTerm = normalizeSearchTerm(searchQuery);
   const filteredItems = items.filter((item) => {
     if (statusFilter !== "all" && (item.status ?? "inbox") !== statusFilter) return false;
@@ -79,6 +83,20 @@ export function NotesInboxView() {
     setItems((prevItems) =>
       prevItems.map((item) => (item.id === id ? { ...item, status: getNextStatus(item.status) } : item)),
     );
+  }
+
+  function handleAddToTodo(note: Note) {
+    const nextTodo: TodoItem = {
+      id: getTodoId(),
+      title: getTodoTitleFromNote(note),
+      memo: getTodoMemoFromNote(note),
+      status: "todo",
+      priority: "medium",
+      createdAt: formatCreatedAt(new Date()),
+    };
+
+    setTodos((prevTodos) => [nextTodo, ...prevTodos]);
+    setTodoAddedNoteIds((prevIds) => (prevIds.includes(note.id) ? prevIds : [...prevIds, note.id]));
   }
 
   return (
@@ -156,6 +174,20 @@ export function NotesInboxView() {
                   {isCompact ? null : <span className="text-xs text-zinc-500">{item.createdAt}</span>}
                   <button
                     type="button"
+                    onClick={() => handleAddToTodo(item)}
+                    aria-label="메모를 Todo에 추가"
+                    title="Todo에 추가"
+                    className={`flex h-8 items-center gap-1 rounded-full border px-2 transition ${
+                      todoAddedNoteIds.includes(item.id)
+                        ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300"
+                        : "border-zinc-800 text-zinc-400 hover:border-emerald-400/40 hover:text-emerald-300"
+                    }`}
+                  >
+                    <ListTodo className="h-4 w-4" />
+                    <span className="text-xs">{todoAddedNoteIds.includes(item.id) ? "추가됨" : "Todo 추가"}</span>
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => handleCycleStatus(item.id)}
                     aria-label={`노트 상태 변경 (현재: ${getNoteStatusLabel(currentStatus)})`}
                     title={`다음 상태: ${getNoteStatusLabel(getNextStatus(currentStatus))}`}
@@ -193,10 +225,23 @@ function getNoteId() {
   return crypto.randomUUID?.() ?? Date.now().toString();
 }
 
+function getTodoId() {
+  return `todo-${crypto.randomUUID?.() ?? Date.now().toString()}`;
+}
+
 function getNotePreview(body: string) {
   const firstLine = body.split("\n")[0]?.trim();
   if (!firstLine) return "제목 없는 노트";
   return firstLine.length > 36 ? `${firstLine.slice(0, 36)}...` : firstLine;
+}
+
+function getTodoTitleFromNote(note: Note) {
+  return note.title?.trim() || getNotePreview(note.body);
+}
+
+function getTodoMemoFromNote(note: Note) {
+  const trimmedBody = note.body.trim();
+  return trimmedBody.length > 0 ? trimmedBody : undefined;
 }
 
 function formatCreatedAt(date: Date) {

@@ -64,6 +64,7 @@ export const defaultDashboardLayout: DashboardLayout = {
   breakpoint: "lg",
   widgets: defaultWidgetLayouts,
   summaryCardsOrder: summaryCardIds,
+  todoSummaryOrder: [],
   narrowWidgetsOrder: editableWidgetIds,
   narrowWidgetHeights: {
     "summary-cards": 4,

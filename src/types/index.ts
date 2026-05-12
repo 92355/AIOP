@@ -8,7 +8,8 @@ export type ViewKey =
   | "subscriptions"
   | "insights"
   | "notes"
-  | "todos";
+  | "todos"
+  | "retros";
 
 export type NavItem = {
   key: ViewKey;
@@ -93,8 +94,27 @@ export type TodoStatus = "todo" | "doing" | "done";
 export type TodoItem = {
   id: string;
   title: string;
+  memo?: string;
   status: TodoStatus;
   priority: "low" | "medium" | "high";
   createdAt: string;
   dueDate?: string;
+};
+
+export type RetroItem = {
+  id: string;
+  text: string;
+  done?: boolean;
+  linkedTodoId?: string;
+  carriedFrom?: string;
+};
+
+export type KptRetro = {
+  id: string;
+  date: string;
+  keep: RetroItem[];
+  problem: RetroItem[];
+  try: RetroItem[];
+  createdAt: string;
+  updatedAt: string;
 };

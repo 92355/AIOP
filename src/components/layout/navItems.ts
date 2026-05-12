@@ -5,6 +5,7 @@ import {
   CheckSquare,
   CreditCard,
   Inbox,
+  NotebookPen,
   Sparkles,
   TrendingUp,
 } from "lucide-react";
@@ -19,6 +20,7 @@ export const viewTitles: Record<ViewKey, string> = {
   insights: "인사이트 보관함",
   notes: "노트 / 수집함",
   todos: "Todo",
+  retros: "K.P.T 회고",
 };
 
 export const navItems: NavItem[] = [
@@ -30,6 +32,7 @@ export const navItems: NavItem[] = [
   { key: "insights", label: "인사이트", icon: BookOpen, href: "/insights" },
   { key: "notes", label: "노트", icon: Inbox, href: "/notes" },
   { key: "todos", label: "Todo", icon: CheckSquare, href: "/todos" },
+  { key: "retros", label: "K.P.T", icon: NotebookPen, href: "/retros" },
 ];
 
 export function isDashboardPathname(pathname: string) {

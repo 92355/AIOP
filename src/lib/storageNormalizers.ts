@@ -2,8 +2,10 @@ import type {
   Currency,
   Insight,
   InsightType,
+  KptRetro,
   Note,
   NoteStatus,
+  RetroItem,
   RegretItem,
   Subscription,
   SubscriptionStatus,
@@ -220,4 +222,55 @@ function normalizeTodo(value: unknown): TodoItem | null {
 export function normalizeTodos(value: unknown): TodoItem[] {
   if (!Array.isArray(value)) return [];
   return value.map(normalizeTodo).filter((item): item is TodoItem => item !== null);
+}
+
+// KPT 회고 / KPT retros
+function normalizeRetroItem(value: unknown): RetroItem | null {
+  if (!isObject(value)) return null;
+
+  if (!isNonEmptyString(value.id)) return null;
+  if (!isNonEmptyString(value.text)) return null;
+
+  return {
+    id: value.id,
+    text: value.text,
+    done: typeof value.done === "boolean" ? value.done : undefined,
+    linkedTodoId: typeof value.linkedTodoId === "string" ? value.linkedTodoId : undefined,
+    carriedFrom: typeof value.carriedFrom === "string" ? value.carriedFrom : undefined,
+  };
+}
+
+function normalizeRetroItems(value: unknown): RetroItem[] {
+  if (!Array.isArray(value)) return [];
+  return value.map(normalizeRetroItem).filter((item): item is RetroItem => item !== null);
+}
+
+function normalizeRetro(value: unknown): KptRetro | null {
+  if (!isObject(value)) return null;
+
+  if (!isNonEmptyString(value.id)) return null;
+  if (!isNonEmptyString(value.date)) return null;
+  if (typeof value.createdAt !== "string") return null;
+  if (typeof value.updatedAt !== "string") return null;
+
+  return {
+    id: value.id,
+    date: value.date,
+    keep: normalizeRetroItems(value.keep),
+    problem: normalizeRetroItems(value.problem),
+    try: normalizeRetroItems(value.try).map((item) => ({
+      ...item,
+      done: item.done ?? false,
+    })),
+    createdAt: value.createdAt,
+    updatedAt: value.updatedAt,
+  };
+}
+
+export function normalizeRetros(value: unknown): KptRetro[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map(normalizeRetro)
+    .filter((item): item is KptRetro => item !== null)
+    .sort((left, right) => right.date.localeCompare(left.date));
 }

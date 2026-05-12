@@ -97,6 +97,14 @@ function normalizeHiddenSummaryCards(value: unknown): SummaryCardId[] {
     .filter((id, index, ids) => ids.indexOf(id) === index);
 }
 
+function normalizeStringOrder(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .filter((id): id is string => typeof id === "string" && id.trim().length > 0)
+    .filter((id, index, ids) => ids.indexOf(id) === index);
+}
+
 function normalizeWidgetOrder(value: unknown): WidgetId[] {
   if (!Array.isArray(value)) return editableWidgetIds;
 
@@ -137,6 +145,7 @@ function normalizeDashboardLayout(value: unknown): DashboardLayout {
     breakpoint: layout.breakpoint === "md" || layout.breakpoint === "sm" ? layout.breakpoint : "lg",
     widgets: normalizeWidgetLayouts(layout.widgets),
     summaryCardsOrder: normalizeSummaryCardsOrder(layout.summaryCardsOrder),
+    todoSummaryOrder: normalizeStringOrder(layout.todoSummaryOrder),
     narrowWidgetsOrder: normalizeWidgetOrder(layout.narrowWidgetsOrder),
     narrowWidgetHeights: normalizeWidgetHeights(layout.narrowWidgetHeights),
     hidden: Array.isArray(layout.hidden) ? layout.hidden.filter(isWidgetId) : undefined,
@@ -157,6 +166,7 @@ export function useDashboardLayout() {
       ...nextLayout,
       widgets: normalizeWidgetLayouts(nextLayout.widgets),
       summaryCardsOrder: normalizeSummaryCardsOrder(nextLayout.summaryCardsOrder),
+      todoSummaryOrder: normalizeStringOrder(nextLayout.todoSummaryOrder),
       narrowWidgetsOrder: normalizeWidgetOrder(nextLayout.narrowWidgetsOrder),
       narrowWidgetHeights: normalizeWidgetHeights(nextLayout.narrowWidgetHeights),
       hidden: Array.isArray(nextLayout.hidden) ? nextLayout.hidden.filter(isWidgetId) : undefined,
