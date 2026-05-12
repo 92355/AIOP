@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { type FormEvent, type KeyboardEvent, useState } from "react";
 import { Send, X } from "lucide-react";
 import { useCompactMode } from "@/contexts/CompactModeContext";
 import { useEscapeKey } from "@/hooks/useEscapeKey";
@@ -57,6 +57,13 @@ export function AddRetroModal({ isOpen, onClose, onAdd }: AddRetroModalProps) {
     onClose();
   }
 
+  function handleTextKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+      event.preventDefault();
+      event.currentTarget.form?.requestSubmit();
+    }
+  }
+
   return (
     <div className={`fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/80 backdrop-blur-sm ${isCompact ? "p-0" : "p-4"}`}>
       <div className={`w-full overflow-y-auto border border-zinc-800 bg-zinc-900 shadow-soft ${isCompact ? "h-[100dvh] max-w-full rounded-none p-4" : "max-w-xl rounded-2xl p-6"}`}>
@@ -93,8 +100,9 @@ export function AddRetroModal({ isOpen, onClose, onAdd }: AddRetroModalProps) {
             <textarea
               value={text}
               onChange={(event) => setText(event.target.value)}
+              onKeyDown={handleTextKeyDown}
               rows={5}
-              className="mt-3 w-full resize-none bg-transparent text-sm leading-6 text-zinc-100 outline-none"
+              className="mt-3 min-h-32 w-full resize-y bg-transparent text-sm leading-6 text-zinc-100 outline-none"
               autoFocus
             />
           </label>

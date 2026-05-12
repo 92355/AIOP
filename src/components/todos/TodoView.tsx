@@ -5,6 +5,7 @@ import { Check, ChevronDown, Circle, Clock3, MessageSquareText, Plus, Trash2 } f
 import { useCompactMode } from "@/contexts/CompactModeContext";
 import { useSearchContext, normalizeSearchTerm } from "@/contexts/SearchContext";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { confirmDelete } from "@/lib/confirmDelete";
 import type { TodoItem, TodoStatus } from "@/types";
 
 const todoStorageKey = "aiop:todos";
@@ -102,6 +103,9 @@ export function TodoView() {
   }
 
   function handleDelete(id: string) {
+    const targetItem = items.find((item) => item.id === id);
+    if (!confirmDelete(targetItem?.title ?? "Todo")) return;
+
     setItems((currentItems) => currentItems.filter((item) => item.id !== id));
   }
 

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Command, Moon, Plus, Search, Smartphone, Sun, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useCompactMode } from "@/contexts/CompactModeContext";
@@ -26,7 +27,13 @@ export function Header({ isDarkMode, onToggleTheme, onOpenQuickAdd }: HeaderProp
 
   return (
     <header className={`relative z-50 flex flex-col gap-4 border-b border-zinc-800 bg-zinc-950/80 backdrop-blur md:flex-row md:items-center md:justify-between ${isCompact ? "px-3 py-3" : "px-5 py-4 md:px-8"}`}>
-      <div>
+      {isCompact ? (
+        <Link href="/" className="rounded-2xl px-1 py-0.5 transition hover:bg-zinc-900" aria-label="대시보드로 이동">
+          <p className="text-xs uppercase tracking-[0.28em] text-emerald-300/80">AIOP</p>
+          <h2 className="mt-1 text-xl font-semibold text-zinc-50">{title}</h2>
+        </Link>
+      ) : null}
+      <div className={isCompact ? "hidden" : undefined}>
         <p className="text-xs uppercase tracking-[0.28em] text-emerald-300/80">운영 센터</p>
         <h2 className={`mt-1 font-semibold text-zinc-50 ${isCompact ? "text-xl" : "text-2xl"}`}>{title}</h2>
       </div>

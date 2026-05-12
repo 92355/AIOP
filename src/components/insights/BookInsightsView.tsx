@@ -8,6 +8,7 @@ import { InsightCard } from "@/components/insights/InsightCard";
 import { useCompactMode } from "@/contexts/CompactModeContext";
 import { useSearchContext, normalizeSearchTerm } from "@/contexts/SearchContext";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { confirmDelete } from "@/lib/confirmDelete";
 import type { Insight } from "@/types";
 
 export function BookInsightsView() {
@@ -29,6 +30,9 @@ export function BookInsightsView() {
   };
 
   const handleDelete = (id: string) => {
+    const targetItem = items.find((item) => item.id === id);
+    if (!confirmDelete(targetItem?.title ?? "인사이트")) return;
+
     setItems((currentItems) => currentItems.filter((item) => item.id !== id));
   };
 

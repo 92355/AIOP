@@ -6,6 +6,26 @@
 
 ---
 
+## 0. 완료된 Plan
+
+### 2026-05-12 — README 정합성 회복 (v1.4 후보 1번)
+
+- 목표: `README.md`를 현재 코드와 일치시킴 (KPT 회고 도메인, QuickAdd retro 통합, 11개 localStorage 키, 프로젝트 구조 트리, 로드맵).
+- 범위: README 1개 파일만. 다른 파일 / 소스 코드 손대지 않음.
+- 결과:
+  - 라우트 표기 9개 / 10라우트로 통일
+  - `### K.P.T 회고 (Retros)` 절 신설
+  - QuickAdd 5개 → 7개 카테고리, `handleAddedRetro` upsert 동작 명시
+  - `aiop:retros` localStorage 행 추가 + normalizer / dataPortability 안내
+  - 프로젝트 구조 트리에 inputs / retros / SearchContext / dataPortability / storageNormalizers / retros.ts / app/retros 반영
+  - "앞으로 구현될 기능" 절을 v1.1~v1.2 / v1.3 / v1.x 보조 3개에서 `v1.4 후보` 단일 절로 통합
+  - 로드맵 v1.1~v1.2 / v1.3 완료 표시, v1.4 후보 행 추가
+  - 하단 참고 링크에서 `aiop-next-steps.md` 제거 → `AGENTS.md` + `aiop-status.md` + `aiop-plan.md`
+- diff: README.md +60 / -47
+- 커밋: 사용자 직접 수행 (메시지 형식 자유)
+
+---
+
 ## 1. 이전 문서 통합 기준
 
 아래 문서들은 활성 문서에서 제외하고 archive 성격으로 본다.

@@ -70,6 +70,17 @@ export function syncTryWithTodos(retros: KptRetro[], todos: TodoItem[]): KptRetr
   }));
 }
 
+export function updateLinkedTodoTitle(todos: TodoItem[], todoId: string, nextTitle: string): TodoItem[] {
+  return todos.map((todo) =>
+    todo.id === todoId
+      ? {
+          ...todo,
+          title: nextTitle,
+        }
+      : todo,
+  );
+}
+
 export function findPreviousRetro(retros: KptRetro[], today: string): KptRetro | null {
   return (
     retros

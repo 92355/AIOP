@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Plus } from "lucide-react";
 import { subscriptions } from "@/data/mockData";
+import { confirmDelete } from "@/lib/confirmDelete";
 import { formatKRW } from "@/lib/formatters";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { AddSubscriptionModal } from "@/components/subscriptions/AddSubscriptionModal";
@@ -38,6 +39,9 @@ export function SubscriptionsView() {
   }
 
   function handleDelete(id: string) {
+    const targetItem = items.find((item) => item.id === id);
+    if (!confirmDelete(targetItem?.service ?? "구독")) return;
+
     setItems((prevItems) => prevItems.filter((item) => item.id !== id));
   }
 

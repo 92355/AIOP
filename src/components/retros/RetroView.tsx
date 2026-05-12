@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { type KeyboardEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { ArrowRight, CalendarDays, CheckCircle2, Circle, Flame, Plus, RotateCcw, Trash2 } from "lucide-react";
+import { ArrowRight, CalendarDays, CheckCircle2, Circle, Flame, Pencil, Plus, RotateCcw, Trash2 } from "lucide-react";
 import { defaultTodos } from "@/components/todos/TodoView";
 import { useCompactMode } from "@/contexts/CompactModeContext";
 import { normalizeSearchTerm, useSearchContext } from "@/contexts/SearchContext";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { confirmDelete } from "@/lib/confirmDelete";
 import {
   calculateStreak,
   carryOverTryItems,
@@ -22,6 +23,7 @@ import {
   hasRetroContent,
   sortRetrosByDateDesc,
   syncTryWithTodos,
+  updateLinkedTodoTitle,
 } from "@/lib/retros";
 import { normalizeRetros } from "@/lib/storageNormalizers";
 import type { KptRetro, RetroItem, TodoItem } from "@/types";
@@ -67,6 +69,9 @@ export function RetroView() {
   const [inputs, setInputs] = useState(emptyInputs);
   const [addTryToTodo, setAddTryToTodo] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState("");
+  const [editingErrorMessage, setEditingErrorMessage] = useState("");
   const [carryoverDismissed, setCarryoverDismissed] = useState(false);
   const baseRetros = useMemo(() => normalizeRetros(storedRetros), [storedRetros]);
   const syncedRetros = useMemo(() => syncTryWithTodos(baseRetros, todos), [baseRetros, todos]);
@@ -102,6 +107,12 @@ export function RetroView() {
     setSelectedDate(dateParam);
   }, [dateParam]);
 
+  useEffect(() => {
+    setEditingItemId(null);
+    setEditingText("");
+    setEditingErrorMessage("");
+  }, [selectedDate]);
+
   function handleInputChange(section: RetroSectionKey, value: string) {
     setInputs((currentInputs) => ({
       ...currentInputs,
@@ -135,6 +146,57 @@ export function RetroView() {
     setErrorMessage("");
   }
 
+  function handleStartEditing(item: RetroItem) {
+    setEditingItemId(item.id);
+    setEditingText(item.text);
+    setEditingErrorMessage("");
+  }
+
+  function handleCancelEditing() {
+    setEditingItemId(null);
+    setEditingText("");
+    setEditingErrorMessage("");
+  }
+
+  function handleSaveEditing(section: RetroSectionKey, item: RetroItem) {
+    const trimmedText = editingText.trim();
+
+    if (!trimmedText) {
+      setEditingErrorMessage("내용을 입력해야 저장할 수 있습니다.");
+      return;
+    }
+
+    const now = new Date().toISOString();
+
+    setStoredRetros((currentRetros) =>
+      normalizeRetros(currentRetros)
+        .map((retro) =>
+          retro.date === selectedDate
+            ? {
+                ...retro,
+                [section]: retro[section].map((currentItem) =>
+                  currentItem.id === item.id
+                    ? {
+                        ...currentItem,
+                        text: trimmedText,
+                      }
+                    : currentItem,
+                ),
+                updatedAt: now,
+              }
+            : retro,
+        )
+        .sort(sortRetrosByDateDesc),
+    );
+
+    if (section === "try" && item.linkedTodoId) {
+      const linkedTodoId = item.linkedTodoId;
+      setTodos((currentTodos) => updateLinkedTodoTitle(currentTodos, linkedTodoId, trimmedText));
+    }
+
+    handleCancelEditing();
+  }
+
   function handleCarryOverAll() {
     upsertRetroItems("try", carryOverTryItems(unfinishedTryItems));
   }
@@ -144,7 +206,19 @@ export function RetroView() {
   }
 
   function handleDeleteItem(section: RetroSectionKey, itemId: string) {
+    const targetItem = selectedRetro[section].find((item) => item.id === itemId);
+    if (!confirmDelete(targetItem?.text ?? `${sectionMeta[section].title} 항목`)) return;
+
     const now = new Date().toISOString();
+
+    if (editingItemId === itemId) {
+      handleCancelEditing();
+    }
+
+    if (section === "try" && targetItem?.linkedTodoId) {
+      const linkedTodoId = targetItem.linkedTodoId;
+      setTodos((currentTodos) => currentTodos.filter((todo) => todo.id !== linkedTodoId));
+    }
 
     setStoredRetros((currentRetros) =>
       normalizeRetros(currentRetros)
@@ -203,6 +277,8 @@ export function RetroView() {
   }
 
   function handleDeleteRetro(date: string) {
+    if (!confirmDelete(`${formatDateLabel(date)} 회고`)) return;
+
     setStoredRetros((currentRetros) => normalizeRetros(currentRetros).filter((retro) => retro.date !== date));
 
     if (date === selectedDate) {
@@ -348,11 +424,18 @@ export function RetroView() {
             inputValue={inputs[section]}
             addTryToTodo={addTryToTodo}
             isCompact={isCompact}
+            editingItemId={editingItemId}
+            editingText={editingText}
+            editingErrorMessage={editingErrorMessage}
             onInputChange={(value) => handleInputChange(section, value)}
             onToggleAddTryToTodo={setAddTryToTodo}
             onAdd={() => handleAddItem(section)}
             onDelete={(itemId) => handleDeleteItem(section, itemId)}
             onToggleTry={handleToggleTryItem}
+            onStartEditing={handleStartEditing}
+            onEditingTextChange={setEditingText}
+            onSaveEditing={(item) => handleSaveEditing(section, item)}
+            onCancelEditing={handleCancelEditing}
           />
         ))}
       </section>
@@ -408,24 +491,45 @@ function RetroSection({
   inputValue,
   addTryToTodo,
   isCompact,
+  editingItemId,
+  editingText,
+  editingErrorMessage,
   onInputChange,
   onToggleAddTryToTodo,
   onAdd,
   onDelete,
   onToggleTry,
+  onStartEditing,
+  onEditingTextChange,
+  onSaveEditing,
+  onCancelEditing,
 }: {
   section: RetroSectionKey;
   items: RetroItem[];
   inputValue: string;
   addTryToTodo: boolean;
   isCompact: boolean;
+  editingItemId: string | null;
+  editingText: string;
+  editingErrorMessage: string;
   onInputChange: (value: string) => void;
   onToggleAddTryToTodo: (value: boolean) => void;
   onAdd: () => void;
   onDelete: (itemId: string) => void;
   onToggleTry: (itemId: string) => void;
+  onStartEditing: (item: RetroItem) => void;
+  onEditingTextChange: (value: string) => void;
+  onSaveEditing: (item: RetroItem) => void;
+  onCancelEditing: () => void;
 }) {
   const meta = sectionMeta[section];
+
+  function handleAddKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+      event.preventDefault();
+      onAdd();
+    }
+  }
 
   return (
     <article className={`rounded-2xl border border-zinc-800 bg-zinc-900 shadow-soft ${isCompact ? "p-4" : "p-5"}`}>
@@ -439,7 +543,10 @@ function RetroSection({
           <div className="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-3 text-sm text-zinc-500">아직 항목이 없습니다.</div>
         ) : null}
 
-        {items.map((item) => (
+        {items.map((item) => {
+          const isEditing = editingItemId === item.id;
+
+          return (
           <div key={item.id} className="flex items-start gap-2 rounded-2xl border border-zinc-800 bg-zinc-950/70 p-3">
             {section === "try" ? (
               <button
@@ -452,14 +559,64 @@ function RetroSection({
               </button>
             ) : null}
             <div className="min-w-0 flex-1">
-              <p className={`break-words text-sm leading-6 ${item.done ? "text-zinc-500 line-through" : "text-zinc-200"}`}>
+              {isEditing ? (
+                <div className="space-y-2">
+                  <textarea
+                    value={editingText}
+                    onChange={(event) => onEditingTextChange(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Escape") {
+                        event.preventDefault();
+                        onCancelEditing();
+                      }
+
+                      if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+                        event.preventDefault();
+                        onSaveEditing(item);
+                      }
+                    }}
+                    rows={3}
+                    className="min-h-24 w-full resize-y rounded-2xl border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm leading-6 text-zinc-100 outline-none focus:border-emerald-400/40"
+                    autoFocus
+                  />
+                  {editingErrorMessage ? <p className="text-xs text-red-300">{editingErrorMessage}</p> : null}
+                  <div className="flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={onCancelEditing}
+                      className="rounded-full border border-zinc-800 px-3 py-1 text-xs text-zinc-400 hover:text-zinc-100"
+                    >
+                      취소
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onSaveEditing(item)}
+                      className="rounded-full bg-emerald-400 px-3 py-1 text-xs font-semibold text-zinc-950 hover:bg-emerald-300"
+                    >
+                      저장
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+              <p className={`whitespace-pre-wrap break-words text-sm leading-6 ${item.done ? "text-zinc-500 line-through" : "text-zinc-200"}`}>
                 {item.text}
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {item.carriedFrom ? <span className="rounded-full bg-amber-400/10 px-2 py-1 text-xs text-amber-200">이월</span> : null}
                 {item.linkedTodoId ? <span className="rounded-full bg-emerald-400/10 px-2 py-1 text-xs text-emerald-300">Todo 연동</span> : null}
               </div>
+                </>
+              )}
             </div>
+            <button
+              type="button"
+              onClick={() => onStartEditing(item)}
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-zinc-500 hover:bg-zinc-900 hover:text-emerald-300"
+              aria-label={`${meta.title} 항목 편집`}
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </button>
             <button
               type="button"
               onClick={() => onDelete(item.id)}
@@ -469,20 +626,18 @@ function RetroSection({
               <Trash2 className="h-3.5 w-3.5" />
             </button>
           </div>
-        ))}
+          );
+        })}
       </div>
 
       <div className="mt-4 space-y-3">
         <div className="flex gap-2">
-          <input
+          <textarea
             value={inputValue}
             onChange={(event) => onInputChange(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") {
-                onAdd();
-              }
-            }}
-            className="h-11 min-w-0 flex-1 rounded-2xl border border-zinc-800 bg-zinc-950/70 px-3 text-sm text-zinc-100 outline-none placeholder:text-zinc-600"
+            onKeyDown={handleAddKeyDown}
+            rows={3}
+            className="min-h-24 min-w-0 flex-1 resize-y rounded-2xl border border-zinc-800 bg-zinc-950/70 px-3 py-2 text-sm leading-6 text-zinc-100 outline-none placeholder:text-zinc-600"
             placeholder={meta.placeholder}
           />
           <button

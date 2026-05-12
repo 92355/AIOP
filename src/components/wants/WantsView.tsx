@@ -8,6 +8,7 @@ import { AddWantModal } from "@/components/wants/AddWantModal";
 import { useCompactMode } from "@/contexts/CompactModeContext";
 import { useSearchContext, normalizeSearchTerm } from "@/contexts/SearchContext";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { confirmDelete } from "@/lib/confirmDelete";
 import { getWantCategoryLabel } from "@/lib/labels";
 import type { WantItem } from "@/types";
 
@@ -31,6 +32,9 @@ export function WantsView() {
   }
 
   function handleDelete(id: string) {
+    const targetItem = items.find((item) => item.id === id);
+    if (!confirmDelete(targetItem?.name ?? "구매 목표")) return;
+
     setItems((prevItems) => prevItems.filter((item) => item.id !== id));
   }
 

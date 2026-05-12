@@ -7,6 +7,7 @@ import { AddRegretItemModal } from "@/components/regret/AddRegretItemModal";
 import { RegretCard } from "@/components/regret/RegretCard";
 import { useCompactMode } from "@/contexts/CompactModeContext";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { confirmDelete } from "@/lib/confirmDelete";
 import type { RegretItem } from "@/types";
 
 export function RegretTrackerView() {
@@ -19,6 +20,9 @@ export function RegretTrackerView() {
   };
 
   const handleDelete = (id: string) => {
+    const targetItem = items.find((item) => item.id === id);
+    if (!confirmDelete(targetItem?.name ?? "후회 기록")) return;
+
     setItems((currentItems) => currentItems.filter((item) => item.id !== id));
   };
 

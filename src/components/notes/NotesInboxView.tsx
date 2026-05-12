@@ -6,6 +6,7 @@ import { notes } from "@/data/mockData";
 import { useCompactMode } from "@/contexts/CompactModeContext";
 import { useSearchContext, normalizeSearchTerm } from "@/contexts/SearchContext";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { confirmDelete } from "@/lib/confirmDelete";
 import { getNoteStatusLabel } from "@/lib/labels";
 import type { Note, NoteStatus, TodoItem } from "@/types";
 
@@ -76,6 +77,9 @@ export function NotesInboxView() {
   }
 
   function handleDelete(id: string) {
+    const targetItem = items.find((item) => item.id === id);
+    if (!confirmDelete(targetItem?.title ?? getNotePreview(targetItem?.body ?? "") ?? "노트")) return;
+
     setItems((prevItems) => prevItems.filter((item) => item.id !== id));
   }
 
