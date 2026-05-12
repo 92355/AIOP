@@ -8,21 +8,33 @@
 
 ## 1. Current Goal
 
-회고 항목(Keep / Problem / Try) 텍스트를 카드 안에서 직접 편집할 수 있게 하고, 회고 입력칸을 긴 글 작성에 맞게 확장한다.
+**D. 대시보드 전역 검색 → 페이지별 드롭다운 결과**
 
-근거: `aiop-status.md` 11번 우선순위 중 1번(회고 항목 인라인 텍스트 편집)과 4번(텍스트 입력칸 확장)을 하나의 작업으로 묶어 진행한다.
+대시보드(`/`)에서 헤더 검색창에 입력하면, 검색어가 포함된 항목을 **페이지별로 그룹화**해서 드롭다운으로 표시한다. 결과를 클릭하면 해당 페이지로 이동한다.
+
+근거: 사용자 요청 — "대시보드에서 검색시 해당 내용이있는 페이지를 드랍다운으로 표시되어야함 (여러개라면 드랍다운으로 각 페이지별로 나오게)".
+
+이전 작업(A 금액 +버튼 / B 컴팩트뷰 모달 / C Header 검색창 노출)은 `aiop-archive.md` §0에 보관됨.
 
 ---
 
-## 2. 결정 사항
+## 2. 결정 사항 (잠정 — §9에서 사용자 확인 필요)
 
-| # | 결정 | 내용 |
+| # | 결정 | 잠정 내용 |
 |---|---|---|
-| D1 | 편집 진입 | 별도 편집 버튼 사용. 더블클릭이나 텍스트 직접 클릭은 사용하지 않는다. |
-| D2 | Try-Todo 동기화 | Try에서 연결된 Todo 방향으로만 동기화한다. Try 텍스트 수정 시 `linkedTodoId`가 있으면 해당 Todo `title`도 갱신한다. |
-| D3 | 입력칸 확장 | 회고 추가 입력과 인라인 편집 UI를 모두 `textarea` 기반으로 맞춘다. |
-| D4 | 빈 값 저장 | `text.trim()` 결과가 비어 있으면 저장하지 않고 기존 텍스트를 유지한다. |
-| D5 | 컴팩트뷰 키보드 가림 | 이번 작업에서는 보정하지 않는다. 동작만 깨지지 않으면 OK. |
+| D1 | 드롭다운 노출 조건 | **대시보드(`/`)에서만**. 다른 페이지는 기존처럼 페이지 내 필터링만 동작. |
+| D2 | 검색 대상 도메인 | Wants, Subscriptions, Insights, Notes, Todos, Retros (6개). Calculator/Regret 제외 (Regret도 추가 가능 — 확인 필요). |
+| D3 | 페이지별 결과 갯수 제한 | 페이지당 **최대 3개**까지 표시, 초과 시 "외 N개 더 보기" 링크. |
+| D4 | 결과 항목 렌더 | 핵심 텍스트 1줄(매칭 부분 강조) + 페이지명 라벨. |
+| D5 | 클릭 시 동작 | 해당 페이지로 이동(`router.push`). 항목 자체 highlight는 v1차 작업 제외. |
+| D6 | 페이지 그룹 헤더 | 페이지명 + 아이콘 + 그 페이지의 결과 갯수. 클릭 시 검색어 유지한 채 해당 페이지 이동. |
+| D7 | 드롭다운 위치 | 검색창 바로 아래, absolute 위치. 폭은 검색창과 동일 또는 더 넓게(`w-96` 정도). |
+| D8 | 키보드 네비게이션 | Arrow Up/Down으로 항목 이동, Enter로 선택, Escape로 닫기. |
+| D9 | 드롭다운 닫기 | 외부 클릭, Escape, 검색어 비움, 항목 선택 후. |
+| D10 | 빈 결과 처리 | "검색 결과 없음" 메시지 표시. |
+| D11 | 검색어 최소 길이 | 1자 이상 입력 시 드롭다운 노출 (디바운스 없이 즉시). |
+| D12 | 검색 로직 일원화 | `src/lib/globalSearch.ts` 신규 생성. 각 도메인 localStorage를 읽어 검색 결과 반환. |
+| D13 | 컴팩트뷰 동작 | 대시보드 컴팩트뷰에서도 드롭다운 동일 동작. C에서 노출한 검색창 활용. |
 
 ---
 
@@ -30,60 +42,62 @@
 
 ### Include
 
-- 회고 항목(K / P / T)의 인라인 편집 진입 / 저장 / 취소 동작
-- 각 항목 카드 안에 lucide `Pencil` 편집 버튼 배치
-- 편집 중에는 텍스트 자리에서 `textarea` + 저장 / 취소 버튼 표시
-- 회고 추가 입력 UI를 `<input>`에서 `<textarea>`로 교체
-- `AddRetroModal` 입력 UI도 긴 글 입력이 가능한 `textarea`로 정리
-- Try 텍스트 수정 시 연결된 Todo `title` 동기화
-- Try 삭제 시 연결된 Todo도 같이 삭제
-- Todo 삭제 시 연결된 Try는 삭제하지 않고 연동만 해제
-- 빈 문자열 저장 거부
-- `Escape` 편집 취소, `Cmd|Ctrl+Enter` 저장
-- 회고 항목 표시 시 textarea 줄바꿈 유지
-- 앱 전체 삭제 버튼에 삭제 확인 팝업 표시
+- `src/lib/globalSearch.ts` 신규: 도메인별 검색 함수 + 통합 `searchAllDomains(query)` 반환.
+- `SearchContext` 확장 또는 신규 컴포넌트 `<SearchResultsDropdown>`: 결과 렌더링 + 키보드 네비 + 외부 클릭 닫기.
+- `Header.tsx`: 대시보드 라우트일 때 검색창 아래 드롭다운 마운트.
+- 도메인별 검색 가능 필드는 기존 각 View의 `matchesSearchTerm`을 참고해 일원화.
 
 ### Exclude
 
-- 컴팩트뷰 키보드 가림 보정
-- Todo에서 Try 방향 역동기화
-- 회고 외 다른 도메인 인라인 편집
-- 백엔드 / Supabase 관련 변경
-- 회고 항목 reorder
-- Markdown / rich text 편집
-- 자동 테스트 추가
+- 검색 결과 항목 클릭 시 해당 항목 highlight / 스크롤
+- 검색 히스토리 / 최근 검색어
+- 디바운스 (즉시 검색)
+- Fuzzy / 자모 매칭 (단순 `includes`)
+- Calculator 페이지 검색 대상 추가
+- 백엔드 / Supabase 작업
+- 검색 결과 페이지(`/search`) 신설
 
 ---
 
 ## 4. Tasks
 
-- [x] **T1. RetroView 구조 파악** - `RetroView.tsx`와 `AddRetroModal.tsx`의 현재 input / textarea / 버튼 배치 확인.
-- [x] **T2. 입력칸 확장 (D3)** - 회고 추가 입력을 `textarea`로 교체하고 `AddRetroModal`에도 적용.
-- [x] **T3. 편집 상태 관리** - `editingItemId: string | null` 기반으로 한 번에 하나의 항목만 편집.
-- [x] **T4. 편집 아이콘 / 편집 UI 렌더 (D1)** - 항목 카드에 `Pencil` 버튼 추가, 편집 중 `textarea` + 저장 / 취소 버튼 표시.
-- [x] **T5. 저장 / 취소 / 빈값 처리 (D4)** - 공백 저장 거부, 취소 시 원래 텍스트 유지.
-- [x] **T6. Try-Todo 텍스트 동기화 (D2)** - Try 항목 저장 시 연결된 Todo `title` 갱신.
-- [x] **T7. 키보드 단축키** - `Escape` 취소, `Cmd|Ctrl+Enter` 저장.
-- [x] **T8. 정규화 / 저장 영향 확인** - `RetroItem` / `KptRetro` 스키마 변경 없이 텍스트 필드만 갱신.
-- [x] **T9. 검증** - `tsc`, `lint`, `build` 통과. 브라우저 수동 QA 통과.
-- [x] **T10. 사용자 검토** - diff와 수동 QA 결과 보고 후 사용자 확인 완료. 커밋 금지.
+### 준비
+
+- [x] **TD1. 현재 검색 동작 재확인** — 각 View의 `matchesSearchTerm` 시그니처와 검색 대상 필드 정리.
+- [x] **TD2. `globalSearch.ts` 설계** — 도메인별 검색 결과 타입 (`SearchHit { domain, id, title, snippet, href }`), 통합 함수 시그니처 결정.
+
+### 구현
+
+- [x] **TD3. `globalSearch.ts` 작성** — localStorage 키 6개에서 항목 읽고, 도메인별 검색 함수 호출, 페이지당 최대 3개 + 전체 갯수 반환.
+- [x] **TD4. `<SearchResultsDropdown>` 컴포넌트 작성** — 페이지별 그룹화 렌더, 키보드 네비, 외부 클릭 닫기 hook.
+- [x] **TD5. `Header.tsx` 통합** — 대시보드 라우트(`isDashboardPathname`)에서만 드롭다운 마운트. 검색창과 결합.
+- [x] **TD6. 키보드 네비** — Arrow Up/Down, Enter, Escape 처리. 포커스 관리.
+- [x] **TD7. 라우팅** — 항목 클릭 시 `router.push(href)`. 검색어 유지 정책 결정 (유지 vs 비움).
+- [ ] **TD8. 컴팩트뷰 검증** — 대시보드 컴팩트뷰 검색창에서도 드롭다운 동작.
+- [x] **TD9. 빈 결과 / 1자 미만 / 결과 0 처리**
+
+### 공통
+
+- [x] **TZ1. `tsc --noEmit`, `lint`, `build` 통과**
+- [ ] **TZ2. 수동 QA 통과**
+- [ ] **TZ3. 사용자 검토**
 
 ---
 
 ## 5. Files Expected to Change
 
 ```txt
-src/components/retros/RetroView.tsx
-src/components/retros/AddRetroModal.tsx
-src/lib/retros.ts
-src/components/layout/Header.tsx
-src/lib/confirmDelete.ts
-src/components/wants/WantsView.tsx
-src/components/subscriptions/SubscriptionsView.tsx
-src/components/notes/NotesInboxView.tsx
-src/components/insights/BookInsightsView.tsx
-src/components/regret/RegretTrackerView.tsx
-src/components/todos/TodoView.tsx
+src/lib/globalSearch.ts                            (신규)
+src/components/layout/SearchResultsDropdown.tsx    (신규)
+src/components/layout/Header.tsx                   (마운트 위치)
+src/contexts/SearchContext.tsx                     (필요 시 확장)
+```
+
+영향 받지만 직접 수정은 없을 가능성 (확인 필요):
+
+```txt
+src/components/layout/AppShell.tsx
+각 도메인 View의 matchesSearchTerm — 가능하면 globalSearch.ts에서 import해 일원화
 ```
 
 ---
@@ -98,40 +112,48 @@ npm run build
 
 ### 수동 QA 체크리스트
 
-- [x] Keep 항목 인라인 편집 진입, 수정, 저장 반영
-- [x] Problem 항목 인라인 편집 진입, 수정, 저장 반영
-- [x] Try 항목 인라인 편집 진입, 수정, 저장 반영
-- [x] Try 항목 중 `linkedTodoId`가 있는 항목 편집 시 `/todos`의 Todo `title`도 변경
-- [x] Try 항목 중 `linkedTodoId`가 없는 항목 편집 시 Todos 변경 없음
-- [x] Try 항목 삭제 시 연결된 Todo도 삭제
-- [x] Todo 삭제 시 연결된 Try는 삭제되지 않고 연동만 해제
-- [x] 빈 문자 / 공백만 저장 시 저장 거부, 기존 텍스트 유지
-- [x] `Escape` 편집 취소
-- [x] `Cmd|Ctrl+Enter` 저장
-- [x] 한 항목 편집 중 다른 항목 편집 버튼 클릭 시 새 항목 편집으로 전환
-- [x] Try 체크박스 / 삭제 / 추가 기능 유지
-- [x] 과거 회고 날짜에서도 동일하게 동작
-- [x] 새로고침 후 편집 내용 유지
-- [x] `AddRetroModal`에서 긴 글 입력 가능
-- [x] `AddRetroModal`로 추가한 여러 줄 텍스트의 줄바꿈 표시
-- [x] `RetroView`의 K/P/T 추가 입력칸에서 긴 글 입력 가능
-- [x] 컴팩트뷰에서 편집 / 저장 동작 유지
-- [x] 컴팩트뷰 상단 AIOP 로고 클릭 시 대시보드로 이동
-- [x] 삭제 버튼 클릭 시 삭제 확인 팝업 표시
+- [x] 대시보드에서 검색어 입력 시 드롭다운 노출
+- [x] 결과가 페이지별로 그룹화되어 표시 (페이지 헤더 + 항목 1~3개)
+- [ x] 페이지당 결과가 3개 초과 시 "외 N개 더 보기" 노출
+- [ x] 결과 항목 클릭 → 해당 페이지로 이동
+- [ x] 페이지 헤더 클릭 → 해당 페이지로 이동 (검색어 유지)
+- [ x] Arrow Up/Down으로 항목 간 이동
+- [x ] Enter로 선택, Escape로 닫기
+- [x ] 외부 클릭으로 닫기
+- [ x] 검색어 비우면 드롭다운 닫힘
+- [x ] 검색 결과 0건일 때 "결과 없음" 메시지
+- [ x] 대시보드 이외 페이지(`/wants` 등)에서는 드롭다운 안 뜸 (기존 페이지 내 필터링만)
+- [ x] 컴팩트뷰 대시보드에서도 드롭다운 동일 동작
+- [ x] 검색 가능 필드: Wants(name/reason), Subs(service), Insights(title/keySentence), Notes(title/body), Todos(title), Retros(K/P/T 텍스트)
 
 ---
 
 ## 7. Done Criteria
 
-- [x] 4번 Tasks 모두 체크
-- [x] 6번 검증 모두 통과
-- [x] 사용자 검토 후 OK
-- [x] `aiop-status.md` 우선순위에서 1번 + 4번 항목 제거
+- [ x] 4번 Tasks 모두 체크
+- [x ] 6번 검증 모두 통과
+- [ x] 사용자 검토 후 OK
 - [ ] 본 plan 요약을 `aiop-archive.md`로 이전
 - [ ] plan.md를 다음 작업 대기 상태로 정리
 
 ---
 
-## 8. Next Plan Placeholder
+## 8. Next Plan 후보
 
-다음 후보는 `aiop-status.md` 11번의 2번, **Wants 카테고리 필터 실제 동작 연결**.
+- Dashboard / Calculator / Regret 페이지의 검색 대상 추가 (현재 검색 미연결 페이지들)
+- 한글 자모 매칭 / 검색 성능 개선
+- 대쉬보드 위젯 커스터마이징 (`aiop-status.md` §11.5)
+- v2.0 Supabase 프로젝트 생성 / 스키마 SQL 작성 (`aiop-status.md` §11.6)
+
+---
+
+## 9. 구현 전 확인 질문
+
+§2 잠정 결정 중 검토 필요한 항목:
+
+1. **D1 노출 조건**: 대시보드(`/`)에서만 vs 모든 페이지에서 드롭다운 노출? (잠정: 대시보드만)
+2. **D2 검색 대상**: 6개 도메인(Wants, Subs, Insights, Notes, Todos, Retros). **Regret도 추가**할지? (잠정: 제외)
+3. **D3 갯수 제한**: 페이지당 최대 3개 + "외 N개" 링크. 다른 숫자(5개 등)가 좋은지?
+4. **D7 드롭다운 폭**: 검색창과 동일(`w-80`) vs 더 넓게(`w-96` 또는 `w-[28rem]`)?
+5. **D11 검색어 최소 길이**: 1자 이상이면 즉시 드롭다운, 디바운스 없이? 아니면 2자 이상 / 300ms 디바운스?
+6. **클릭 후 검색어 정책**: 결과 클릭 시 검색어 유지 vs 비움?

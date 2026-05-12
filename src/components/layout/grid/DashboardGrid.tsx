@@ -36,18 +36,6 @@ function toGridLayout(layout: WidgetLayout): LayoutItem {
   };
 }
 
-function toNarrowGridLayouts(layout: WidgetLayout): LayoutItem {
-  return {
-    x: 0,
-    y: layout.y,
-    w: 1,
-    h: layout.h,
-    i: layout.id,
-    minW: 1,
-    minH: layout.minH,
-  };
-}
-
 function fromGridLayout(layout: LayoutItem): WidgetLayout | null {
   if (!editableWidgetIds.includes(layout.i as WidgetId)) return null;
 
@@ -95,21 +83,12 @@ export function DashboardGrid() {
   const visibleNarrowWidgetIds = narrowWidgetOrder.filter((id) => visibleWidgetIds.includes(id));
   const editableLayouts = layout.widgets.filter((widgetLayout) => visibleWidgetIds.includes(widgetLayout.id));
   const largeLayout = editableLayouts.map(toGridLayout);
-  const narrowLayout = getNarrowLayout(
-    visibleNarrowWidgetIds,
-    layout.narrowWidgetHeights ?? {},
-  );
 
   function handleLayoutChange(currentLayout: Layout) {
     if (!canEditLayout) return;
 
     const nextWidgets = currentLayout.map(fromGridLayout).filter((item): item is WidgetLayout => item !== null);
     if (nextWidgets.length > 0) {
-      if (isNarrowLayout) {
-        setNarrowLayout(sortLayoutByPosition(nextWidgets));
-        return;
-      }
-
       setLayout(nextWidgets);
     }
   }
@@ -125,48 +104,70 @@ export function DashboardGrid() {
     const currentId = nextOrder[currentIndex];
     nextOrder[currentIndex] = nextOrder[nextIndex];
     nextOrder[nextIndex] = currentId;
-    setNarrowLayout(getNarrowLayout(nextOrder, layout.narrowWidgetHeights ?? {}).map(fromNarrowLayout));
+
+    // 기존 높이 값은 보존하되, narrow 스택에서는 높이를 사용하지 않음
+    setNarrowLayout(nextOrder.map((id) => ({
+      id,
+      x: 0,
+      y: 0,
+      w: 1,
+      h: layout.narrowWidgetHeights?.[id] ?? 5,
+      minW: 1,
+      minH: 3,
+    })));
   }
 
+  const gapClass = isCompact ? "space-y-4" : "space-y-6";
+
   return (
-    <div ref={containerRef} className={isCompact ? "space-y-4" : "space-y-6"}>
+    <div ref={containerRef} className={gapClass}>
       <HeroWidget />
       {mounted ? (
-        <Responsive
-          className={`dashboard-grid ${isEditMode ? "dashboard-grid-edit" : ""}`}
-          layouts={{
-            lg: largeLayout,
-            sm: narrowLayout,
-          }}
-          breakpoints={{ lg: 768, sm: 0 }}
-          cols={{ lg: 12, sm: 1 }}
-          rowHeight={72}
-          margin={isCompact ? [0, 16] : [24, 24]}
-          containerPadding={[0, 0]}
-          dragConfig={{ enabled: canEditLayout, handle: ".widget-drag-handle" }}
-          resizeConfig={{ enabled: canEditLayout, handles: ["se"] }}
-          width={width}
-          onLayoutChange={handleLayoutChange}
-        >
-          {visibleWidgetIds.map((id) => {
-            const narrowIndex = visibleNarrowWidgetIds.indexOf(id);
-
-            return (
-            <div key={id}>
+        isNarrowLayout ? (
+          // narrow/모바일: react-grid-layout 없이 단순 스택 → 콘텐츠 크기대로 자동 조절
+          <div className={gapClass}>
+            {visibleNarrowWidgetIds.map((id, index) => (
               <WidgetFrame
+                key={id}
                 id={id}
                 title={widgetTitles[id]}
-                canMoveUp={isNarrowLayout && narrowIndex > 0}
-                canMoveDown={isNarrowLayout && narrowIndex >= 0 && narrowIndex < visibleNarrowWidgetIds.length - 1}
-                onMoveUp={isNarrowLayout ? () => handleMoveNarrowWidget(id, "up") : undefined}
-                onMoveDown={isNarrowLayout ? () => handleMoveNarrowWidget(id, "down") : undefined}
+                isNarrow
+                canMoveUp={isEditMode && index > 0}
+                canMoveDown={isEditMode && index < visibleNarrowWidgetIds.length - 1}
+                onMoveUp={isEditMode ? () => handleMoveNarrowWidget(id, "up") : undefined}
+                onMoveDown={isEditMode ? () => handleMoveNarrowWidget(id, "down") : undefined}
               >
                 {renderWidget(id)}
               </WidgetFrame>
-            </div>
-            );
-          })}
-        </Responsive>
+            ))}
+          </div>
+        ) : (
+          // 넓은 화면: react-grid-layout 그리드
+          <Responsive
+            className={`dashboard-grid ${isEditMode ? "dashboard-grid-edit" : ""}`}
+            layouts={{ lg: largeLayout, sm: [] }}
+            breakpoints={{ lg: 768, sm: 0 }}
+            cols={{ lg: 12, sm: 1 }}
+            rowHeight={72}
+            margin={[24, 24]}
+            containerPadding={[0, 0]}
+            dragConfig={{ enabled: canEditLayout, handle: ".widget-drag-handle" }}
+            resizeConfig={{ enabled: canEditLayout, handles: ["se"] }}
+            width={width}
+            onLayoutChange={handleLayoutChange}
+          >
+            {visibleWidgetIds.map((id) => (
+              <div key={id}>
+                <WidgetFrame
+                  id={id}
+                  title={widgetTitles[id]}
+                >
+                  {renderWidget(id)}
+                </WidgetFrame>
+              </div>
+            ))}
+          </Responsive>
+        )
       ) : null}
       {visibleWidgetIds.length === 0 ? (
         <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 text-sm text-zinc-500 shadow-soft">
@@ -184,46 +185,4 @@ function getNormalizedNarrowWidgetOrder(order: WidgetId[]) {
   const missingIds = editableWidgetIds.filter((id) => !uniqueIds.includes(id));
 
   return [...uniqueIds, ...missingIds];
-}
-
-function getNarrowLayout(order: WidgetId[], heights: Partial<Record<WidgetId, number>>) {
-  let currentY = 0;
-
-  return order.map((id) => {
-    const height = heights[id] ?? 5;
-    const layout = toNarrowGridLayouts({
-      id,
-      x: 0,
-      y: currentY,
-      w: 1,
-      h: height,
-      minW: 1,
-      minH: 3,
-    });
-
-    currentY += height;
-    return layout;
-  });
-}
-
-function fromNarrowLayout(layout: LayoutItem): WidgetLayout {
-  return {
-    id: layout.i as WidgetId,
-    x: 0,
-    y: layout.y,
-    w: 1,
-    h: layout.h,
-    minW: layout.minW,
-    minH: layout.minH,
-  };
-}
-
-function sortLayoutByPosition(items: WidgetLayout[]) {
-  return [...items].sort((firstItem, secondItem) => {
-    if (firstItem.y !== secondItem.y) {
-      return firstItem.y - secondItem.y;
-    }
-
-    return firstItem.x - secondItem.x;
-  });
 }

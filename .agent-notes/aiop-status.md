@@ -2,7 +2,7 @@
 
 > 목적: 현재 프로젝트 상태 단일 기준 문서.
 > Claude / Codex는 작업 전 이 문서를 읽고, 문서와 실제 코드가 다르면 실제 코드를 우선한다.
-> 작성 기준: 2026-05-12, branch `main`, working tree clean.
+> 작성 기준: 2026-05-12, branch `main`, working tree dirty.
 
 ---
 
@@ -15,7 +15,7 @@
 - 인증: 없음
 - 외부 API: 없음
 - 자동 테스트: 없음 (수동 QA만)
-- working tree: clean (모든 변경분 커밋됨, 최신 `f9a8e8f`)
+- working tree: dirty (`src/components/wants/WantsView.tsx`, `.agent-notes/*`, `tsconfig.tsbuildinfo` 변경 중)
 - Supabase 프로젝트: 아직 생성 안 됨 (v2.0 1단계 미착수)
 - 다음 큰 목표: v2.0 Supabase + Google OAuth + RSC/Server Actions
 
@@ -82,7 +82,7 @@ src/
 | 도메인 | CRUD | localStorage | 검색 | 대시보드 위젯 | 비고 |
 |---|---:|---|---:|---|---|
 | Dashboard | - | `aiop:layout`, `aiop:hero-message` | - | 위젯 7개 | 드래그/리사이즈/visibility |
-| Wants | ✅ | `aiop:wants` | ✅ | `want-preview`, `asset-snapshot` | 구매 목표 |
+| Wants | ✅ | `aiop:wants` | ✅ | `want-preview`, `asset-snapshot` | 구매 목표, 카테고리 필터 AND 검색 |
 | Calculator | - | - | - | - | 계산 전용 (저장 없음) |
 | Regret | ✅ | `aiop:regret-items` | - | - | 후회 기록, KRW/USD |
 | Subscriptions | ✅ | `aiop:subscriptions` | ✅ | `subscription-summary` | keep/review/cancel |
@@ -202,11 +202,11 @@ getLocalDateString, formatDateLabel, parseLocalDate, addDays, createId
 
 `src/components/inputs/MoneyInputField.tsx`
 
-- KRW 입력 시 `원 / 천 / 만 / 억` 단위 버튼 표시.
-- 내부 저장값은 항상 원 단위 숫자 (`base value`).
-- 단위는 입력값 크기에 따라 **자동 선택** (`getAutoUnit`), 사용자가 버튼을 누르면 **수동 모드** 고정.
-- 입력창 아래 `formatKRW` / `formatCurrency` 미리보기 (emerald 색).
-- USD 입력 시 단위 버튼 대신 `USD` 라벨만 표시.
+- 내부 저장값은 항상 base value 숫자.
+- 입력창은 숫자 직접 입력 가능.
+- KRW 입력 시 누적 버튼 `+1만 / +5만 / +10만 / +100만`.
+- USD 입력 시 누적 버튼 `+10 / +100 / +1k / +10k`.
+- 입력창 아래 `formatKRW` / `formatCurrency` 미리보기(emerald 색).
 
 적용 위치:
 ```txt
@@ -262,7 +262,6 @@ UX 개선 후보 (확정 작업 아님):
 
 위에서 아래 순서로 진행한다. `aiop-plan.md`에는 한 번에 하나만 옮긴다.
 
-5. 대쉬보드 위젯 커스터마이징 (삭제, 추가 기능)
 6. v2.0 Supabase 프로젝트 생성 / 스키마 SQL 작성
 
 ---

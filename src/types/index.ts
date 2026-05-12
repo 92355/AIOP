@@ -64,6 +64,7 @@ export type Subscription = {
   usage: "daily" | "weekly" | "monthly" | "rare";
   valueScore: number;
   status: SubscriptionStatus;
+  billingDay?: number; // 매월 결제일 (1-31), 미입력 시 생략
 };
 
 export type InsightType = "book" | "video" | "article" | "thought";

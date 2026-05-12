@@ -11,18 +11,18 @@ type UpdateNoticeModalProps = {
 
 const updates = [
   {
-    title: "화면별 URL 분리",
-    description: "구매 목표, 계산기, 구독, 노트 같은 화면을 바로 URL로 열 수 있습니다.",
+    title: "우리 홈페이지의 목표",
+    description: "생활에 가장 밀접하게 필요한 기능 바로 사용할 수 있는 홈페이지",
     icon: Route,
   },
   {
-    title: "뒤로가기 / 앞으로가기 개선",
-    description: "브라우저 이동 기록과 현재 화면이 자연스럽게 맞춰집니다.",
+    title: "AI와 연계하여, 구매 점수 판별, 수익률 계산등 자산관리의 디지털 혁신",
+    description: "AI가 평가해주는 내 지름 점수. 그때 샀더라면 지금 웃고있을까? ",
     icon: ArrowRight,
   },
   {
-    title: "빠른 추가 흐름 정리",
-    description: "항목을 저장하면 관련 화면으로 이동하고 목록이 바로 갱신됩니다.",
+    title: "모바일 OS, PC OS 모두 지원. Web 기반 실시간 동기화 ",
+    description: "언제든 옆에 켜두고 입력만 하세요. 기록 관리 동기화 제가 다 할게요!",
     icon: CheckCircle2,
   },
 ];
@@ -51,13 +51,13 @@ export function UpdateNoticeModal({ isOpen, onClose }: UpdateNoticeModalProps) {
           <div>
             <p className="flex items-center gap-2 text-xs uppercase tracking-[0.28em] text-emerald-300/80">
               <Sparkles className="h-3.5 w-3.5" />
-              업데이트
+              반가워요!!
             </p>
             <h2 id="update-notice-title" className="mt-2 text-2xl font-semibold text-zinc-50">
-              라우트 분리가 적용되었습니다
+              베타테스트에 회원님과 함께하게 되어 영광입니다!
             </h2>
             <p className="mt-2 text-sm leading-6 text-zinc-500">
-              AIOP 화면 이동 구조를 App Router 기준으로 정리했습니다.
+              AIOP의 모든 기능을 씹고 뜯으며 많은 피드백 부탁드립니다!
             </p>
           </div>
           <button

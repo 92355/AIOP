@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Plus } from "lucide-react";
 import { wants } from "@/data/mockData";
 import { WantCard } from "@/components/wants/WantCard";
@@ -9,23 +9,25 @@ import { useCompactMode } from "@/contexts/CompactModeContext";
 import { useSearchContext, normalizeSearchTerm } from "@/contexts/SearchContext";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { confirmDelete } from "@/lib/confirmDelete";
-import { getWantCategoryLabel } from "@/lib/labels";
+import { getWantCategoryLabel, getWantPriorityLabel, getWantStatusLabel } from "@/lib/labels";
 import type { WantItem } from "@/types";
 
-const filters: Array<"All" | WantItem["category"]> = ["All", "Productivity", "Lifestyle", "Investment", "Hobby"];
+type WantCategoryFilter = "All" | WantItem["category"];
+
+const filters: WantCategoryFilter[] = ["All", "Productivity", "Lifestyle", "Investment", "Hobby"];
 
 export function WantsView() {
   const { isCompact } = useCompactMode();
   const { searchQuery } = useSearchContext();
   const [items, setItems] = useLocalStorage<WantItem[]>("aiop:wants", wants);
   const [isAddOpen, setIsAddOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<(typeof filters)[number]>("All");
+  const [selectedCategory, setSelectedCategory] = useState<WantCategoryFilter>("All");
   const searchTerm = normalizeSearchTerm(searchQuery);
-  const filteredItems = items.filter((item) => {
-    if (selectedCategory !== "All" && item.category !== selectedCategory) return false;
-    if (!searchTerm) return true;
-    return item.name.toLowerCase().includes(searchTerm) || item.reason.toLowerCase().includes(searchTerm);
-  });
+  const filteredItems = useMemo(
+    () => items.filter((item) => matchesCategoryFilter(item, selectedCategory) && matchesSearchTerm(item, searchTerm)),
+    [items, searchTerm, selectedCategory],
+  );
+  const hasActiveFilter = selectedCategory !== "All" || searchTerm.length > 0;
 
   function handleAdd(item: WantItem) {
     setItems((prevItems) => [item, ...prevItems]);
@@ -75,8 +77,8 @@ export function WantsView() {
           <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 text-sm text-zinc-500 shadow-soft xl:col-span-2">
             {items.length === 0
               ? "등록된 구매 목표가 없습니다. 사고 싶은 항목을 추가하면 필요한 자산과 월 현금흐름을 계산합니다."
-              : searchTerm
-                ? `"${searchQuery}" 검색 결과가 없습니다.`
+              : hasActiveFilter
+                ? "선택한 카테고리와 검색어에 맞는 구매 목표가 없습니다."
                 : "선택한 카테고리에 해당하는 구매 목표가 없습니다."}
           </div>
         ) : null}
@@ -87,4 +89,24 @@ export function WantsView() {
       <AddWantModal isOpen={isAddOpen} onClose={() => setIsAddOpen(false)} onAdd={handleAdd} />
     </div>
   );
+}
+
+function matchesCategoryFilter(item: WantItem, selectedCategory: WantCategoryFilter) {
+  return selectedCategory === "All" || item.category === selectedCategory;
+}
+
+function matchesSearchTerm(item: WantItem, searchTerm: string) {
+  if (!searchTerm) return true;
+
+  const searchableText = [
+    item.name,
+    item.reason,
+    getWantCategoryLabel(item.category),
+    getWantStatusLabel(item.status),
+    item.priority ? getWantPriorityLabel(item.priority) : "",
+  ]
+    .join(" ")
+    .toLowerCase();
+
+  return searchableText.includes(searchTerm);
 }

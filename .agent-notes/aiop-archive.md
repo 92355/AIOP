@@ -8,6 +8,51 @@
 
 ## 0. 완료된 Plan
 
+### 2026-05-12 — 금액 +버튼 / 컴팩트뷰 모달 / Header 검색창 (A+B+C 묶음)
+
+- 목표: 세 가지를 한 plan으로 묶어 처리.
+  - **A. 금액 +버튼 변경** — `MoneyInputField`를 단위 전환(|원/천/만/억|)에서 누적 가산 방식으로 교체.
+  - **B. 컴팩트뷰 모달 레이아웃 수정** — PC 화면에서 컴팩트 토글 시 입력 모달이 PC 전체로 펼쳐지는 현상 해결.
+  - **C. Header 검색창 컴팩트뷰 노출** — 컴팩트뷰에서도 검색 가능하게 노출.
+- 결정:
+  - A2/A3: KRW `+1만/+5만/+10만/+100만`, USD `+10/+100/+1k/+10k`
+  - A4: 기존 단위 버튼(`unit`/`isUnitManual`/`getAutoUnit` 등) 완전 제거
+  - A8: `onChange(value + multiplier)` 누적 가산
+  - A9: `value=0`일 때 입력창에 `0` 그대로 표시
+  - B3: 분기점 Tailwind `sm`(640px). sm 미만 풀스크린, sm 이상 일반 모달 크기
+  - B4: className 패턴 — `h-[100dvh] max-w-full rounded-none p-4 sm:h-auto sm:max-h-[90vh] sm:max-w-{xl|2xl} sm:rounded-2xl sm:p-6`
+  - C3: 컴팩트뷰 검색창을 헤더 아래 별도 한 줄로 배치 (헤더 자체는 깔끔하게 유지)
+  - C4/C5: 컴팩트뷰 폭 100%, placeholder `"검색..."`로 축약
+- 구현 핵심:
+  - `MoneyInputField.tsx`: `KRW_INCREMENTS` / `USD_INCREMENTS` 상수 + `incrementsByCurrency` 매핑. currency에 따라 +버튼 배열 렌더.
+  - 8개 모달 (`AddWant/Subscription/Insight/Note/Todo/Regret/Retro` + `QuickAddModal`)의 wrapper className에 sm: prefix 추가.
+  - `Header.tsx` 검색창 visibility 조건 수정 + 컴팩트뷰 별도 행 배치.
+- 영향 받지 않음 (props 유지): `AddWantModal`, `AddSubscriptionModal`, `AddRegretItemModal`, `AssetCalculatorView`는 `MoneyInputField` 인터페이스 그대로 사용.
+- 검증: `tsc --noEmit`, `npm run lint`, `npm run build` 통과. 수동 QA 체크리스트 전부 OK.
+- 부수 변경: `next.config.ts`, `UpdateNoticeModal.tsx`, `WantsView.tsx` 일부 변경 (working tree에 함께 존재).
+- 커밋: 사용자 직접 수행.
+
+### 2026-05-12 — 회고 인라인 편집 + 입력칸 확장 + 삭제 확인 (v1.4 후보)
+
+- 목표: K.P.T 회고 항목을 카드 안에서 직접 편집하도록 만들고, 회고 입력칸을 긴 글 작성 가능한 textarea로 확장한다. 추가로 모든 도메인의 삭제 동작 앞에 확인 다이얼로그를 둔다.
+- 범위: `RetroView`, `AddRetroModal`, `retros.ts`, `Header`, 7개 도메인(`wants`, `subscriptions`, `insights`, `notes`, `regret`, `todos`, `retros`)의 삭제 동작 + 신규 `src/lib/confirmDelete.ts`.
+- 결정:
+  - D1 편집 진입: `Pencil` 버튼만 사용 (더블클릭 / 텍스트 직접 클릭 X)
+  - D2 Try → Todo 단방향 동기화 (`updateLinkedTodoTitle`)
+  - D3 추가 입력 / 인라인 편집 모두 `textarea` 기반
+  - D4 `text.trim()` 빈 값 저장 거부 → 원본 유지
+  - D5 컴팩트뷰 키보드 가림 보정은 이번 작업 범위 외
+- 구현 핵심:
+  - `RetroView`: `editingItemId` / `editingText` / `editingErrorMessage` 상태로 한 번에 한 항목만 편집. `Escape` 취소, `Cmd|Ctrl+Enter` 저장.
+  - Try 삭제 시 연결 Todo 동반 삭제 (`linkedTodoId` 기반).
+  - `syncTryWithTodos`: 연결 Todo가 사라지면 `linkedTodoId`만 해제 → Todo→Try 비파괴 정책 유지.
+  - 회고 표시 텍스트에 `whitespace-pre-wrap` 적용해 textarea 줄바꿈 보존.
+  - `AddRetroModal`: `<input>` → `<textarea rows={5}>` + `Cmd|Ctrl+Enter` 제출.
+  - `Header`: 컴팩트뷰 상단 AIOP 로고를 `Link href="/"`로 감싸 대시보드 이동.
+  - `confirmDelete(targetLabel)`: 공용 `window.confirm` 래퍼. 7개 도메인 + 회고 전체/개별 삭제 전부 통과.
+- 검증: `tsc --noEmit`, `npm run lint`, `npm run build` 모두 통과. 수동 QA 체크리스트 (T1-T10) 전부 OK.
+- 커밋: 사용자 직접 수행.
+
 ### 2026-05-12 — README 정합성 회복 (v1.4 후보 1번)
 
 - 목표: `README.md`를 현재 코드와 일치시킴 (KPT 회고 도메인, QuickAdd retro 통합, 11개 localStorage 키, 프로젝트 구조 트리, 로드맵).

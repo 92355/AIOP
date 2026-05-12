@@ -63,6 +63,9 @@ export function SubscriptionCard({ item, onDelete, onStatusChange }: Subscriptio
         <div>
           <p className="text-sm text-zinc-500">월 금액</p>
           <p className="mt-1 text-2xl font-semibold text-zinc-50">{formatKRW(item.monthlyPrice)}</p>
+          {item.billingDay != null ? (
+            <p className="mt-1 text-xs text-zinc-500">매월 {item.billingDay}일 결제</p>
+          ) : null}
         </div>
         <div className="text-right">
           <p className="text-sm text-zinc-500">가치 점수</p>

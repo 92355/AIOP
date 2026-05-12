@@ -94,6 +94,10 @@ function normalizeSubscription(value: unknown): Subscription | null {
   if (!isFiniteNumber(value.valueScore)) return null;
   if (!isOneOf<SubscriptionStatus>(value.status, subscriptionStatuses)) return null;
 
+  const billingDay = typeof value.billingDay === "number" && Number.isInteger(value.billingDay) && value.billingDay >= 1 && value.billingDay <= 31
+    ? value.billingDay
+    : undefined;
+
   return {
     id: value.id,
     service: value.service,
@@ -102,6 +106,7 @@ function normalizeSubscription(value: unknown): Subscription | null {
     usage: value.usage,
     valueScore: value.valueScore,
     status: value.status,
+    ...(billingDay !== undefined ? { billingDay } : {}),
   };
 }
 

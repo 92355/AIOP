@@ -64,8 +64,8 @@ export function AddInsightModal({ isOpen, onClose, onAdd }: AddInsightModalProps
   }
 
   return (
-    <div className={`fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/80 backdrop-blur-sm ${isCompact ? "p-0" : "p-4"}`}>
-      <div className={`w-full overflow-y-auto border border-zinc-800 bg-zinc-900 shadow-soft ${isCompact ? "h-[100dvh] max-w-full rounded-none p-4" : "max-h-[90vh] max-w-2xl rounded-2xl p-6"}`}>
+    <div className={`fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/80 backdrop-blur-sm ${isCompact ? "p-0 sm:p-4" : "p-4"}`}>
+      <div className={`w-full overflow-y-auto border border-zinc-800 bg-zinc-900 shadow-soft ${isCompact ? "h-[100dvh] max-w-full rounded-none p-4 sm:h-auto sm:max-h-[90vh] sm:max-w-2xl sm:rounded-2xl sm:p-6" : "max-h-[90vh] max-w-2xl rounded-2xl p-6"}`}>
         <div className="flex items-start justify-between gap-4">
           <div>
             <h3 className="text-2xl font-semibold text-zinc-50">인사이트 추가</h3>

@@ -213,7 +213,7 @@ function SummaryCardItem({
   };
 }) {
   const Icon = card.icon;
-  const className = `group block h-full w-full rounded-2xl border bg-zinc-900 text-left shadow-soft transition duration-200 ${
+  const className = `block h-full w-full rounded-2xl border bg-zinc-900 text-left shadow-soft transition duration-200 ${
     isEditable ? "border-emerald-400/30" : "border-zinc-800"
   } ${
     isLinked
@@ -226,8 +226,8 @@ function SummaryCardItem({
     <>
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-sm text-zinc-500 transition-colors group-hover:text-zinc-400">{card.label}</p>
-          <strong className={`mt-2 block font-semibold text-zinc-50 transition-colors group-hover:text-emerald-200 ${isCompact ? "text-xl" : "text-2xl"}`}>{card.value}</strong>
+          <p className="text-sm text-zinc-500 transition-colors">{card.label}</p>
+          <strong className={`mt-2 block font-semibold text-zinc-50 transition-colors ${isCompact ? "text-xl" : "text-2xl"}`}>{card.value}</strong>
         </div>
         {dragHandleProps ? (
           <button
@@ -240,12 +240,12 @@ function SummaryCardItem({
             <GripVertical className={isCompact ? "h-4 w-4" : "h-5 w-5"} />
           </button>
         ) : (
-          <div className={`flex items-center justify-center rounded-2xl bg-emerald-400/10 text-emerald-300 transition duration-200 group-hover:scale-105 group-hover:bg-emerald-400/15 group-hover:text-emerald-200 ${isCompact ? "h-9 w-9" : "h-11 w-11"}`}>
+          <div className={`flex items-center justify-center rounded-2xl bg-emerald-400/10 text-emerald-300 transition duration-200 hover:scale-105 hover:bg-emerald-400/15 hover:text-emerald-200 ${isCompact ? "h-9 w-9" : "h-11 w-11"}`}>
             <Icon className={isCompact ? "h-4 w-4" : "h-5 w-5"} />
           </div>
         )}
       </div>
-      {isCompact ? null : <p className="mt-4 text-sm text-zinc-500 transition-colors group-hover:text-zinc-400">{card.helper}</p>}
+      {isCompact ? null : <p className="mt-4 text-sm text-zinc-500 transition-colors">{card.helper}</p>}
     </>
   );
 

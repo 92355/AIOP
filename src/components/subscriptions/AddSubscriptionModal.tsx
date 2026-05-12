@@ -24,6 +24,7 @@ const defaultForm = {
   usage: "daily" as Subscription["usage"],
   valueScore: 80,
   status: "keep" as SubscriptionStatus,
+  billingDay: null as number | null,
 };
 
 export function AddSubscriptionModal({ isOpen, onClose, onAdd }: AddSubscriptionModalProps) {
@@ -56,6 +57,7 @@ export function AddSubscriptionModal({ isOpen, onClose, onAdd }: AddSubscription
       usage: form.usage,
       valueScore: clampScore(form.valueScore),
       status: form.status,
+      ...(form.billingDay !== null ? { billingDay: form.billingDay } : {}),
     };
 
     onAdd(nextItem);
@@ -65,8 +67,8 @@ export function AddSubscriptionModal({ isOpen, onClose, onAdd }: AddSubscription
   }
 
   return (
-    <div className={`fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/80 backdrop-blur-sm ${isCompact ? "p-0" : "p-4"}`}>
-      <div className={`w-full overflow-y-auto border border-zinc-800 bg-zinc-900 shadow-soft ${isCompact ? "h-[100dvh] max-w-full rounded-none p-4" : "max-h-[90vh] max-w-2xl rounded-2xl p-6"}`}>
+    <div className={`fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/80 backdrop-blur-sm ${isCompact ? "p-0 sm:p-4" : "p-4"}`}>
+      <div className={`w-full overflow-y-auto border border-zinc-800 bg-zinc-900 shadow-soft ${isCompact ? "h-[100dvh] max-w-full rounded-none p-4 sm:h-auto sm:max-h-[90vh] sm:max-w-2xl sm:rounded-2xl sm:p-6" : "max-h-[90vh] max-w-2xl rounded-2xl p-6"}`}>
         <div className="flex items-start justify-between gap-4">
           <div>
             <h3 className="text-2xl font-semibold text-zinc-50">구독 추가</h3>
@@ -85,6 +87,7 @@ export function AddSubscriptionModal({ isOpen, onClose, onAdd }: AddSubscription
             <SelectField label="사용 빈도" value={form.usage} options={usages} getOptionLabel={(option) => getUsageLabel(option as Subscription["usage"])} onChange={(value) => setForm((prev) => ({ ...prev, usage: value as Subscription["usage"] }))} />
             <NumberField label="가치 점수" value={form.valueScore} onChange={(value) => setForm((prev) => ({ ...prev, valueScore: value }))} />
             <SelectField label="상태" value={form.status} options={statuses} getOptionLabel={(option) => getSubscriptionStatusLabel(option as SubscriptionStatus)} onChange={(value) => setForm((prev) => ({ ...prev, status: value as SubscriptionStatus }))} />
+            <BillingDayField value={form.billingDay} onChange={(value) => setForm((prev) => ({ ...prev, billingDay: value }))} />
           </div>
 
           {errorMessage ? <p className="text-sm text-red-300">{errorMessage}</p> : null}
@@ -141,6 +144,33 @@ function SelectField({
         {options.map((option) => (
           <option key={option} value={option}>
             {getOptionLabel(option)}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+const BILLING_DAYS = Array.from({ length: 31 }, (_, i) => i + 1);
+
+function BillingDayField({ value, onChange }: { value: number | null; onChange: (value: number | null) => void }) {
+  return (
+    <label className="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4">
+      <span className="text-sm text-zinc-500">
+        결제일 <span className="text-zinc-600">(선택)</span>
+      </span>
+      <select
+        value={value ?? ""}
+        onChange={(event) => {
+          const raw = event.target.value;
+          onChange(raw === "" ? null : Number(raw));
+        }}
+        className="mt-3 w-full bg-zinc-950 text-lg font-semibold text-zinc-50 outline-none"
+      >
+        <option value="">선택 안 함</option>
+        {BILLING_DAYS.map((day) => (
+          <option key={day} value={day}>
+            매월 {day}일
           </option>
         ))}
       </select>

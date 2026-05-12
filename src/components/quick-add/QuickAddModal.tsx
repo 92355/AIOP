@@ -69,10 +69,10 @@ export function QuickAddModal({ isOpen, onClose, onSelectCategory }: QuickAddMod
   if (!isOpen) return null;
 
   return (
-    <div className={`fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/80 backdrop-blur-sm ${isCompact ? "p-0" : "p-4"}`} onClick={onClose}>
+    <div className={`fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/80 backdrop-blur-sm ${isCompact ? "p-0 sm:p-4" : "p-4"}`} onClick={onClose}>
       <div
         className={`w-full overflow-y-auto border border-zinc-800 bg-zinc-900 shadow-soft ${
-          isCompact ? "h-[100dvh] max-w-full rounded-none p-4" : "max-w-3xl rounded-2xl p-6"
+          isCompact ? "h-[100dvh] max-w-full rounded-none p-4 sm:h-auto sm:max-h-[90vh] sm:max-w-3xl sm:rounded-2xl sm:p-6" : "max-w-3xl rounded-2xl p-6"
         }`}
         onClick={(event) => event.stopPropagation()}
       >
