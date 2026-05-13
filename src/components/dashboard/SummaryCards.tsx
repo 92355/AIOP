@@ -7,6 +7,7 @@ import { Banknote, BookMarked, CheckSquare, CreditCard, GripVertical, NotebookTa
 import Link from "next/link";
 import { useCompactMode } from "@/contexts/CompactModeContext";
 import { useLayoutContext } from "@/contexts/LayoutContext";
+import { FlipNumber } from "@/components/ui/FlipNumber";
 import { formatCompactKRW, formatKRW } from "@/lib/formatters";
 import type { Insight, Note, Subscription, TodoItem, WantItem } from "@/types";
 import type { SummaryCardId } from "@/types/layout";
@@ -224,7 +225,9 @@ function SummaryCardItem({
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-sm text-zinc-500 transition-colors">{card.label}</p>
-          <strong className={`mt-2 block font-semibold text-zinc-50 transition-colors ${isCompact ? "text-xl" : "text-2xl"}`}>{card.value}</strong>
+          <strong className={`mt-2 block font-semibold text-zinc-50 transition-colors ${isCompact ? "text-xl" : "text-2xl"}`}>
+            <FlipNumber value={card.value} />
+          </strong>
         </div>
         {dragHandleProps ? (
           <button

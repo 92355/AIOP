@@ -144,3 +144,37 @@ body {
 .dashboard-grid .react-resizable-handle::after {
   border-color: rgba(52, 211, 153, 0.9);
 }
+
+@keyframes numberFlipUp {
+  0% {
+    opacity: 0;
+    transform: perspective(300px) rotateX(-90deg) translateY(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: perspective(300px) rotateX(0deg) translateY(0);
+  }
+}
+
+@keyframes numberFlipDown {
+  0% {
+    opacity: 0;
+    transform: perspective(300px) rotateX(90deg) translateY(-6px);
+  }
+  100% {
+    opacity: 1;
+    transform: perspective(300px) rotateX(0deg) translateY(0);
+  }
+}
+
+.animate-number-flip-up {
+  display: inline-block;
+  transform-origin: 50% 60%;
+  animation: numberFlipUp 220ms ease-out;
+}
+
+.animate-number-flip-down {
+  display: inline-block;
+  transform-origin: 50% 40%;
+  animation: numberFlipDown 220ms ease-out;
+}

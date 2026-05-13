@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { AddInsightModal } from "@/components/insights/AddInsightModal";
 import { BottomTabBar } from "@/components/layout/BottomTabBar";
@@ -54,6 +54,7 @@ function AppShellContent({ children }: AppShellProps) {
   const [updateNoticeDismissed, setUpdateNoticeDismissed] = useLocalStorage<boolean>("aiop-update-notice-v1", false);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<QuickAddCategory | null>(null);
+  const [, startRefreshTransition] = useTransition();
   const { isCompact } = useCompactMode();
   const isMobile = useIsMobile();
   const showBottomNav = isCompact || isMobile;
@@ -83,7 +84,9 @@ function AppShellContent({ children }: AppShellProps) {
   async function handleAddedItem(action: () => Promise<unknown>) {
     setActiveCategory(null);
     await action();
-    router.refresh();
+    startRefreshTransition(() => {
+      router.refresh();
+    });
   }
 
   async function handleAddedRetro(input: QuickRetroInput) {
@@ -98,7 +101,9 @@ function AppShellContent({ children }: AppShellProps) {
 
     setActiveCategory(null);
     await addRetroItem(today, input.section, retroItem, todo ?? undefined);
-    router.refresh();
+    startRefreshTransition(() => {
+      router.refresh();
+    });
   }
 
   return (

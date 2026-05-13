@@ -130,7 +130,6 @@ export function DashboardGrid({ initialData }: { initialData: DashboardData }) {
 
   return (
     <div ref={containerRef} className={gapClass}>
-      <HeroWidget />
       {mounted ? (
         isNarrowLayout ? (
           // narrow/모바일: react-grid-layout 없이 단순 스택 → 콘텐츠 크기대로 자동 조절

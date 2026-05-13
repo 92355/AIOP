@@ -1,4 +1,4 @@
-'use server'
+﻿'use server'
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
@@ -8,7 +8,7 @@ import type { Insight } from '@/types'
 async function getAuthenticatedUser() {
   const supabase = await createClient()
   const { data: { user }, error } = await supabase.auth.getUser()
-  if (error || !user) throw new Error('인증이 필요합니다.')
+  if (error || !user) throw new Error('?몄쬆???꾩슂?⑸땲??')
   return { supabase, userId: user.id }
 }
 
@@ -33,7 +33,7 @@ export async function createInsight(item: Insight): Promise<Insight> {
     .single()
 
   if (error) throw new Error(error.message)
-  revalidatePath('/', 'layout')
+  revalidatePath('/', 'page')
   return dbToInsight(data)
 }
 
@@ -47,3 +47,4 @@ export async function deleteInsight(id: string): Promise<void> {
 
   if (error) throw new Error(error.message)
 }
+

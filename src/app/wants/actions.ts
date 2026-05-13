@@ -1,4 +1,4 @@
-'use server'
+﻿'use server'
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
@@ -8,7 +8,7 @@ import type { WantItem } from '@/types'
 async function getAuthenticatedUser() {
   const supabase = await createClient()
   const { data: { user }, error } = await supabase.auth.getUser()
-  if (error || !user) throw new Error('인증이 필요합니다.')
+  if (error || !user) throw new Error('?몄쬆???꾩슂?⑸땲??')
   return { supabase, userId: user.id }
 }
 
@@ -33,14 +33,14 @@ export async function createWant(item: WantItem): Promise<WantItem> {
     .single()
 
   if (error) throw new Error(error.message)
-  revalidatePath('/', 'layout')
+  revalidatePath('/', 'page')
   return dbToWant(data)
 }
 
 export async function updateWant(id: string, updates: Partial<WantItem>): Promise<WantItem> {
   const { supabase, userId } = await getAuthenticatedUser()
 
-  // camelCase → snake_case 부분 변환 (변경된 필드만)
+  // camelCase ??snake_case 遺遺?蹂??(蹂寃쎈맂 ?꾨뱶留?
   // Partial update: only map fields that are actually present
   const dbUpdates: Record<string, unknown> = {}
   if (updates.name !== undefined)                   dbUpdates.name = updates.name
@@ -79,3 +79,4 @@ export async function deleteWant(id: string): Promise<void> {
 
   if (error) throw new Error(error.message)
 }
+
