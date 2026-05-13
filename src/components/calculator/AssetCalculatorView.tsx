@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Calculator, TrendingUp } from "lucide-react";
 import { ExchangeRatePanel } from "@/components/calculator/ExchangeRatePanel";
 import { MoneyInputField } from "@/components/inputs/MoneyInputField";
@@ -9,8 +10,10 @@ import { calculateAssetPlan } from "@/lib/calculations";
 import { formatKRW } from "@/lib/formatters";
 
 const CAREFUL_REQUIRED_CAPITAL = 100000000;
+const WANT_DRAFT_STORAGE_KEY = "aiop-want-draft-from-calculator";
 
 export function AssetCalculatorView() {
+  const router = useRouter();
   const { isCompact } = useCompactMode();
   const [price, setPrice] = useState(3500000);
   const [targetMonths, setTargetMonths] = useState(12);
@@ -23,6 +26,23 @@ export function AssetCalculatorView() {
   );
 
   const decision = getPurchaseDecision(price, monthlyInvestment, result.requiredCapital, result.monthsToBuy);
+
+  function handleAddToWants() {
+    const draft = {
+      name: "",
+      price,
+      currency: "KRW" as const,
+      category: "Productivity" as const,
+      reason: `계산기 판단: ${decision}`,
+      priority: "medium" as const,
+      status: "thinking" as const,
+      targetMonths,
+      expectedYield,
+    };
+
+    localStorage.setItem(WANT_DRAFT_STORAGE_KEY, JSON.stringify(draft));
+    router.push("/wants?source=calculator");
+  }
 
   return (
     <div className="space-y-4">
@@ -85,6 +105,13 @@ export function AssetCalculatorView() {
             <p className="text-sm text-emerald-300/80">구매 판단</p>
             <p className="mt-2 text-2xl font-semibold text-emerald-200">{decision}</p>
           </div>
+          <button
+            type="button"
+            onClick={handleAddToWants}
+            className="flex h-11 w-full items-center justify-center rounded-2xl bg-emerald-400 px-4 text-sm font-semibold text-zinc-950 hover:bg-emerald-300"
+          >
+            구매목표에 추가
+          </button>
         </div>
       </section>
       </div>

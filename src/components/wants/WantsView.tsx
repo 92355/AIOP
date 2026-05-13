@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Plus } from "lucide-react";
 import { WantCard } from "@/components/wants/WantCard";
 import { AddWantModal } from "@/components/wants/AddWantModal";
@@ -18,12 +19,25 @@ type WantsViewProps = { initialItems: WantItem[] };
 
 const filters: WantCategoryFilter[] = ["All", "Productivity", "Lifestyle", "Investment", "Hobby"];
 const statusFilters: WantStatusFilter[] = ["All", "thinking", "planned", "bought", "skipped"];
+const WANT_DRAFT_STORAGE_KEY = "aiop-want-draft-from-calculator";
 
 export function WantsView({ initialItems }: WantsViewProps) {
   const { isCompact } = useCompactMode();
+  const searchParams = useSearchParams();
   const { searchQuery } = useSearchContext();
   const [items, setItems] = useState<WantItem[]>(initialItems);
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [initialDraftForm, setInitialDraftForm] = useState<Partial<{
+    name: string;
+    price: number;
+    currency: WantItem["currency"];
+    category: WantItem["category"];
+    reason: string;
+    priority: WantItem["priority"];
+    status: WantItem["status"];
+    targetMonths: number;
+    expectedYield: number;
+  }> | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<WantCategoryFilter>("All");
   const [selectedStatus, setSelectedStatus] = useState<WantStatusFilter>("All");
   const searchTerm = normalizeSearchTerm(searchQuery);
@@ -35,6 +49,32 @@ export function WantsView({ initialItems }: WantsViewProps) {
     [items, searchTerm, selectedCategory, selectedStatus],
   );
   const hasActiveFilter = selectedCategory !== "All" || selectedStatus !== "All" || searchTerm.length > 0;
+
+  useEffect(() => {
+    if (searchParams.get("source") !== "calculator") return;
+
+    const rawDraft = localStorage.getItem(WANT_DRAFT_STORAGE_KEY);
+    if (!rawDraft) return;
+
+    try {
+      const parsedDraft = JSON.parse(rawDraft) as {
+        name?: string;
+        price?: number;
+        currency?: WantItem["currency"];
+        category?: WantItem["category"];
+        reason?: string;
+        priority?: WantItem["priority"];
+        status?: WantItem["status"];
+        targetMonths?: number;
+        expectedYield?: number;
+      };
+      setInitialDraftForm(parsedDraft);
+      setIsAddOpen(true);
+      localStorage.removeItem(WANT_DRAFT_STORAGE_KEY);
+    } catch {
+      localStorage.removeItem(WANT_DRAFT_STORAGE_KEY);
+    }
+  }, [searchParams]);
 
   async function handleAdd(item: WantItem) {
     setItems((prev) => [item, ...prev]);
@@ -75,7 +115,10 @@ export function WantsView({ initialItems }: WantsViewProps) {
         </div>
         <button
           type="button"
-          onClick={() => setIsAddOpen(true)}
+          onClick={() => {
+            setInitialDraftForm(null);
+            setIsAddOpen(true);
+          }}
           className="flex h-11 items-center justify-center gap-2 rounded-2xl bg-emerald-400 px-4 text-sm font-semibold text-zinc-950 hover:bg-emerald-300"
         >
           <Plus className="h-4 w-4" />
@@ -128,7 +171,7 @@ export function WantsView({ initialItems }: WantsViewProps) {
           <WantCard key={item.id} item={item} onDelete={handleDelete} onStatusChange={handleStatusChange} />
         ))}
       </div>
-      <AddWantModal isOpen={isAddOpen} onClose={() => setIsAddOpen(false)} onAdd={handleAdd} />
+      <AddWantModal isOpen={isAddOpen} onClose={() => setIsAddOpen(false)} onAdd={handleAdd} initialForm={initialDraftForm ?? undefined} />
     </div>
   );
 }

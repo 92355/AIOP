@@ -1,7 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { MoneyInputField } from "@/components/inputs/MoneyInputField";
 import { calculateMonthlyCashflowNeeded, calculateRequiredCapital } from "@/lib/calculations";
 import { getWantCategoryLabel, getWantPriorityLabel, getWantStatusLabel } from "@/lib/labels";
@@ -14,6 +14,7 @@ type AddWantModalProps = {
   isOpen: boolean;
   onClose: () => void;
   onAdd: (item: WantItem) => void;
+  initialForm?: Partial<typeof defaultForm>;
 };
 
 const categories: WantItem["category"][] = ["Productivity", "Lifestyle", "Investment", "Hobby"];
@@ -33,11 +34,24 @@ const defaultForm = {
   expectedYield: 4,
 };
 
-export function AddWantModal({ isOpen, onClose, onAdd }: AddWantModalProps) {
+export function AddWantModal({ isOpen, onClose, onAdd, initialForm }: AddWantModalProps) {
   const { isCompact } = useCompactMode();
   const [form, setForm] = useState(defaultForm);
   const [errorMessage, setErrorMessage] = useState("");
   useEscapeKey(isOpen, onClose);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    if (!initialForm) {
+      setForm(defaultForm);
+      return;
+    }
+
+    setForm({
+      ...defaultForm,
+      ...initialForm,
+    });
+  }, [initialForm, isOpen]);
 
   if (!isOpen) return null;
 

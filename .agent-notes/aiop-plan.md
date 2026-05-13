@@ -190,3 +190,4 @@ npm run build
 - Todo, 구매목표, 구독, 회고를 묶는 일정관리 페이지
 - 결제 알림을 브라우저 Notification 또는 이메일로 확장
 - 환율 API `429` 응답의 `cooldownRemainingMs`를 패널 UI에 직접 표시
+- K.P.T 작성 내역을 AI 가 판단후 진단
