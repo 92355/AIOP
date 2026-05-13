@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { DndContext, PointerSensor, closestCenter, type DragEndEvent, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, arrayMove, rectSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -9,12 +8,16 @@ import Link from "next/link";
 import { useCompactMode } from "@/contexts/CompactModeContext";
 import { useLayoutContext } from "@/contexts/LayoutContext";
 import { formatCompactKRW, formatKRW } from "@/lib/formatters";
-import { getWants } from "@/app/wants/actions";
-import { getSubscriptions } from "@/app/subscriptions/actions";
-import { getInsights } from "@/app/insights/actions";
-import { getNotes } from "@/app/notes/actions";
-import { getTodos } from "@/app/todos/actions";
+import type { Insight, Note, Subscription, TodoItem, WantItem } from "@/types";
 import type { SummaryCardId } from "@/types/layout";
+
+type SummaryCardsInitialData = {
+  wants: WantItem[];
+  subscriptions: Subscription[];
+  insights: Insight[];
+  notes: Note[];
+  todos: TodoItem[];
+};
 
 type SummaryCard = {
   id: SummaryCardId;
@@ -34,6 +37,17 @@ type SummaryData = {
   activeTodoCount: number;
 };
 
+function buildSummary(data: SummaryCardsInitialData): SummaryData {
+  return {
+    wantCount: data.wants.length,
+    monthlyTotal: data.subscriptions.reduce((sum, s) => sum + s.monthlyPrice, 0),
+    coverableSpend: data.wants.reduce((sum, w) => sum + w.price, 0),
+    insightCount: data.insights.length,
+    inboxNoteCount: data.notes.filter((n) => (n.status ?? "inbox") === "inbox").length,
+    activeTodoCount: data.todos.filter((t) => t.status !== "done").length,
+  };
+}
+
 function sortCardsByOrder(cards: SummaryCard[], order: SummaryCardId[]) {
   const cardsById = new Map(cards.map((card) => [card.id, card]));
   const orderedCards = order.map((id) => cardsById.get(id)).filter((card): card is SummaryCard => Boolean(card));
@@ -42,32 +56,10 @@ function sortCardsByOrder(cards: SummaryCard[], order: SummaryCardId[]) {
   return [...orderedCards, ...missingCards];
 }
 
-export function SummaryCards() {
+export function SummaryCards({ initialData }: { initialData: SummaryCardsInitialData }) {
   const { isCompact } = useCompactMode();
   const { isEditMode, layout, setCardsOrder } = useLayoutContext();
-  const [summary, setSummary] = useState<SummaryData>({
-    wantCount: 0,
-    monthlyTotal: 0,
-    coverableSpend: 0,
-    insightCount: 0,
-    inboxNoteCount: 0,
-    activeTodoCount: 0,
-  });
-
-  useEffect(() => {
-    Promise.all([getWants(), getSubscriptions(), getInsights(), getNotes(), getTodos()])
-      .then(([wants, subscriptions, insights, notes, todos]) => {
-        setSummary({
-          wantCount: wants.length,
-          monthlyTotal: subscriptions.reduce((sum, s) => sum + s.monthlyPrice, 0),
-          coverableSpend: wants.reduce((sum, w) => sum + w.price, 0),
-          insightCount: insights.length,
-          inboxNoteCount: notes.filter((n) => (n.status ?? "inbox") === "inbox").length,
-          activeTodoCount: todos.filter((t) => t.status !== "done").length,
-        });
-      })
-      .catch(console.error);
-  }, []);
+  const summary = buildSummary(initialData);
 
   const cards: SummaryCard[] = [
     {

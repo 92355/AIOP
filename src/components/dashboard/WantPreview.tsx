@@ -1,19 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useCompactMode } from "@/contexts/CompactModeContext";
 import { formatKRW } from "@/lib/formatters";
 import { getWantCategoryLabel, getWantStatusLabel } from "@/lib/labels";
-import { getWants } from "@/app/wants/actions";
 import type { WantItem } from "@/types";
 
-export function WantPreview() {
+export function WantPreview({ initialWants }: { initialWants: WantItem[] }) {
   const { isCompact } = useCompactMode();
-  const [items, setItems] = useState<WantItem[]>([]);
-
-  useEffect(() => {
-    getWants().then(setItems).catch(console.error);
-  }, []);
+  const items = initialWants;
 
   const previewItems = items.slice(0, 5);
 

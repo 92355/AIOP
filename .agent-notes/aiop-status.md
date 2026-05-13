@@ -2,7 +2,7 @@
 
 > 목적: 현재 프로젝트 상태 단일 기준 문서.
 > Claude / Codex는 작업 전 이 문서를 읽고, 문서와 실제 코드가 다르면 실제 코드를 우선한다.
-> 작성 기준: 2026-05-12, branch `main`.
+> 작성 기준: 2026-05-13, branch `main`.
 
 ---
 
@@ -15,7 +15,8 @@
 - 백엔드: **Supabase** + Next.js Server Actions
 - 외부 API: 없음 (exchange_rates 미구현)
 - 자동 테스트: 없음 (수동 QA만)
-- 다음 큰 목표: exchange_rates 캐시 + localStorage export/import → Supabase import 도구, v2.1 AI 기능
+- 배포: **Vercel** (https://aiop-alpha.vercel.app) — 2026-05-13 최초 배포
+- 다음 큰 목표: 모바일 UI/UX 개선, exchange_rates 캐시, v2.1 AI 기능
 
 ---
 
@@ -34,7 +35,17 @@
 /retros/weekly    주간 회고 롤업
 ```
 
-`src/app/layout.tsx` → `AppShell`(클라이언트 컴포넌트)이 공통 셸로 감싼다.
+**라우트 그룹 구조 (2026-05-13 적용):**
+```txt
+src/app/
+  layout.tsx          — html/body만 (AppShell 없음)
+  (app)/layout.tsx    — AppShell 포함 (인증 필요 페이지)
+  (app)/...           — 모든 인증 필요 페이지
+  (auth)/login/       — 로그인 (AppShell 없음)
+  (auth)/auth/callback/ — OAuth 콜백
+```
+- 이전: `layout.tsx`가 AppShell로 전체 감쌈 → `/login`에서도 `getDashboardLayout` 호출 → 500 에러
+- 이후: `(auth)` 그룹은 AppShell 없이 렌더, 문제 해결됨
 
 ---
 
@@ -200,20 +211,24 @@ src/app/<domain>/actions.ts
 ✅ 10. Dashboard layout → user_settings DB 저장
 ✅ 11. WeeklyRollupView → getRetros()
 ✅ 12. 전역 검색 → searchDomains Server Action (300ms debounce)
-⏸ 13. localStorage export JSON → Supabase import 도구 (미전환)
-⬜ 14. exchange_rates 캐시 테이블 + Cron
-⬜ 15. 서버 기반 export
-⬜ 16. v2.1+ AI Route Handler
+✅ 13. 라우트 그룹 분리 (app)/(auth) — /login 500 에러 해결
+✅ 14. Vercel 배포 (https://aiop-alpha.vercel.app)
+⏸ 15. localStorage export JSON → Supabase import 도구 — 로컬 데이터 없음, 불필요 판단
+⬜ 16. 모바일 UI/UX 개선
+⬜ 17. exchange_rates 캐시 테이블 + Cron
+⬜ 18. 서버 기반 export
+⬜ 19. v2.1+ AI Route Handler
 ```
 
 ---
 
 ## 11. 현재 우선순위
 
-v2.0 핵심 DB 전환 완료. 남은 항목:
+v2.0 핵심 DB 전환 + Vercel 배포 완료. 남은 항목:
 
+- **단기**: 모바일 UI/UX 개선 (현재 모바일 미최적화 상태)
 - **단기**: exchange_rates 캐시 + Frankfurter API 연동 (통화 환산 실데이터)
-- **중기**: localStorage → Supabase 데이터 이전 도구 (`dataPortability.ts` 전환) - 로컬에 저장된게 없어, 이전작업 불필요하다 판단 
+- **중기**: localStorage → Supabase 데이터 이전 도구 — 로컬 데이터 없음, 불필요 판단
 - **장기**: v2.1 AI 기능 (입력 자동분류 → 오늘의 할일 추천 → 투자종목 추천)
 
 ---

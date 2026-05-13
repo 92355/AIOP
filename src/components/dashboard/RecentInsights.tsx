@@ -1,18 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useCompactMode } from "@/contexts/CompactModeContext";
 import { getInsightTypeLabel } from "@/lib/labels";
-import { getInsights } from "@/app/insights/actions";
 import type { Insight } from "@/types";
 
-export function RecentInsights() {
+export function RecentInsights({ initialInsights }: { initialInsights: Insight[] }) {
   const { isCompact } = useCompactMode();
-  const [items, setItems] = useState<Insight[]>([]);
-
-  useEffect(() => {
-    getInsights().then(setItems).catch(console.error);
-  }, []);
+  const items = initialInsights;
 
   const recentItems = items.slice(0, 3);
 

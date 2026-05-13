@@ -1,20 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Target } from "lucide-react";
 import { useCompactMode } from "@/contexts/CompactModeContext";
 import { calculateRequiredCapital } from "@/lib/calculations";
 import { formatKRW } from "@/lib/formatters";
-import { getWants } from "@/app/wants/actions";
 import type { WantItem } from "@/types";
 
-export function AssetSnapshot() {
+export function AssetSnapshot({ initialWants }: { initialWants: WantItem[] }) {
   const { isCompact } = useCompactMode();
-  const [items, setItems] = useState<WantItem[]>([]);
-
-  useEffect(() => {
-    getWants().then(setItems).catch(console.error);
-  }, []);
+  const items = initialWants;
 
   const targetItem = items[0];
   const expectedYield = targetItem?.expectedYield ?? 0;

@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { DndContext, PointerSensor, closestCenter, type DragEndEvent, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, arrayMove, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { CheckCircle2, CheckSquare, GripVertical } from "lucide-react";
 import { useCompactMode } from "@/contexts/CompactModeContext";
 import { useLayoutContext } from "@/contexts/LayoutContext";
-import { getTodos, updateTodoStatus } from "@/app/todos/actions";
+import { updateTodoStatus } from "@/app/todos/actions";
 import type { TodoItem } from "@/types";
 
 const maxPreviewItemCount = 4;
@@ -40,14 +40,10 @@ function applyCustomTodoOrder(items: TodoItem[], order: string[]) {
   return [...orderedItems, ...missingItems];
 }
 
-export function TodoSummary() {
+export function TodoSummary({ initialTodos }: { initialTodos: TodoItem[] }) {
   const { isCompact } = useCompactMode();
   const { isEditMode, layout, setTodoSummaryOrder } = useLayoutContext();
-  const [items, setItems] = useState<TodoItem[]>([]);
-
-  useEffect(() => {
-    getTodos().then(setItems).catch(console.error);
-  }, []);
+  const [items, setItems] = useState<TodoItem[]>(initialTodos);
 
   const activeItems = items.filter((item) => item.status !== "done");
   const doneCount = items.filter((item) => item.status === "done").length;

@@ -1,18 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useCompactMode } from "@/contexts/CompactModeContext";
 import { formatKRW } from "@/lib/formatters";
-import { getSubscriptions } from "@/app/subscriptions/actions";
 import type { Subscription } from "@/types";
 
-export function SubscriptionSummary() {
+export function SubscriptionSummary({ initialSubscriptions }: { initialSubscriptions: Subscription[] }) {
   const { isCompact } = useCompactMode();
-  const [items, setItems] = useState<Subscription[]>([]);
-
-  useEffect(() => {
-    getSubscriptions().then(setItems).catch(console.error);
-  }, []);
+  const items = initialSubscriptions;
 
   const summary = useMemo(() => {
     return {

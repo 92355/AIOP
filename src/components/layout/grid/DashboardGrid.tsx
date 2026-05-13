@@ -12,7 +12,16 @@ import { editableWidgetIds } from "@/components/layout/grid/defaultLayout";
 import { WidgetFrame } from "@/components/layout/grid/WidgetFrame";
 import { useCompactMode } from "@/contexts/CompactModeContext";
 import { useLayoutContext } from "@/contexts/LayoutContext";
+import type { Insight, Note, Subscription, TodoItem, WantItem } from "@/types";
 import type { WidgetId, WidgetLayout } from "@/types/layout";
+
+type DashboardData = {
+  wants: WantItem[];
+  subscriptions: Subscription[];
+  insights: Insight[];
+  notes: Note[];
+  todos: TodoItem[];
+};
 
 const widgetTitles: Record<WidgetId, string> = {
   hero: "Hero",
@@ -50,26 +59,26 @@ function fromGridLayout(layout: LayoutItem): WidgetLayout | null {
   };
 }
 
-function renderWidget(id: WidgetId) {
+function renderWidget(id: WidgetId, data: DashboardData) {
   switch (id) {
     case "hero":
       return <HeroWidget />;
     case "summary-cards":
-      return <SummaryCards />;
+      return <SummaryCards initialData={data} />;
     case "want-preview":
-      return <WantPreview />;
+      return <WantPreview initialWants={data.wants} />;
     case "asset-snapshot":
-      return <AssetSnapshot />;
+      return <AssetSnapshot initialWants={data.wants} />;
     case "subscription-summary":
-      return <SubscriptionSummary />;
+      return <SubscriptionSummary initialSubscriptions={data.subscriptions} />;
     case "recent-insights":
-      return <RecentInsights />;
+      return <RecentInsights initialInsights={data.insights} />;
     case "todo-summary":
-      return <TodoSummary />;
+      return <TodoSummary initialTodos={data.todos} />;
   }
 }
 
-export function DashboardGrid() {
+export function DashboardGrid({ initialData }: { initialData: DashboardData }) {
   const { isCompact } = useCompactMode();
   const { isEditMode, layout, setLayout, setNarrowLayout } = useLayoutContext();
   const { width, containerRef, mounted } = useContainerWidth({ initialWidth: 1280 });
@@ -137,7 +146,7 @@ export function DashboardGrid() {
                 onMoveUp={isEditMode ? () => handleMoveNarrowWidget(id, "up") : undefined}
                 onMoveDown={isEditMode ? () => handleMoveNarrowWidget(id, "down") : undefined}
               >
-                {renderWidget(id)}
+                {renderWidget(id, initialData)}
               </WidgetFrame>
             ))}
           </div>
@@ -162,7 +171,7 @@ export function DashboardGrid() {
                   id={id}
                   title={widgetTitles[id]}
                 >
-                  {renderWidget(id)}
+                  {renderWidget(id, initialData)}
                 </WidgetFrame>
               </div>
             ))}
