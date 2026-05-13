@@ -218,7 +218,7 @@ function SummaryCardItem({
       ? "cursor-pointer hover:-translate-y-0.5 hover:border-emerald-400/50 hover:bg-zinc-800/80 hover:shadow-[0_18px_50px_rgba(52,211,153,0.12)] focus:outline-none focus:ring-2 focus:ring-emerald-400/50 active:translate-y-0"
       : ""
   } ${
-    isCompact ? "p-3" : "p-5"
+    isCompact ? "p-3" : "p-5 lg:pb-6 2xl:pb-5"
   }`;
   const content = (
     <>
