@@ -108,7 +108,7 @@ export function Header({ isDarkMode, isMobileLayout, onToggleTheme, onOpenQuickA
           </div>
           <div className="flex w-full items-center justify-end gap-1.5 sm:gap-2 sm:w-auto">
             <div className="hidden text-right text-xs text-zinc-500 lg:block">{today}</div>
-            {canCustomizeLayout ? <HeaderSettingsButton /> : null}
+            {canCustomizeLayout ? <HeaderSettingsButton isMobileLayout={isMobileLayout} /> : null}
             <button
               aria-label={isDarkMode ? "라이트 모드로 변경" : "다크 모드로 변경"}
               aria-pressed={!isDarkMode}

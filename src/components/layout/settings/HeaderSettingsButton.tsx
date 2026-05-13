@@ -3,12 +3,14 @@
 import { useState } from "react";
 import { Settings } from "lucide-react";
 import { SettingsMenu } from "@/components/layout/settings/SettingsMenu";
-import { useIsMobile } from "@/hooks/useIsMobile";
 import { useEscapeKey } from "@/hooks/useEscapeKey";
 
-export function HeaderSettingsButton() {
+type HeaderSettingsButtonProps = {
+  isMobileLayout: boolean;
+};
+
+export function HeaderSettingsButton({ isMobileLayout }: HeaderSettingsButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const isMobile = useIsMobile();
 
   useEscapeKey(isOpen, () => setIsOpen(false));
 
@@ -24,7 +26,7 @@ export function HeaderSettingsButton() {
       >
         <Settings className="h-4 w-4" />
       </button>
-      {isOpen && isMobile ? (
+      {isOpen && isMobileLayout ? (
         <div
           className="fixed inset-0 z-[80] flex items-end bg-zinc-950/80 backdrop-blur-sm"
           onClick={() => setIsOpen(false)}
@@ -37,7 +39,7 @@ export function HeaderSettingsButton() {
           </div>
         </div>
       ) : null}
-      {isOpen && !isMobile ? (
+      {isOpen && !isMobileLayout ? (
         <div className="absolute right-0 top-12 z-[70]">
           <SettingsMenu onClose={() => setIsOpen(false)} />
         </div>

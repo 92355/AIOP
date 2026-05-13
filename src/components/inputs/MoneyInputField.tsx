@@ -99,7 +99,7 @@ export function MoneyInputField({ label, value, onChange, currency = "KRW", comp
         ))}
       </div>
       <div className={`${compact ? "mt-2" : "mt-3"}`}>
-        <p className="min-w-0 truncate text-right text-sm font-medium text-emerald-300">{previewText}</p>
+        <p className={`min-w-0 break-all text-right font-medium text-emerald-300 ${compact ? "text-base" : "text-sm"}`}>{previewText}</p>
       </div>
     </label>
   );
