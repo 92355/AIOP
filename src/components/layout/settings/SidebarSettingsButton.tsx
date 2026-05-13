@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Settings } from "lucide-react";
 import { SettingsMenu } from "@/components/layout/settings/SettingsMenu";
 import { useEscapeKey } from "@/hooks/useEscapeKey";
+import packageJson from "../../../../package.json";
 
 export function SidebarSettingsButton() {
   const [isOpen, setIsOpen] = useState(false);
@@ -12,6 +13,7 @@ export function SidebarSettingsButton() {
 
   return (
     <div className="relative">
+      <p className="mb-2 px-1 text-[10px] text-zinc-600">v{packageJson.version}</p>
       <button
         type="button"
         onClick={() => setIsOpen((currentValue) => !currentValue)}
