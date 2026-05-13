@@ -6,6 +6,7 @@ import { Calculator, TrendingUp } from "lucide-react";
 import { ExchangeRatePanel } from "@/components/calculator/ExchangeRatePanel";
 import { MoneyInputField } from "@/components/inputs/MoneyInputField";
 import { useCompactMode } from "@/contexts/CompactModeContext";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import { calculateAssetPlan } from "@/lib/calculations";
 import { formatKRW } from "@/lib/formatters";
 
@@ -15,6 +16,8 @@ const WANT_DRAFT_STORAGE_KEY = "aiop-want-draft-from-calculator";
 export function AssetCalculatorView() {
   const router = useRouter();
   const { isCompact } = useCompactMode();
+  const isMobile = useIsMobile();
+  const isCompactLayout = isCompact || isMobile;
   const [price, setPrice] = useState(3500000);
   const [targetMonths, setTargetMonths] = useState(12);
   const [expectedYield, setExpectedYield] = useState(4);
@@ -46,19 +49,19 @@ export function AssetCalculatorView() {
 
   return (
     <div className="space-y-4">
-      <div className={`grid gap-4 ${isCompact ? "" : "xl:grid-cols-[1.05fr_0.95fr] xl:gap-6"}`}>
-      <section className={`rounded-2xl border border-emerald-400/20 bg-zinc-900 shadow-soft ${isCompact ? "p-4" : "p-6"}`}>
+      <div className={`grid gap-4 ${isCompactLayout ? "" : "xl:grid-cols-[1.05fr_0.95fr] xl:gap-6"}`}>
+      <section className={`rounded-2xl border border-emerald-400/20 bg-zinc-900 shadow-soft ${isCompactLayout ? "p-4" : "p-6"}`}>
         <div className="flex items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-400/10 text-emerald-300">
             <Calculator className="h-6 w-6" />
           </div>
           <div>
-            <h2 className={`font-semibold text-zinc-50 ${isCompact ? "text-2xl" : "text-3xl"}`}>자산 구매 계산기</h2>
-            {isCompact ? null : <p className="mt-1 text-zinc-500">소비를 자산 현금흐름 기준으로 다시 계산합니다.</p>}
+            <h2 className={`font-semibold text-zinc-50 ${isCompactLayout ? "text-2xl" : "text-3xl"}`}>자산 구매 계산기</h2>
+            {isCompactLayout ? null : <p className="mt-1 text-zinc-500">소비를 자산 현금흐름 기준으로 다시 계산합니다.</p>}
           </div>
         </div>
-        <div className={`grid gap-4 ${isCompact ? "mt-5" : "mt-8 sm:grid-cols-2"}`}>
-          <MoneyInputField label="구매 가격" value={price} onChange={setPrice} helperText="천 / 만 / 억 단위로 볼 수 있습니다." compact={isCompact} />
+        <div className={`grid gap-4 ${isCompactLayout ? "mt-5" : "mt-8 sm:grid-cols-2"}`}>
+          <MoneyInputField label="구매 가격" value={price} onChange={setPrice} helperText="천 / 만 / 억 단위로 볼 수 있습니다." compact={isCompactLayout} />
           <label className="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4">
             <span className="text-sm text-zinc-500">목표 기간</span>
             <div className="mt-3 flex items-center gap-2">
@@ -83,24 +86,24 @@ export function AssetCalculatorView() {
               <span className="text-sm text-zinc-500">%</span>
             </div>
           </label>
-          <MoneyInputField label="월 투자 가능액" value={monthlyInvestment} onChange={setMonthlyInvestment} helperText="목표 기간 기준으로 계산합니다." compact={isCompact} />
+          <MoneyInputField label="월 투자 가능액" value={monthlyInvestment} onChange={setMonthlyInvestment} helperText="목표 기간 기준으로 계산합니다." compact={isCompactLayout} />
         </div>
       </section>
 
-      <section className={`rounded-2xl border border-zinc-800 bg-zinc-900 shadow-soft ${isCompact ? "p-4" : "p-6"}`}>
+      <section className={`rounded-2xl border border-zinc-800 bg-zinc-900 shadow-soft ${isCompactLayout ? "p-4" : "p-6"}`}>
         <div className="flex items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-zinc-950 text-emerald-300">
             <TrendingUp className="h-6 w-6" />
           </div>
           <div>
             <h3 className="text-xl font-semibold text-zinc-50">판단 결과</h3>
-            {isCompact ? null : <p className="text-sm text-zinc-500">입력값에 따라 즉시 갱신됩니다.</p>}
+            {isCompactLayout ? null : <p className="text-sm text-zinc-500">입력값에 따라 즉시 갱신됩니다.</p>}
           </div>
         </div>
-        <div className={isCompact ? "mt-5 space-y-3" : "mt-8 space-y-4"}>
-          <ResultRow label="필요 자산" value={formatKRW(result.requiredCapital)} highlight compact={isCompact} />
-          <ResultRow label="월 필요 현금흐름" value={formatKRW(result.monthlyCashflowNeeded)} compact={isCompact} />
-          <ResultRow label="구매까지 걸리는 기간" value={result.monthsToBuy > 0 ? `${result.monthsToBuy.toFixed(1)}개월` : "계산 대기"} compact={isCompact} />
+        <div className={isCompactLayout ? "mt-5 space-y-3" : "mt-8 space-y-4"}>
+          <ResultRow label="필요 자산" value={formatKRW(result.requiredCapital)} highlight compact={isCompactLayout} />
+          <ResultRow label="월 필요 현금흐름" value={formatKRW(result.monthlyCashflowNeeded)} compact={isCompactLayout} />
+          <ResultRow label="구매까지 걸리는 기간" value={result.monthsToBuy > 0 ? `${result.monthsToBuy.toFixed(1)}개월` : "계산 대기"} compact={isCompactLayout} />
           <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-5">
             <p className="text-sm text-emerald-300/80">구매 판단</p>
             <p className="mt-2 text-2xl font-semibold text-emerald-200">{decision}</p>
@@ -116,7 +119,7 @@ export function AssetCalculatorView() {
       </section>
       </div>
 
-      <ExchangeRatePanel compact={isCompact} />
+      <ExchangeRatePanel compact={isCompactLayout} />
     </div>
   );
 }

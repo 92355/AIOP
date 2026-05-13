@@ -13,9 +13,10 @@ import { applyImport, downloadExport } from "@/lib/dataPortability";
 
 type SettingsMenuProps = {
   onClose: () => void;
+  className?: string;
 };
 
-export function SettingsMenu({ onClose }: SettingsMenuProps) {
+export function SettingsMenu({ onClose, className }: SettingsMenuProps) {
   const {
     isEditMode,
     layout,
@@ -88,7 +89,7 @@ export function SettingsMenu({ onClose }: SettingsMenuProps) {
   }
 
   return (
-    <div className="max-h-[min(72vh,720px)] w-72 overflow-y-auto rounded-2xl border border-zinc-800 bg-zinc-950 p-2 shadow-soft">
+    <div className={`max-h-[min(72vh,720px)] w-72 overflow-y-auto rounded-2xl border border-zinc-800 bg-zinc-950 p-2 shadow-soft ${className ?? ""}`}>
       {isEditMode ? (
         <button
           type="button"
