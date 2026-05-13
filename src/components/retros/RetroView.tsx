@@ -54,6 +54,12 @@ const emptyInputs: Record<RetroSectionKey, string> = {
   try: "",
 };
 
+const emptyPendingSections: Record<RetroSectionKey, boolean> = {
+  keep: false,
+  problem: false,
+  try: false,
+};
+
 export function RetroView({ initialRetros, initialTodos }: { initialRetros: KptRetro[]; initialTodos: TodoItem[] }) {
   const today = getLocalDateString(new Date());
   const searchParams = useSearchParams();
@@ -64,6 +70,7 @@ export function RetroView({ initialRetros, initialTodos }: { initialRetros: KptR
   const [todos, setTodos] = useState<TodoItem[]>(initialTodos);
   const [selectedDate, setSelectedDate] = useState(dateParam || today);
   const [inputs, setInputs] = useState(emptyInputs);
+  const [pendingSections, setPendingSections] = useState(emptyPendingSections);
   const [addTryToTodo, setAddTryToTodo] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -134,6 +141,8 @@ export function RetroView({ initialRetros, initialTodos }: { initialRetros: KptR
   }
 
   async function handleAddItem(section: RetroSectionKey) {
+    if (pendingSections[section]) return;
+
     const trimmedText = inputs[section].trim();
 
     if (!trimmedText) {
@@ -149,6 +158,13 @@ export function RetroView({ initialRetros, initialTodos }: { initialRetros: KptR
       linkedTodoId: todo?.id,
     };
 
+    handleInputChange(section, "");
+    setErrorMessage("");
+    setPendingSections((currentSections) => ({
+      ...currentSections,
+      [section]: true,
+    }));
+
     await upsertRetroItems(section, [nextItem]);
 
     if (todo) {
@@ -161,8 +177,10 @@ export function RetroView({ initialRetros, initialTodos }: { initialRetros: KptR
       }
     }
 
-    handleInputChange(section, "");
-    setErrorMessage("");
+    setPendingSections((currentSections) => ({
+      ...currentSections,
+      [section]: false,
+    }));
   }
 
   function handleStartEditing(item: RetroItem) {
@@ -490,6 +508,7 @@ export function RetroView({ initialRetros, initialTodos }: { initialRetros: KptR
             section={section}
             items={selectedRetro[section]}
             inputValue={inputs[section]}
+            isAddPending={pendingSections[section]}
             addTryToTodo={addTryToTodo}
             isCompact={isCompact}
             editingItemId={editingItemId}
@@ -557,6 +576,7 @@ function RetroSection({
   section,
   items,
   inputValue,
+  isAddPending,
   addTryToTodo,
   isCompact,
   editingItemId,
@@ -575,6 +595,7 @@ function RetroSection({
   section: RetroSectionKey;
   items: RetroItem[];
   inputValue: string;
+  isAddPending: boolean;
   addTryToTodo: boolean;
   isCompact: boolean;
   editingItemId: string | null;
@@ -711,7 +732,8 @@ function RetroSection({
           <button
             type="button"
             onClick={onAdd}
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-400 text-zinc-950 hover:bg-emerald-300"
+            disabled={isAddPending}
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-400 text-zinc-950 hover:bg-emerald-300 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-400"
             aria-label={`${meta.title} 항목 추가`}
           >
             <Plus className="h-4 w-4" />
