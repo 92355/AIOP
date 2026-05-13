@@ -15,7 +15,7 @@ export function CoffeeSupportWidget() {
           <div>
             <p className="text-xs uppercase tracking-[0.18em] text-emerald-300/80">Support</p>
             <h3 className="mt-1 text-sm font-semibold text-zinc-100">개발자 커피사주기</h3>
-            <p className="mt-2 text-xs leading-5 text-zinc-500">후원 정보는 모달에서 확인할 수 있습니다.</p>
+            <p className="mt-2 text-xs leading-5 text-zinc-500">개발자에게 시~원한 커피 사주기</p>
           </div>
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-400/25 bg-emerald-400/10 text-emerald-300">
             <Coffee className="h-4 w-4" />
@@ -63,10 +63,10 @@ export function CoffeeSupportWidget() {
             <div className="mt-5 rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4">
               <p className="flex items-center gap-2 text-sm font-medium text-zinc-100">
                 <Coffee className="h-4 w-4 text-emerald-300" />
-                계좌/송금 정보 직접 입력 영역
+                카카오페이도 받습니다
               </p>
               <p className="mt-2 text-sm leading-6 text-zinc-400">
-                여기에 계좌번호 또는 카카오페이 안내 문구를 직접 수정해서 넣어주세요.
+                서버비용 나 거지된다아ㅏㅏ..
               </p>
             </div>
             <button
