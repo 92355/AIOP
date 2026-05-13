@@ -29,18 +29,20 @@ import { createNote } from "@/app/notes/actions";
 import { createTodo } from "@/app/todos/actions";
 import { addRetroItem } from "@/app/retros/actions";
 import type { Insight, Note, RegretItem, RetroItem, Subscription, TodoItem, WantItem } from "@/types";
+import type { DashboardLayout } from "@/types/layout";
 
 type AppShellProps = {
   children: React.ReactNode;
+  initialLayout: DashboardLayout;
 };
 
 type ThemeMode = "dark" | "light";
 
 
-export function AppShell({ children }: AppShellProps) {
+export function AppShell({ children, initialLayout }: AppShellProps) {
   return (
     <CompactModeProvider>
-      <LayoutProvider>
+      <LayoutProvider initialLayout={initialLayout}>
         <SearchProvider>
           <AppShellContent>{children}</AppShellContent>
         </SearchProvider>
@@ -49,7 +51,7 @@ export function AppShell({ children }: AppShellProps) {
   );
 }
 
-function AppShellContent({ children }: AppShellProps) {
+function AppShellContent({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [themeMode, setThemeMode] = useLocalStorage<ThemeMode>("aiop-theme-mode", "dark");
   const [updateNoticeDismissed, setUpdateNoticeDismissed] = useLocalStorage<boolean>("aiop-update-notice-v1", false);

@@ -152,14 +152,16 @@ function normalizeDashboardLayout(value: unknown): DashboardLayout {
   };
 }
 
-export function useDashboardLayout() {
-  const [layout, setLayout] = useState<DashboardLayout>(defaultDashboardLayout);
+export function useDashboardLayout(initialLayout: DashboardLayout = defaultDashboardLayout) {
+  const [layout, setLayout] = useState<DashboardLayout>(() => normalizeDashboardLayout(initialLayout));
 
   useEffect(() => {
+    if (initialLayout !== defaultDashboardLayout) return;
+
     getDashboardLayout()
       .then((loaded) => setLayout(normalizeDashboardLayout(loaded)))
       .catch(console.error);
-  }, []);
+  }, [initialLayout]);
 
   function saveLayout(nextLayout: DashboardLayout) {
     const normalized: DashboardLayout = {

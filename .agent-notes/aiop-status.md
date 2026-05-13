@@ -8,19 +8,20 @@
 
 ## 1. 한눈에 요약
 
-- 버전: **v2.0** (Supabase + Google OAuth + RSC/Server Actions 전환 완료)
-- 상태: 9개 도메인 모두 Supabase DB 연동 완료
-- 데이터: **Supabase Postgres** (RLS 적용)
-- 인증: **Google OAuth** (Supabase Auth)
-- 백엔드: **Supabase** + Next.js Server Actions
-- 외부 API: 없음 (exchange_rates 미구현)
-- 자동 테스트: 없음 (수동 QA만)
-- 배포: **Vercel** (https://aiop-alpha.vercel.app) — 2026-05-13 최초 배포
-- 다음 큰 목표: 모바일 UI/UX 개선, exchange_rates 캐시, v2.1 AI 기능
+- 앱 성격: 개인용 All-In-One Page 대시보드
+- 현재 버전: `package.json` 기준 **0.2.1.1**
+- 현재 단계: **v2.1 진행 상태** (성능 개선 일부 + 환율 캐시/API 추가)
+- 인증: Supabase Auth + Google OAuth
+- DB: Supabase Postgres + RLS
+- 데이터 접근: Next.js App Router + RSC + Server Actions
+- UI 설정 일부: localStorage 유지
+- 외부 API: Frankfurter v2 API (서버 Route Handler에서만 호출)
+- 자동 테스트: 별도 테스트 없음
+- 배포 URL: `https://aiop-alpha.vercel.app`로 문서에 기록되어 있음
 
 ---
 
-## 2. 라우트 (Next.js App Router)
+## 2. 현재 라우트
 
 ```txt
 /                 Dashboard
@@ -33,226 +34,420 @@
 /todos            Todo
 /retros           K.P.T 회고
 /retros/weekly    주간 회고 롤업
+/login            로그인
+/auth/callback    Supabase OAuth callback
 ```
 
-**라우트 그룹 구조 (2026-05-13 적용):**
+라우트 그룹:
+
 ```txt
 src/app/
-  layout.tsx          — html/body만 (AppShell 없음)
-  (app)/layout.tsx    — AppShell 포함 (인증 필요 페이지)
-  (app)/...           — 모든 인증 필요 페이지
-  (auth)/login/       — 로그인 (AppShell 없음)
-  (auth)/auth/callback/ — OAuth 콜백
+  layout.tsx
+  (app)/layout.tsx
+  (app)/page.tsx
+  (app)/wants/page.tsx
+  (app)/calculator/page.tsx
+  (app)/regret/page.tsx
+  (app)/subscriptions/page.tsx
+  (app)/insights/page.tsx
+  (app)/notes/page.tsx
+  (app)/todos/page.tsx
+  (app)/retros/page.tsx
+  (app)/retros/weekly/page.tsx
+  (auth)/login/page.tsx
+  (auth)/auth/callback/route.ts
 ```
-- 이전: `layout.tsx`가 AppShell로 전체 감쌈 → `/login`에서도 `getDashboardLayout` 호출 → 500 에러
-- 이후: `(auth)` 그룹은 AppShell 없이 렌더, 문제 해결됨
+
+- `(app)` 그룹은 `AppShell`로 감싼다.
+- `(auth)` 그룹은 `AppShell` 없이 렌더링한다.
+- `middleware.ts`에서 미인증 사용자를 `/login`으로 redirect한다.
+- 인증된 사용자가 `/login`에 접근하면 `/`로 redirect한다.
 
 ---
 
-## 3. 디렉토리 구조 (요지)
+## 3. 주요 디렉토리 구조
 
 ```txt
 src/
-├── app/
-│   ├── wants/actions.ts          # Server Actions (Supabase CRUD)
-│   ├── subscriptions/actions.ts
-│   ├── insights/actions.ts
-│   ├── notes/actions.ts
-│   ├── regret/actions.ts
-│   ├── todos/actions.ts
-│   ├── retros/actions.ts
-│   ├── search/actions.ts         # searchDomains (전 도메인 Promise.all + searchAllDomains)
-│   └── settings/actions.ts       # getDashboardLayout / saveDashboardLayout / resetDashboardLayout
-├── components/
-│   ├── dashboard/                # Hero, SummaryCards, WantPreview, AssetSnapshot,
-│   │                             # SubscriptionSummary, RecentInsights, TodoSummary
-│   ├── layout/
-│   │   ├── AppShell.tsx          # 테마/컴팩트/레이아웃 Provider + QuickAdd wiring (Server Actions)
-│   │   ├── SearchResultsDropdown.tsx  # 300ms debounce + searchDomains Server Action
-│   │   ├── grid/                 # DashboardGrid, WidgetFrame, defaultLayout
-│   │   └── settings/             # HeaderSettingsButton, SidebarSettingsButton, SettingsMenu
-│   ├── inputs/                   # MoneyInputField (공통 금액 입력)
-│   ├── quick-add/                # QuickAddModal
-│   ├── wants/ subscriptions/ insights/ notes/ todos/ retros/ regret/
-├── contexts/                     # CompactModeContext, LayoutContext, SearchContext
-├── hooks/
-│   ├── useLocalStorage.ts        # 테마/컴팩트 UI 설정 전용으로 범위 축소
-│   └── useDashboardLayout.ts     # useState + useEffect + getDashboardLayout/saveDashboardLayout
-├── lib/
-│   ├── supabase/                 # server.ts, client.ts (@supabase/ssr)
-│   ├── db/mappers.ts             # snake_case DB ↔ camelCase TS 변환
-│   ├── globalSearch.ts           # searchAllDomains(data: SearchData, query, maxPerDomain)
-│   ├── calculations.ts formatters.ts labels.ts retros.ts storageNormalizers.ts
-│   └── dataPortability.ts        # ⏸ export/import 미전환 (localStorage 기반 유지)
-├── types/                        # index.ts (도메인), layout.ts (위젯/카드)
-└── data/mockData.ts              # 초기 / fallback (현재 미사용)
+  middleware.ts
+  app/
+    (app)/                  # 인증 필요 페이지
+    (auth)/                 # 로그인 / OAuth callback
+    wants/actions.ts
+    subscriptions/actions.ts
+    insights/actions.ts
+    notes/actions.ts
+    regret/actions.ts
+    todos/actions.ts
+    retros/actions.ts
+    search/actions.ts
+    settings/actions.ts
+  components/
+    dashboard/
+    calculator/
+    wants/
+    subscriptions/
+    insights/
+    notes/
+    regret/
+    todos/
+    retros/
+    quick-add/
+    layout/
+      AppShell.tsx
+      Header.tsx
+      Sidebar.tsx
+      BottomTabBar.tsx
+      SearchResultsDropdown.tsx
+      grid/
+      settings/
+  contexts/
+    CompactModeContext.tsx
+    LayoutContext.tsx
+    SearchContext.tsx
+  hooks/
+    useDashboardLayout.ts
+    useEscapeKey.ts
+    useIsMobile.ts
+    useLocalStorage.ts
+  lib/
+    db/mappers.ts
+    supabase/client.ts
+    supabase/server.ts
+    globalSearch.ts
+    dashboardOptimistic.ts
+    dataPortability.ts
+    storage.ts
+    storageNormalizers.ts
+    calculations.ts
+    formatters.ts
+    labels.ts
+    retros.ts
+  types/
+    index.ts
+    layout.ts
+  data/
+    mockData.ts
+supabase/
+  schema.sql
 ```
 
 ---
 
-## 4. 도메인 상태
+## 4. 기술 스택
 
-| 도메인 | CRUD | 저장소 | 검색 | 대시보드 위젯 | 비고 |
-|---|---:|---|---:|---|---|
-| Dashboard layout | - | **Supabase** `user_settings` | - | 위젯 7개 | useDashboardLayout → DB upsert |
-| Wants | ✅ | **Supabase** `wants` | ✅ | `want-preview`, `asset-snapshot` | |
-| Calculator | - | - | - | - | 계산 전용 (저장 없음) |
-| Regret | ✅ | **Supabase** `regret_items` | - | - | |
-| Subscriptions | ✅ | **Supabase** `subscriptions` | ✅ | `subscription-summary` | |
-| Insights | ✅ | **Supabase** `insights` | ✅ | `recent-insights` | |
-| Notes | ✅ | **Supabase** `notes` | ✅ | - | |
-| Todos | ✅ | **Supabase** `todos` | ✅ | `todo-summary` | |
-| Retros | ✅ | **Supabase** `retros` | ✅ | - | UNIQUE(user_id, date) upsert |
-
----
-
-## 5. 기술 스택
-
-| 영역 | 사용 |
+| 영역 | 현재 사용 |
 |---|---|
-| Framework | Next.js 15 (App Router) |
-| UI | React 19 + TypeScript 5.7 + Tailwind 3.4 |
+| Framework | Next.js 15 App Router |
+| UI | React 19, TypeScript 5.7, Tailwind CSS 3.4 |
 | Icons | `lucide-react` |
-| Dashboard grid | `react-grid-layout` 2.2.3 (Responsive) |
-| Summary card reorder | `@dnd-kit/core`, `@dnd-kit/sortable` |
-| Backend / DB | Supabase (Postgres + Auth + RLS) |
-| Auth | Google OAuth (Supabase Auth) |
-| 데이터 접근 | Next.js Server Actions (`'use server'`) |
-| Persistence (UI) | `window.localStorage` — 테마/컴팩트 2개 키만 유지 |
-| External API | 없음 |
-| Test | 없음 |
+| Dashboard Grid | `react-grid-layout` |
+| Drag / Sort | `@dnd-kit/core`, `@dnd-kit/sortable` |
+| Backend | Supabase |
+| Auth | Supabase Auth + Google OAuth |
+| DB | Supabase Postgres |
+| SSR/Auth helper | `@supabase/ssr` |
+| 테스트 | 자동 테스트 없음 |
 
 ---
 
-## 6. localStorage 잔존 키 (UI 설정 2개만)
+## 5. Supabase 테이블 상태
 
-도메인 데이터는 전부 Supabase로 이전. 아래 2개는 per-device UI 설정으로 유지.
+`supabase/schema.sql` 기준:
 
-| Key | Value | 위치 |
-|---|---|---|
-| `aiop-compact-mode` | `boolean` | `CompactModeContext` |
-| `aiop-theme-mode` | `"light" \| "dark"` | `AppShell.tsx` |
+| 테이블 | 용도 | 현재 코드 사용 |
+|---|---|---:|
+| `profiles` | Google OAuth 사용자 정보 캐시 | 제한적 / 직접 UI 사용 여부 미확인 |
+| `wants` | 구매 목표 | ✅ |
+| `subscriptions` | 구독 관리 | ✅ |
+| `insights` | 인사이트 | ✅ |
+| `notes` | 노트 | ✅ |
+| `todos` | 할 일 | ✅ |
+| `retros` | K.P.T 회고 | ✅ |
+| `regret_items` | 그때 살걸 기록 | ✅ |
+| `dashboard_layouts` | 대시보드 위젯 레이아웃 | ✅ |
+| `user_settings` | 테마 / 컴팩트 / hero 설정용 스키마 | ⚠️ 현재 UI 설정은 localStorage 사용 |
+| `exchange_rates` | 환율 캐시 | ✅ |
 
-> `dataPortability.ts`의 export/import는 아직 localStorage 기반 그대로 유지 (⏸ 미전환).
+주의:
+
+- `settings/actions.ts`는 `dashboard_layouts.layout`을 사용한다.
+- `user_settings.dashboard_layout` 컬럼은 현재 스키마와 코드에 없다.
+- `exchange_rates`는 `base_currency`, `quote_currency`, `rate_date`, `provider` 조합을 unique key로 사용한다.
+- 모든 개인 데이터 테이블은 RLS를 켜고 `auth.uid() = user_id` 정책을 둔다.
+- `retros`는 `UNIQUE (user_id, date)` 기준으로 날짜별 1행 구조다.
+- `insights.tags`, `notes.tags`는 `text[]` + GIN index 구조다.
 
 ---
 
-## 7. Supabase 스키마 (테이블 목록)
+## 6. 도메인별 구현 상태
 
-| 테이블 | PK | 주요 컬럼 |
-|---|---|---|
-| `wants` | `id` (uuid) | `user_id`, `name`, `price`, `expected_yield`, ... |
-| `subscriptions` | `id` (uuid) | `user_id`, `service`, `monthly_price`, `status`, ... |
-| `insights` | `id` (uuid) | `user_id`, `title`, `key_sentence`, `tags` (text[]), ... |
-| `notes` | `id` (uuid) | `user_id`, `title`, `body`, `tags` (text[]), `status`, ... |
-| `regret_items` | `id` (uuid) | `user_id`, `name`, `watched_price`, `current_price`, ... |
-| `todos` | `id` (uuid) | `user_id`, `title`, `status`, `priority`, `memo`, ... |
-| `retros` | `id` (uuid) | `user_id`, `date` (text), `keep`/`problem`/`try` (jsonb) — UNIQUE(user_id, date) |
-| `user_settings` | `user_id` (uuid) | `dashboard_layout` (jsonb) — UNIQUE(user_id) |
-
-모든 테이블 RLS 활성화. `user_id = auth.uid()` 조건.
+| 도메인 | 페이지 | Server Action | 저장소 | 검색 | 대시보드 |
+|---|---|---|---|---:|---:|
+| Dashboard | `/` | `settings/actions.ts` | Supabase + localStorage 일부 | - | ✅ |
+| Wants | `/wants` | `wants/actions.ts` | Supabase `wants` | ✅ | ✅ |
+| Calculator | `/calculator` | 없음 | 저장 없음 | - | - |
+| Regret | `/regret` | `regret/actions.ts` | Supabase `regret_items` | - | QuickAdd만 |
+| Subscriptions | `/subscriptions` | `subscriptions/actions.ts` | Supabase `subscriptions` | ✅ | ✅ |
+| Insights | `/insights` | `insights/actions.ts` | Supabase `insights` | ✅ | ✅ |
+| Notes | `/notes` | `notes/actions.ts` | Supabase `notes` | ✅ | QuickAdd optimistic |
+| Todos | `/todos` | `todos/actions.ts` | Supabase `todos` | ✅ | ✅ |
+| Retros | `/retros`, `/retros/weekly` | `retros/actions.ts` | Supabase `retros` | ✅ | QuickAdd |
 
 ---
 
-## 8. Server Actions 패턴
+## 7. 데이터 흐름
+
+기본 패턴:
 
 ```txt
-src/app/<domain>/actions.ts
-  'use server'
-  getAuthenticatedUser() → { supabase, userId }
-  get<Domain>()         → DB select → mapper → TS type[]
-  create<Domain>(item)  → DB insert → mapper → TS type
-  update<Domain>*(id, ...) → DB update
-  delete<Domain>(id)    → DB delete
+page.tsx (RSC)
+  → Server Action 또는 Supabase server client 호출
+  → mapper로 DB snake_case를 TS camelCase로 변환
+  → Client View에 initialItems 전달
+  → Client View에서 useState(initialItems)
+  → 생성/수정/삭제 시 Server Action 호출
 ```
 
-- **page.tsx**: async RSC → Server Action 호출 → `initialItems` prop 전달
-- **View.tsx**: `useState(initialItems)` + 핸들러에서 Server Action 호출
-- **Dashboard 위젯**: `useEffect` + Server Action (RSC 불가 클라이언트 컴포넌트)
-- **globalSearch**: `searchAllDomains(data: SearchData, query, maxPerDomain)` — 순수 함수
-- **검색 드롭다운**: `useEffect` + 300ms debounce + `searchDomains` Server Action
-- **레이아웃 저장**: `saveDashboardLayout` fire-and-forget (로컬 상태 즉시 반영)
-- **Retros upsert**: `saveRetro` — UNIQUE(user_id, date) 기준 upsert
-
----
-
-## 9. K.P.T 회고 기능
-
-### 화면
-- `/retros` 오늘 회고 + 과거 회고 목록 + Streak + 이월 안내
-- `/retros/weekly` 주간 롤업 (월~일) — `useEffect + getRetros()`
-
-### 통합 기능
-| 기능 | 위치 | 상태 |
-|---|---|---|
-| K/P/T 항목 추가/삭제 | `RetroView.tsx` | ✅ |
-| Try 체크박스 토글 | `RetroView.tsx` + `updateTodoStatus` | ✅ |
-| Try ↔ Todo 양방향 연동 | `saveRetro` + `updateTodoStatus` | ✅ |
-| 어제 미완료 Try 이월 | `findPreviousRetro` + `carryOverTryItems` | ✅ |
-| 연속 작성 Streak | `calculateStreak`, `getWeekProgress` | ✅ |
-| 주간 롤업 | `WeeklyRollupView.tsx` + `buildWeeklyRollup` | ✅ |
-| Problem 키워드 Top 3 | `extractProblemKeywords` | ✅ |
-| QuickAdd retro | `AppShell.tsx` → `addRetroItem` Server Action | ✅ |
-
----
-
-## 10. v2.0 진행 현황
+대시보드:
 
 ```txt
-✅  1. Supabase 프로젝트 생성 + 환경변수
-✅  2. Postgres 스키마 + RLS (도메인 8개 + user_settings)
-✅  3. Google OAuth 설정
-✅  4. @supabase/ssr 서버/클라이언트 세팅
-✅  5. DB ↔ TS mappers (src/lib/db/mappers.ts)
-✅  6. Wants 도메인 RSC + Server Action 전환
-✅  7. 나머지 도메인 전환 (Subscriptions, Insights, Regret, Notes, Todos, Retros)
-✅  8. Dashboard 위젯 DB 전환 (SummaryCards, TodoSummary, RecentInsights, AssetSnapshot)
-✅  9. AppShell QuickAdd → Server Actions
-✅ 10. Dashboard layout → user_settings DB 저장
-✅ 11. WeeklyRollupView → getRetros()
-✅ 12. 전역 검색 → searchDomains Server Action (300ms debounce)
-✅ 13. 라우트 그룹 분리 (app)/(auth) — /login 500 에러 해결
-✅ 14. Vercel 배포 (https://aiop-alpha.vercel.app)
-⏸ 15. localStorage export JSON → Supabase import 도구 — 로컬 데이터 없음, 불필요 판단
-⬜ 16. 모바일 UI/UX 개선
-⬜ 20. 성능 개선 — 데이터 로딩 / 페이지 이동 속도
-⬜ 17. exchange_rates 캐시 테이블 + Cron
-⬜ 18. 서버 기반 export
-⬜ 19. v2.1+ AI Route Handler
+src/app/(app)/page.tsx
+  → Supabase에서 wants/subscriptions/insights/notes/todos를 Promise.all로 조회
+  → mapper 변환
+  → DashboardGrid initialData 전달
+```
+
+QuickAdd:
+
+```txt
+AppShell
+  → QuickAddModal
+  → 도메인별 Add Modal
+  → Server Action 호출
+  → 일부 도메인은 dashboard optimistic event 적용
+  → router.refresh()
+```
+
+대시보드 레이아웃:
+
+```txt
+src/app/(app)/layout.tsx
+  → getDashboardLayout()
+  → AppShell initialLayout 전달
+  → LayoutProvider / useDashboardLayout 초기값으로 사용
+  → dashboard_layouts.layout 조회
+  → 클라이언트 상태에 반영
+  → saveDashboardLayout() upsert
+```
+
+환율:
+
+```txt
+ExchangeRatePanel
+  → useExchangeRate()
+  → GET /api/exchange-rates?base=USD&quote=KRW
+  → exchange_rates 캐시 조회
+  → 12시간 이내 캐시가 있으면 캐시 반환
+  → 없거나 refresh=1이면 Frankfurter v2 API 호출
+  → exchange_rates upsert 후 반환
 ```
 
 ---
 
-## 11. 현재 우선순위
+## 8. 검색 상태
 
-v2.0 핵심 DB 전환 + Vercel 배포 완료. 남은 항목:
+현재 전역 검색:
 
-- **단기**: 모바일 UI/UX 개선 (현재 모바일 미최적화 상태)
-- **단기**: 성능 개선 (아래 상세 참고)
-- **단기**: exchange_rates 캐시 + Frankfurter API 연동 (통화 환산 실데이터)
-- **중기**: localStorage → Supabase 데이터 이전 도구 — 로컬 데이터 없음, 불필요 판단
-- **장기**: v2.1 AI 기능 (입력 자동분류 → 오늘의 할일 추천 → 투자종목 추천)
+```txt
+Header.tsx
+  → Dashboard 경로(`/`)에서만 SearchResultsDropdown 표시
+  → searchDomains(query, 3)
+  → wants/subscriptions/insights/notes/todos/retros 조회
+  → searchAllDomains(data, query, maxPerDomain)
+```
+
+검색 대상:
+
+| 도메인 | 검색 필드 |
+|---|---|
+| Wants | `name`, `reason`, `category`, `status`, `priority` |
+| Subscriptions | `service`, `category` |
+| Insights | `title`, `keySentence`, `actionItem`, `relatedGoal`, `tags` |
+| Notes | `title`, `body`, `tags` |
+| Todos | `title`, `memo` |
+| Retros | `date`, `keep/problem/try.text` |
+
+현재 제외:
+
+- Calculator
+- Regret
 
 ---
 
-## 12. 알려진 성능 이슈 (미해결)
+## 9. localStorage 상태
 
-- **증상**: 데이터 로딩 속도 느림, 페이지 이동 속도 느림
-- **현재 상태**: Dashboard는 RSC + Promise.all 전환 완료 (2026-05-13). 그러나 체감 속도는 여전히 느림
-- **원인 미특정**: 호스팅 서버(Vercel 리전), DB 서버(Supabase 리전), 코드 구조 중 어느 쪽인지 불명확
-- **다음 진단 방향**:
-  - Vercel/Supabase 리전 확인 (둘 다 같은 리전인지)
-  - Next.js `cache()` 적용 여부 검토
-  - Supabase 쿼리 실행시간 로깅
-  - Vercel Analytics / Speed Insights 활성화
+현재 코드에서 직접 쓰는 키:
+
+| Key | 용도 | 위치 |
+|---|---|---|
+| `aiop-theme-mode` | 다크 / 라이트 모드 | `AppShell.tsx` |
+| `aiop-compact-mode` | 컴팩트 모드 | `CompactModeContext.tsx` |
+| `aiop-update-notice-v1` | 업데이트 안내 모달 닫힘 여부 | `AppShell.tsx` |
+
+레거시 / 미전환:
+
+- `dataPortability.ts`는 v1 localStorage export/import 키를 여전히 다룬다.
+- `storage.ts`의 `prependLocalStorageItem`은 남아 있으나 현재 주요 저장 흐름에서는 Supabase Server Action이 우선이다.
+- `dataPortability.ts`는 Supabase DB import/export로 전환되지 않았다.
 
 ---
 
-## 13. 주의사항
+## 10. K.P.T 회고 상태
 
-- `dataPortability.ts`는 아직 localStorage 기반. export/import 기능은 현재 사용 불가 상태로 간주.
-- `aiop-compact-mode`, `aiop-theme-mode` 2개 키는 의도적으로 localStorage 유지 (per-device UI 설정).
-- `globalSearch.ts`의 `searchAllDomains`는 더 이상 `window.localStorage`를 읽지 않음. `SearchData` 객체를 인자로 받는 순수 함수로 변경됨.
-- `useDashboardLayout`은 초기값이 `defaultDashboardLayout`이고, mount 후 DB에서 로드해 덮어씀 — 짧은 레이아웃 플래시 발생 가능.
-- Retros는 `UNIQUE(user_id, date)` 기준 upsert. `saveRetro` 호출 시 date 값이 정확해야 함.
-- 라우트는 이미 App Router 구조. `?view=` / `popstate` 흔적이 보이면 잔재이므로 제거 대상.
+| 기능 | 상태 |
+|---|---:|
+| 일일 K/P/T 작성 | ✅ |
+| 날짜별 회고 저장 | ✅ |
+| `UNIQUE(user_id, date)` 기반 upsert | ✅ |
+| Try 항목 Todo 연동 | ✅ |
+| Todo 상태 변경과 Try done 동기화 | ✅ |
+| 어제 미완료 Try 이월 | ✅ |
+| Streak / 주간 진행률 | ✅ |
+| `/retros/weekly` 주간 롤업 | ✅ |
+| QuickAdd retro | ✅ |
+
+---
+
+## 11. 대시보드 상태
+
+위젯:
+
+```txt
+hero
+summary-cards
+want-preview
+asset-snapshot
+subscription-summary
+recent-insights
+todo-summary
+```
+
+레이아웃:
+
+- 넓은 화면: `react-grid-layout` 기반 위치 / 크기 조정
+- 모바일 / 컴팩트: 단순 세로 스택
+- 편집 모드: 설정 메뉴에서 위젯 숨김, 순서 변경, 리셋 가능
+- 저장 위치: Supabase `dashboard_layouts.layout`
+- 초기값: `defaultDashboardLayout`
+
+v2.1 성능 개선:
+
+- `(app)/layout.tsx`에서 `dashboard_layouts.layout`을 서버에서 먼저 조회해 `AppShell`에 전달한다.
+- `useDashboardLayout`은 서버에서 받은 초기 레이아웃이 있으면 mount 직후 중복 조회를 생략한다.
+- `TodoSummary`는 `router.refresh()`로 갱신된 `initialTodos`를 다시 로컬 상태에 반영한다.
+
+주의:
+
+- 레이아웃 저장은 여전히 클라이언트에서 `saveDashboardLayout()`을 호출한다.
+- QuickAdd 후 일부 도메인은 optimistic event와 `router.refresh()`를 함께 사용한다.
+
+---
+
+## 12. 환율 캐시 / API 상태
+
+현재 구현:
+
+| 항목 | 상태 |
+|---|---:|
+| `exchange_rates` 테이블 스키마 | ✅ |
+| RLS policy | ✅ |
+| `GET /api/exchange-rates` | ✅ |
+| Frankfurter v2 단일 환율 API 연동 | ✅ |
+| 12시간 캐시 TTL | ✅ |
+| stale cache fallback | ✅ |
+| `/calculator` USD/KRW 패널 | ✅ |
+
+API:
+
+```txt
+GET /api/exchange-rates?base=USD&quote=KRW
+GET /api/exchange-rates?base=USD&quote=KRW&refresh=1
+```
+
+응답 요지:
+
+```txt
+base, quote, rate, rateDate, fetchedAt, provider, source
+```
+
+주의:
+
+- 현재 지원 통화쌍은 코드 타입 기준 `KRW`, `USD`다.
+- 운영 DB에는 `supabase/schema.sql`의 `exchange_rates` 추가분을 적용해야 한다.
+- Frankfurter API는 브라우저가 아니라 Next.js Route Handler에서 호출한다.
+- 미인증 사용자는 401을 반환한다.
+
+---
+
+## 13. 현재 계획서 상태
+
+`.agent-notes/aiop-plan.md`는 **v2.1 데이터 로딩 / 페이지 이동 성능 진단 및 개선 + 환율 캐시/API 연동** 계획이다.
+
+AI 기능은 v2.2 후보로 미뤘다.
+
+남아 있는 문서 작업:
+
+- v2.1 완료 후 `aiop-archive.md` 이동 여부 결정
+- 실제 Supabase 운영 DB migration 적용 여부 기록
+
+---
+
+## 14. 검증 명령어
+
+`package.json` 기준 사용 가능한 스크립트:
+
+```bash
+npm run dev
+npm run build
+npm run start
+npm run lint
+```
+
+프로젝트 공통 검증:
+
+```bash
+npx tsc --noEmit
+npm run lint
+npm run build
+```
+
+주의:
+
+- `package.json`에는 `test` 스크립트가 없다.
+- `npm run lint`는 `next lint`를 실행한다.
+
+---
+
+## 15. 알려진 주의사항
+
+- `dataPortability.ts`는 Supabase 전환 이후 현재 데이터 구조와 맞지 않는 레거시 export/import일 수 있다.
+- `user_settings` 테이블은 스키마에 있으나 현재 테마/컴팩트 모드는 localStorage 기반이다.
+- `dashboard_layouts`와 `user_settings`의 역할이 문서에서 섞이지 않도록 주의한다.
+- Regret 도메인은 전역 검색 대상에서 제외되어 있다.
+- Dashboard RSC는 `wants/subscriptions/insights/notes/todos`만 직접 조회한다. `regret_items`, `retros`는 현재 대시보드 초기 데이터에 포함되지 않는다.
+- 환율 테이블은 스키마에 추가됐지만 실제 Supabase 프로젝트에는 별도 SQL 적용이 필요하다.
+- `mockData.ts`는 초기 / fallback 성격으로 남아 있으나 현재 주요 데이터 흐름은 Supabase다.
+- 환경 변수와 secret은 문서에 기록하지 않는다.
+
+---
+
+## 16. 다음 후보 작업
+
+- Supabase 운영 DB에 `exchange_rates` SQL 적용
+- 환율 기능 수동 QA
+- 모바일 UI/UX QA 및 overflow 수정
+- `dataPortability.ts`를 Supabase 기반 export/import로 재설계하거나 제거 여부 결정
+- Regret 전역 검색 포함 여부 결정
+- Wants / Regret에 환율 환산 표시 확장
+- v2.2 AI 자동분류 / 추천 기능

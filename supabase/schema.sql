@@ -322,3 +322,34 @@ CREATE POLICY "user_settings: 본인 데이터만 삭제" ON user_settings FOR D
 CREATE TRIGGER user_settings_updated_at
   BEFORE UPDATE ON user_settings
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+
+-- ============================================================
+-- 10. exchange_rates (환율 캐시)
+-- Frankfurter API 응답을 서버 Route Handler가 캐시
+-- ============================================================
+CREATE TABLE exchange_rates (
+  id              uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  base_currency   text        NOT NULL CHECK (base_currency IN ('KRW', 'USD')),
+  quote_currency  text        NOT NULL CHECK (quote_currency IN ('KRW', 'USD')),
+  rate            numeric     NOT NULL CHECK (rate > 0),
+  rate_date       date        NOT NULL,
+  provider        text        NOT NULL DEFAULT 'frankfurter',
+  fetched_at      timestamptz NOT NULL DEFAULT now(),
+  created_at      timestamptz NOT NULL DEFAULT now(),
+  updated_at      timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (base_currency, quote_currency, rate_date, provider)
+);
+
+CREATE INDEX exchange_rates_pair_fetched_at_idx
+  ON exchange_rates (base_currency, quote_currency, provider, fetched_at DESC);
+
+ALTER TABLE exchange_rates ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "exchange_rates: 인증 사용자 조회" ON exchange_rates FOR SELECT TO authenticated USING (true);
+CREATE POLICY "exchange_rates: 인증 사용자 삽입" ON exchange_rates FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "exchange_rates: 인증 사용자 수정" ON exchange_rates FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
+
+CREATE TRIGGER exchange_rates_updated_at
+  BEFORE UPDATE ON exchange_rates
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

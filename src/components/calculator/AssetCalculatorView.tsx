@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Calculator, TrendingUp } from "lucide-react";
+import { ExchangeRatePanel } from "@/components/calculator/ExchangeRatePanel";
 import { MoneyInputField } from "@/components/inputs/MoneyInputField";
 import { useCompactMode } from "@/contexts/CompactModeContext";
 import { calculateAssetPlan } from "@/lib/calculations";
@@ -24,7 +25,8 @@ export function AssetCalculatorView() {
   const decision = getPurchaseDecision(price, monthlyInvestment, result.requiredCapital, result.monthsToBuy);
 
   return (
-    <div className={`grid gap-4 ${isCompact ? "" : "xl:grid-cols-[1.05fr_0.95fr] xl:gap-6"}`}>
+    <div className="space-y-4">
+      <div className={`grid gap-4 ${isCompact ? "" : "xl:grid-cols-[1.05fr_0.95fr] xl:gap-6"}`}>
       <section className={`rounded-2xl border border-emerald-400/20 bg-zinc-900 shadow-soft ${isCompact ? "p-4" : "p-6"}`}>
         <div className="flex items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-400/10 text-emerald-300">
@@ -85,6 +87,9 @@ export function AssetCalculatorView() {
           </div>
         </div>
       </section>
+      </div>
+
+      <ExchangeRatePanel compact={isCompact} />
     </div>
   );
 }

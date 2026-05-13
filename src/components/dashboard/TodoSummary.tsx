@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { DndContext, PointerSensor, closestCenter, type DragEndEvent, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, arrayMove, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -43,6 +43,10 @@ export function TodoSummary({ initialTodos }: { initialTodos: TodoItem[] }) {
   const { isCompact } = useCompactMode();
   const { isEditMode, layout, setTodoSummaryOrder } = useLayoutContext();
   const [items, setItems] = useState<TodoItem[]>(initialTodos);
+
+  useEffect(() => {
+    setItems(initialTodos);
+  }, [initialTodos]);
 
   const activeItems = items.filter((item) => item.status !== "done");
   const doneCount = items.filter((item) => item.status === "done").length;

@@ -23,11 +23,11 @@ type LayoutContextValue = {
 
 const LayoutContext = createContext<LayoutContextValue | null>(null);
 
-export function LayoutProvider({ children }: { children: React.ReactNode }) {
+export function LayoutProvider({ children, initialLayout }: { children: React.ReactNode; initialLayout: DashboardLayout }) {
   const [isEditMode, setEditMode] = useState(false);
   const [draftLayout, setDraftLayout] = useState<DashboardLayout | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const { layout: savedLayout, saveLayout: persistLayout, resetLayout: resetSavedLayout, normalizeLayout } = useDashboardLayout();
+  const { layout: savedLayout, saveLayout: persistLayout, resetLayout: resetSavedLayout, normalizeLayout } = useDashboardLayout(initialLayout);
 
   const layout = draftLayout ?? savedLayout;
 

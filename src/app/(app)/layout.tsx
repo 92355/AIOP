@@ -1,9 +1,12 @@
 import { AppShell } from "@/components/layout/AppShell";
+import { getDashboardLayout } from "@/app/settings/actions";
 
-export default function AppLayout({
+export default async function AppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <AppShell>{children}</AppShell>;
+  const initialLayout = await getDashboardLayout();
+
+  return <AppShell initialLayout={initialLayout}>{children}</AppShell>;
 }
