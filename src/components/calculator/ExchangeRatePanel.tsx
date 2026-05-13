@@ -11,9 +11,11 @@ const sourceLabels = {
 } as const;
 
 export function ExchangeRatePanel({ compact = false }: { compact?: boolean }) {
-  const { data, isLoading, errorMessage, refresh } = useExchangeRate("USD", "KRW");
+  const { data, isLoading, errorMessage, refresh, canManualRefresh, cooldownRemainingMs } = useExchangeRate("USD", "KRW");
   const rateText = data ? `1 ${data.base} = ${formatRate(data.rate)} ${data.quote}` : "환율 조회 대기";
   const sourceText = data ? sourceLabels[data.source] : "대기";
+  const cooldownText = canManualRefresh ? "즉시 가능" : formatDuration(cooldownRemainingMs);
+  const refreshButtonDisabled = isLoading || !canManualRefresh;
 
   return (
     <section className={`rounded-2xl border border-zinc-800 bg-zinc-900 shadow-soft ${compact ? "p-4" : "p-5"}`}>
@@ -25,7 +27,7 @@ export function ExchangeRatePanel({ compact = false }: { compact?: boolean }) {
         <button
           type="button"
           onClick={() => void refresh()}
-          disabled={isLoading}
+          disabled={refreshButtonDisabled}
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-zinc-800 bg-zinc-950 text-zinc-300 transition hover:border-emerald-400/40 hover:text-emerald-300 disabled:cursor-wait disabled:opacity-60"
           aria-label="환율 새로고침"
           title="환율 새로고침"
@@ -45,6 +47,7 @@ export function ExchangeRatePanel({ compact = false }: { compact?: boolean }) {
         <MetaItem label="출처" value={data?.provider ?? "frankfurter"} />
         <MetaItem label="응답" value={sourceText} />
       </div>
+      <p className="mt-3 text-xs text-zinc-500">수동 새로고침 쿨다운: {cooldownText} (3시간)</p>
     </section>
   );
 }
@@ -62,4 +65,13 @@ function formatRate(rate: number) {
   return new Intl.NumberFormat("ko-KR", {
     maximumFractionDigits: 2,
   }).format(rate);
+}
+
+function formatDuration(durationMs: number) {
+  const totalSeconds = Math.max(0, Math.floor(durationMs / 1000));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }

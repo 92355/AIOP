@@ -1,6 +1,7 @@
 import type { Currency } from "@/types";
 
 export const EXCHANGE_RATE_CACHE_TTL_MS = 12 * 60 * 60 * 1000;
+export const EXCHANGE_RATE_MANUAL_REFRESH_COOLDOWN_MS = 3 * 60 * 60 * 1000;
 export const EXCHANGE_RATE_PROVIDER = "frankfurter";
 export const DEFAULT_EXCHANGE_RATE_BASE: Currency = "USD";
 export const DEFAULT_EXCHANGE_RATE_QUOTE: Currency = "KRW";
@@ -51,6 +52,13 @@ export function isFreshExchangeRate(fetchedAt: string, now = Date.now()) {
   if (!Number.isFinite(fetchedTime)) return false;
 
   return now - fetchedTime < EXCHANGE_RATE_CACHE_TTL_MS;
+}
+
+export function getManualRefreshCooldownRemainingMs(fetchedAt: string, now = Date.now()) {
+  const fetchedTime = new Date(fetchedAt).getTime();
+  if (!Number.isFinite(fetchedTime)) return 0;
+
+  return Math.max(0, fetchedTime + EXCHANGE_RATE_MANUAL_REFRESH_COOLDOWN_MS - now);
 }
 
 export function exchangeRateRowToResponse(row: ExchangeRateRow, source: ExchangeRateSource): ExchangeRateResponse {

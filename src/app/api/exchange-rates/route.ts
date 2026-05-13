@@ -6,6 +6,7 @@ import {
   EXCHANGE_RATE_PROVIDER,
   buildFrankfurterRateUrl,
   exchangeRateRowToResponse,
+  getManualRefreshCooldownRemainingMs,
   isFreshExchangeRate,
   normalizeCurrency,
   parseFrankfurterRateResponse,
@@ -43,6 +44,19 @@ export async function GET(request: Request) {
   }
 
   const cachedRow = await getLatestCachedRate(supabase, base, quote);
+
+  if (cachedRow && forceRefresh) {
+    const cooldownRemainingMs = getManualRefreshCooldownRemainingMs(cachedRow.fetched_at);
+    if (cooldownRemainingMs > 0) {
+      return NextResponse.json(
+        {
+          message: "수동 새로고침은 3시간마다 가능합니다.",
+          cooldownRemainingMs,
+        },
+        { status: 429 },
+      );
+    }
+  }
 
   if (cachedRow && !forceRefresh && isFreshExchangeRate(cachedRow.fetched_at)) {
     return NextResponse.json(exchangeRateRowToResponse(cachedRow, "cache"));

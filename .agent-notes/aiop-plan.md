@@ -160,4 +160,5 @@ npm run build
 - v2.1 후속: 실제 Supabase migration 적용 및 운영 DB 확인
 - v2.1 후속: Vercel / Supabase 리전 확인, Speed Insights 기반 추가 진단
 - v2.1 후속: Wants / Regret에 환율 환산 표시 확장
+- v2.1 후속: 환율 API `429` 응답의 `cooldownRemainingMs`를 패널 UI에 직접 표시
 - v2.2: AI 자동분류 / 오늘 할 일 추천 / 투자종목 추천 / 뉴스 추천
