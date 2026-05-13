@@ -82,7 +82,7 @@ export function AddSubscriptionModal({ isOpen, onClose, onAdd }: AddSubscription
         <form onSubmit={handleSubmit} className={`${isCompact ? "mt-4" : "mt-6"} space-y-4`}>
           <div className={`grid gap-3 ${isCompact ? "grid-cols-2" : "sm:grid-cols-2"}`}>
             <TextField label="서비스명" value={form.service} onChange={(value) => setForm((prev) => ({ ...prev, service: value }))} />
-            <MoneyInputField label="월 금액" value={form.monthlyPrice} onChange={(value) => setForm((prev) => ({ ...prev, monthlyPrice: value }))} helperText="천 / 만 / 억 단위로 입력하세요." />
+            <MoneyInputField label="월 금액" value={form.monthlyPrice} onChange={(value) => setForm((prev) => ({ ...prev, monthlyPrice: value }))} />
             <TextField label="카테고리" value={form.category} onChange={(value) => setForm((prev) => ({ ...prev, category: value }))} />
             <SelectField label="사용 빈도" value={form.usage} options={usages} getOptionLabel={(option) => getUsageLabel(option as Subscription["usage"])} onChange={(value) => setForm((prev) => ({ ...prev, usage: value as Subscription["usage"] }))} />
             <NumberField label="가치 점수" value={form.valueScore} onChange={(value) => setForm((prev) => ({ ...prev, valueScore: value }))} />

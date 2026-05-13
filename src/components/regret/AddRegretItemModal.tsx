@@ -105,14 +105,12 @@ export function AddRegretItemModal({ isOpen, onClose, onAdd }: AddRegretItemModa
               label="관심 가격"
               value={form.watchedPrice}
               currency={form.currency}
-              helperText="천 / 만 / 억 단위로 입력하세요."
               onChange={(value) => setForm((prev) => ({ ...prev, watchedPrice: value }))}
             />
             <MoneyInputField
               label="현재 가격"
               value={form.currentPrice}
               currency={form.currency}
-              helperText="천 / 만 / 억 단위로 입력하세요."
               onChange={(value) => setForm((prev) => ({ ...prev, currentPrice: value }))}
             />
             <NumberField label="수량" value={form.quantity} onChange={(value) => setForm((prev) => ({ ...prev, quantity: value }))} />

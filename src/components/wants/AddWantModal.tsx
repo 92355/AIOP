@@ -125,7 +125,6 @@ export function AddWantModal({ isOpen, onClose, onAdd, initialForm }: AddWantMod
               label="가격"
               value={form.price}
               currency={form.currency}
-              helperText="천 / 만 / 억 단위로 입력 가능합니다."
               onChange={(value) => setForm((prev) => ({ ...prev, price: value }))}
             />
             <SelectField label="통화" value={form.currency} options={currencies} onChange={(value) => setForm((prev) => ({ ...prev, currency: value as Currency }))} />

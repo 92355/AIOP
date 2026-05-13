@@ -51,7 +51,7 @@ export function AssetCalculatorView() {
     <div className="min-w-0 max-w-full space-y-4 overflow-x-hidden">
       <div className={`min-w-0 max-w-full grid gap-4 ${isCompactLayout ? "" : "xl:grid-cols-[1.05fr_0.95fr] xl:gap-6"}`}>
       <section className={`min-w-0 w-full max-w-full overflow-hidden rounded-2xl border border-emerald-400/20 bg-zinc-900 shadow-soft ${isCompactLayout ? "p-4" : "p-6"}`}>
-        <div className="flex items-center gap-3">
+        <div className={`flex gap-3 ${isCompactLayout ? "items-center justify-center text-center" : "items-center"}`}>
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-400/10 text-emerald-300">
             <Calculator className="h-6 w-6" />
           </div>
@@ -61,7 +61,7 @@ export function AssetCalculatorView() {
           </div>
         </div>
         <div className={`grid gap-4 ${isCompactLayout ? "mt-5" : "mt-8 sm:grid-cols-2"}`}>
-          <MoneyInputField label="구매 가격" value={price} onChange={setPrice} helperText="천 / 만 / 억 단위로 볼 수 있습니다." compact={isCompactLayout} />
+          <MoneyInputField label="구매 가격" value={price} onChange={setPrice} compact={isCompactLayout} />
           <label className="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4">
             <span className="text-sm text-zinc-500">목표 기간</span>
             <div className="mt-3 flex items-center gap-2">
@@ -86,7 +86,7 @@ export function AssetCalculatorView() {
               <span className="text-sm text-zinc-500">%</span>
             </div>
           </label>
-          <MoneyInputField label="월 투자 가능액" value={monthlyInvestment} onChange={setMonthlyInvestment} helperText="목표 기간 기준으로 계산합니다." compact={isCompactLayout} />
+          <MoneyInputField label="월 투자 가능액" value={monthlyInvestment} onChange={setMonthlyInvestment} compact={isCompactLayout} />
         </div>
       </section>
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { formatCurrency, formatKRW } from "@/lib/formatters";
 import type { Currency } from "@/types";
 
@@ -8,7 +9,6 @@ type MoneyInputFieldProps = {
   value: number;
   onChange: (value: number) => void;
   currency?: Currency;
-  helperText?: string;
   compact?: boolean;
 };
 
@@ -45,10 +45,16 @@ const INCREMENT_BUTTONS: Record<Currency, Array<{
   USD: USD_INCREMENTS,
 };
 
-export function MoneyInputField({ label, value, onChange, currency = "KRW", helperText, compact = false }: MoneyInputFieldProps) {
+export function MoneyInputField({ label, value, onChange, currency = "KRW", compact = false }: MoneyInputFieldProps) {
   const previewText = currency === "KRW" ? formatKRW(value) : formatCurrency(value, currency);
   const increments = INCREMENT_BUTTONS[currency];
   const currencyLabel = CURRENCY_LABELS[currency];
+  const [inputValue, setInputValue] = useState(() => String(Number.isFinite(value) ? value : 0));
+
+  useEffect(() => {
+    const normalized = String(Number.isFinite(value) ? value : 0);
+    setInputValue((currentValue) => (currentValue === normalized ? currentValue : normalized));
+  }, [value]);
 
   function handleIncrement(incrementValue: number) {
     const baseValue = Number.isFinite(value) ? value : 0;
@@ -61,8 +67,21 @@ export function MoneyInputField({ label, value, onChange, currency = "KRW", help
       <div className={`flex min-w-0 items-center gap-2 ${compact ? "mt-2" : "mt-3"}`}>
         <input
           type="number"
-          value={Number.isFinite(value) ? value : 0}
-          onChange={(event) => onChange(toSafeNumber(event.target.value))}
+          value={inputValue}
+          onFocus={() => {
+            if (inputValue === "0") setInputValue("");
+          }}
+          onChange={(event) => {
+            const nextInputValue = event.target.value;
+            setInputValue(nextInputValue);
+            onChange(toSafeNumber(nextInputValue));
+          }}
+          onBlur={() => {
+            if (inputValue.trim() === "") {
+              setInputValue("0");
+              onChange(0);
+            }
+          }}
           className={`min-w-0 flex-1 bg-transparent font-semibold text-zinc-50 outline-none ${compact ? "text-xl" : "text-3xl md:text-4xl"}`}
         />
         <span className="shrink-0 text-base text-zinc-500">{currencyLabel}</span>
@@ -79,9 +98,8 @@ export function MoneyInputField({ label, value, onChange, currency = "KRW", help
           </button>
         ))}
       </div>
-      <div className={`flex min-w-0 items-center justify-between gap-3 ${compact ? "mt-2" : "mt-3"}`}>
-        <p className="min-w-0 flex-1 text-xs text-zinc-500">{helperText ?? "금액 입력"}</p>
-        <p className="min-w-0 max-w-[55%] truncate text-right text-sm font-medium text-emerald-300">{previewText}</p>
+      <div className={`${compact ? "mt-2" : "mt-3"}`}>
+        <p className="min-w-0 truncate text-right text-sm font-medium text-emerald-300">{previewText}</p>
       </div>
     </label>
   );
