@@ -10,6 +10,7 @@ import { SearchResultsDropdown } from "@/components/layout/SearchResultsDropdown
 import { HeaderSettingsButton } from "@/components/layout/settings/HeaderSettingsButton";
 import { ProfileBadge } from "@/components/layout/ProfileBadge";
 import { getActiveNavItem, isDashboardPathname, viewTitles } from "@/components/layout/navItems";
+import packageJson from "../../../package.json";
 
 type HeaderProps = {
   isDarkMode: boolean;
@@ -61,7 +62,10 @@ export function Header({ isDarkMode, isMobileLayout, onToggleTheme, onOpenQuickA
       <div className={`${headerInnerClass} flex flex-col gap-4`}>
         {isMobileLayout ? (
           <Link href="/" className="rounded-2xl px-1 py-0.5 transition hover:bg-zinc-900" aria-label="대시보드로 이동">
-            <p className="text-xs uppercase tracking-[0.28em] text-emerald-300/80">AIOP</p>
+            <div className="flex items-center gap-2">
+              <p className="text-xs uppercase tracking-[0.28em] text-emerald-300/80">AIOP</p>
+              <span className="text-[10px] text-zinc-500">v{packageJson.version}</span>
+            </div>
             <h2 className="mt-1 text-xl font-semibold text-zinc-50">{title}</h2>
           </Link>
         ) : null}
