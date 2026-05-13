@@ -108,7 +108,7 @@ export function NotesInboxView({ initialItems }: { initialItems: Note[] }) {
     <div className={`grid gap-4 ${isCompact ? "" : "xl:grid-cols-[0.95fr_1.05fr] xl:gap-6"}`}>
       <section className={`rounded-2xl border border-zinc-800 bg-zinc-900 shadow-soft ${isCompact ? "p-4" : "p-6"}`}>
         <h2 className={`font-semibold text-zinc-50 ${isCompact ? "text-2xl" : "text-3xl"}`}>빠른 기록</h2>
-        {isCompact ? null : <p className="mt-2 text-zinc-500">분류하기 전의 생각을 빠르게 받아두는 공간입니다.</p>}
+        {isCompact ? null : <p className="mt-2 text-zinc-500">생각 나는거 막 적어 그냥 막 </p>}
         <textarea
           value={body}
           onChange={(event) => setBody(event.target.value)}
@@ -176,7 +176,7 @@ export function NotesInboxView({ initialItems }: { initialItems: Note[] }) {
               <div className="flex items-start justify-between gap-4">
                 <h4 className="min-w-0 truncate font-medium text-zinc-100">{item.title || getNotePreview(item.body)}</h4>
                 <div className="flex shrink-0 items-center gap-2">
-                  {isCompact ? null : <span className="text-xs text-zinc-500">{item.createdAt}</span>}
+                  {isCompact ? null : <span className="text-xs text-zinc-500">{formatRecentNoteDateTime(item.createdAt)}</span>}
                   <button
                     type="button"
                     onClick={() => handleAddToTodo(item)}
@@ -250,9 +250,18 @@ function getTodoMemoFromNote(note: Note) {
 }
 
 function formatCreatedAt(date: Date) {
-  return `오늘 ${date.toLocaleTimeString("ko-KR", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  })}`;
+  return formatRecentNoteDateTime(date);
+}
+
+function formatRecentNoteDateTime(dateOrString: Date | string) {
+  const date = typeof dateOrString === "string" ? new Date(dateOrString) : dateOrString;
+  if (Number.isNaN(date.getTime())) return typeof dateOrString === "string" ? dateOrString : "";
+
+  const year = String(date.getFullYear()).slice(-2);
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hour = String(date.getHours()).padStart(2, "0");
+  const minute = String(date.getMinutes()).padStart(2, "0");
+
+  return `${year}-${month}-${day}  ${hour}:${minute}`;
 }

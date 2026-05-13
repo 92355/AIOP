@@ -34,7 +34,7 @@ export function RegretTrackerView({ initialItems }: RegretTrackerViewProps) {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className={`font-semibold text-zinc-50 ${isCompact ? "text-2xl" : "text-3xl"}`}>그때 살걸 기록장</h2>
-          {isCompact ? null : <p className="mt-2 text-zinc-500">관심 있었던 자산과 물건을 결과가 아니라 판단 과정으로 복기합니다.</p>}
+          {isCompact ? null : <p className="mt-2 text-zinc-500">라고할때 살걸... 이라고 할때 살걸... </p>}
         </div>
         <button
           type="button"

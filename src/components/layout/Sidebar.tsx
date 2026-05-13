@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { isNavItemActive, navItems, viewTitles } from "@/components/layout/navItems";
 import { SidebarSettingsButton } from "@/components/layout/settings/SidebarSettingsButton";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 
 type SidebarProps = {
   onOpenCoffee: () => void;
@@ -12,6 +13,10 @@ type SidebarProps = {
 
 export function Sidebar({ onOpenCoffee }: SidebarProps) {
   const pathname = usePathname();
+  const [focusNote, setFocusNote] = useLocalStorage<string>(
+    "aiop-sidebar-focus-note",
+    "소비 결정, 자산 기준, 인사이트 기록을 한 화면에서 연결합니다.",
+  );
 
   return (
     <aside className="relative z-50 flex border-zinc-800 bg-zinc-950/95 px-4 py-5 md:h-screen md:w-72 md:flex-col md:border-r">
@@ -57,9 +62,14 @@ export function Sidebar({ onOpenCoffee }: SidebarProps) {
             <ClipboardList className="h-4 w-4 text-emerald-300" />
             오늘의 초점
           </div>
-          <p className="text-sm leading-6 text-zinc-400">
-            소비 결정, 자산 기준, 인사이트 기록을 한 화면에서 연결합니다.
-          </p>
+          <textarea
+            value={focusNote}
+            onChange={(event) => setFocusNote(event.target.value)}
+            rows={4}
+            className="w-full resize-y rounded-2xl border border-zinc-800 bg-zinc-950/70 px-3 py-2 text-sm leading-6 text-zinc-400 outline-none focus:border-emerald-400/40"
+            placeholder="오늘의 초점을 입력하세요"
+            aria-label="오늘의 초점 입력"
+          />
         </div>
       </div>
 

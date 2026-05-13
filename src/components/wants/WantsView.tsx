@@ -110,8 +110,8 @@ export function WantsView({ initialItems }: WantsViewProps) {
     <div className={isCompact ? "space-y-4" : "space-y-6"}>
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h2 className={`font-semibold text-zinc-50 ${isCompact ? "text-2xl" : "text-3xl"}`}>구매 욕구를 운영 가능한 목표로 바꾸기</h2>
-          {isCompact ? null : <p className="mt-2 text-zinc-500">가격, 이유, 판단 점수, 필요한 자산 규모를 한 번에 봅니다.</p>}
+          <h2 className={`font-semibold text-zinc-50 ${isCompact ? "text-2xl" : "text-3xl"}`}>구매하기전, 운영 가능한 목표로 바꾸어 봅시다.</h2>
+          {isCompact ? null : <p className="mt-2 text-zinc-500">필요 금액을 입력후, 목표구매일, 목표기간을 설정하면 AI가 구매 점수를 책정해줍니다</p>}
         </div>
         <button
           type="button"

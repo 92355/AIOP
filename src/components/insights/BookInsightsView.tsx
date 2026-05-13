@@ -44,7 +44,7 @@ export function BookInsightsView({ initialItems }: BookInsightsViewProps) {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className={`font-semibold text-zinc-50 ${isCompact ? "text-2xl" : "text-3xl"}`}>인사이트 보관함</h2>
-          {isCompact ? null : <p className="mt-2 text-zinc-500">읽고 본 내용을 내 행동과 소비 판단으로 연결합니다.</p>}
+          {isCompact ? null : <p className="mt-2 text-zinc-500">인상깊은 인사이트 기록해보세요</p>}
         </div>
         <button
           type="button"
