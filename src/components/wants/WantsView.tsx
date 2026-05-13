@@ -8,13 +8,16 @@ import { useCompactMode } from "@/contexts/CompactModeContext";
 import { useSearchContext, normalizeSearchTerm } from "@/contexts/SearchContext";
 import { confirmDelete } from "@/lib/confirmDelete";
 import { getWantCategoryLabel, getWantPriorityLabel, getWantStatusLabel } from "@/lib/labels";
+import { calculateWantDecisionScore } from "@/lib/wants";
 import { createWant, deleteWant, updateWant } from "@/app/wants/actions";
 import type { WantItem, WantStatus } from "@/types";
 
 type WantCategoryFilter = "All" | WantItem["category"];
+type WantStatusFilter = "All" | WantStatus;
 type WantsViewProps = { initialItems: WantItem[] };
 
 const filters: WantCategoryFilter[] = ["All", "Productivity", "Lifestyle", "Investment", "Hobby"];
+const statusFilters: WantStatusFilter[] = ["All", "thinking", "planned", "bought", "skipped"];
 
 export function WantsView({ initialItems }: WantsViewProps) {
   const { isCompact } = useCompactMode();
@@ -22,12 +25,16 @@ export function WantsView({ initialItems }: WantsViewProps) {
   const [items, setItems] = useState<WantItem[]>(initialItems);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<WantCategoryFilter>("All");
+  const [selectedStatus, setSelectedStatus] = useState<WantStatusFilter>("All");
   const searchTerm = normalizeSearchTerm(searchQuery);
   const filteredItems = useMemo(
-    () => items.filter((item) => matchesCategoryFilter(item, selectedCategory) && matchesSearchTerm(item, searchTerm)),
-    [items, searchTerm, selectedCategory],
+    () =>
+      items
+        .filter((item) => matchesCategoryFilter(item, selectedCategory) && matchesStatusFilter(item, selectedStatus) && matchesSearchTerm(item, searchTerm))
+        .sort((left, right) => right.score - left.score),
+    [items, searchTerm, selectedCategory, selectedStatus],
   );
-  const hasActiveFilter = selectedCategory !== "All" || searchTerm.length > 0;
+  const hasActiveFilter = selectedCategory !== "All" || selectedStatus !== "All" || searchTerm.length > 0;
 
   async function handleAdd(item: WantItem) {
     setItems((prev) => [item, ...prev]);
@@ -35,8 +42,20 @@ export function WantsView({ initialItems }: WantsViewProps) {
   }
 
   async function handleStatusChange(id: string, status: WantStatus) {
-    setItems((prev) => prev.map((item) => (item.id === id ? { ...item, status } : item)));
-    await updateWant(id, { status });
+    const targetItem = items.find((item) => item.id === id);
+    const nextScore = targetItem
+      ? calculateWantDecisionScore({
+          price: targetItem.price,
+          priority: targetItem.priority,
+          status,
+          targetMonths: targetItem.targetMonths,
+          monthlyCashflowNeeded: targetItem.monthlyCashflowNeeded,
+          reason: targetItem.reason,
+        })
+      : undefined;
+
+    setItems((prev) => prev.map((item) => (item.id === id ? { ...item, status, score: nextScore ?? item.score } : item)));
+    await updateWant(id, { status, ...(nextScore !== undefined ? { score: nextScore } : {}) });
   }
 
   async function handleDelete(id: string) {
@@ -79,6 +98,22 @@ export function WantsView({ initialItems }: WantsViewProps) {
           </button>
         ))}
       </div>
+      <div className="flex gap-2 overflow-x-auto">
+        {statusFilters.map((filter) => (
+          <button
+            key={filter}
+            type="button"
+            onClick={() => setSelectedStatus(filter)}
+            className={`rounded-2xl border px-4 py-2 text-sm ${
+              selectedStatus === filter
+                ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300"
+                : "border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-zinc-100"
+            }`}
+          >
+            {filter === "All" ? "전체 상태" : getWantStatusLabel(filter)}
+          </button>
+        ))}
+      </div>
       <div className={`grid gap-4 ${isCompact ? "" : "xl:grid-cols-2"}`}>
         {filteredItems.length === 0 ? (
           <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 text-sm text-zinc-500 shadow-soft xl:col-span-2">
@@ -100,6 +135,10 @@ export function WantsView({ initialItems }: WantsViewProps) {
 
 function matchesCategoryFilter(item: WantItem, selectedCategory: WantCategoryFilter) {
   return selectedCategory === "All" || item.category === selectedCategory;
+}
+
+function matchesStatusFilter(item: WantItem, selectedStatus: WantStatusFilter) {
+  return selectedStatus === "All" || item.status === selectedStatus;
 }
 
 function matchesSearchTerm(item: WantItem, searchTerm: string) {

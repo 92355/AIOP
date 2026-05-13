@@ -2,6 +2,7 @@ import { Trash2 } from "lucide-react";
 import type { WantItem, WantStatus } from "@/types";
 import { formatCurrency, formatKRW } from "@/lib/formatters";
 import { getWantCategoryLabel, getWantStatusLabel } from "@/lib/labels";
+import { getWantScoreLabel } from "@/lib/wants";
 import { useCompactMode } from "@/contexts/CompactModeContext";
 
 type WantCardProps = {
@@ -62,9 +63,11 @@ export function WantCard({ item, onDelete, onStatusChange }: WantCardProps) {
       <p className={`mt-4 font-semibold text-zinc-50 ${isCompact ? "text-xl" : "text-2xl"}`}>{item.currency === "USD" ? formatCurrency(item.price, "USD") : formatKRW(item.price)}</p>
       <p className={`mt-3 text-sm leading-6 text-zinc-400 ${isCompact ? "line-clamp-1" : "line-clamp-2 min-h-12"}`}>{item.reason}</p>
       <div className={`mt-5 grid gap-3 ${isCompact ? "grid-cols-2" : "sm:grid-cols-3"}`}>
-        <div className={`rounded-2xl bg-zinc-950/70 p-3 ${isCompact ? "hidden" : ""}`}>
-          <p className="text-xs text-zinc-500">AI 판단 점수</p>
-          <p className="mt-1 text-lg font-semibold text-zinc-100">{item.score}</p>
+        <div className="rounded-2xl bg-zinc-950/70 p-3">
+          <p className="text-xs text-zinc-500">구매 판단 점수</p>
+          <p className="mt-1 text-lg font-semibold text-zinc-100">
+            {item.score} <span className="text-sm font-medium text-zinc-400">({getWantScoreLabel(item.score)})</span>
+          </p>
         </div>
         <div className="rounded-2xl bg-zinc-950/70 p-3">
           <p className="text-xs text-zinc-500">필요 자산</p>
@@ -72,7 +75,19 @@ export function WantCard({ item, onDelete, onStatusChange }: WantCardProps) {
         </div>
         <div className="rounded-2xl bg-zinc-950/70 p-3">
           <p className="text-xs text-zinc-500">목표 구매일</p>
-          <p className="mt-1 text-lg font-semibold text-zinc-100">{item.targetDate}</p>
+          <p className="mt-1 text-lg font-semibold text-zinc-100">{item.targetDate || "-"}</p>
+        </div>
+      </div>
+      <div className={`mt-3 grid gap-3 ${isCompact ? "grid-cols-2" : "sm:grid-cols-2"}`}>
+        <div className="rounded-2xl bg-zinc-950/70 p-3">
+          <p className="text-xs text-zinc-500">목표 기간</p>
+          <p className="mt-1 text-base font-semibold text-zinc-100">{item.targetMonths ? `${item.targetMonths}개월` : "-"}</p>
+        </div>
+        <div className="rounded-2xl bg-zinc-950/70 p-3">
+          <p className="text-xs text-zinc-500">월 필요 현금흐름</p>
+          <p className="mt-1 text-base font-semibold text-zinc-100">
+            {item.monthlyCashflowNeeded && item.monthlyCashflowNeeded > 0 ? formatKRW(item.monthlyCashflowNeeded) : "-"}
+          </p>
         </div>
       </div>
     </article>

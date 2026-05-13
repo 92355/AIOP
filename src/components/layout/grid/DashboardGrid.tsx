@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Responsive, useContainerWidth, type Layout, type LayoutItem } from "react-grid-layout";
 import { AssetSnapshot } from "@/components/dashboard/AssetSnapshot";
+import { CoffeeSupportWidget } from "@/components/dashboard/CoffeeSupportWidget";
 import { HeroWidget } from "@/components/dashboard/HeroWidget";
 import { RecentInsights } from "@/components/dashboard/RecentInsights";
 import { SubscriptionSummary } from "@/components/dashboard/SubscriptionSummary";
@@ -183,6 +184,7 @@ export function DashboardGrid({ initialData }: { initialData: DashboardData }) {
                 {renderWidget(id, dashboardData)}
               </WidgetFrame>
             ))}
+            <CoffeeSupportWidget />
           </div>
         ) : (
           // 넓은 화면: react-grid-layout 그리드

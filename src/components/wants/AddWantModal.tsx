@@ -5,6 +5,7 @@ import { FormEvent, useState } from "react";
 import { MoneyInputField } from "@/components/inputs/MoneyInputField";
 import { calculateMonthlyCashflowNeeded, calculateRequiredCapital } from "@/lib/calculations";
 import { getWantCategoryLabel, getWantPriorityLabel, getWantStatusLabel } from "@/lib/labels";
+import { calculateWantDecisionScore } from "@/lib/wants";
 import { useCompactMode } from "@/contexts/CompactModeContext";
 import { useEscapeKey } from "@/hooks/useEscapeKey";
 import type { Currency, WantItem, WantPriority, WantStatus } from "@/types";
@@ -57,6 +58,16 @@ export function AddWantModal({ isOpen, onClose, onAdd }: AddWantModalProps) {
     const targetMonths = Math.max(1, form.targetMonths);
     const expectedYield = Math.max(0, form.expectedYield);
     const targetDate = getTargetDate(targetMonths);
+    const monthlyCashflowNeeded = calculateMonthlyCashflowNeeded(form.price, targetMonths);
+    const score = calculateWantDecisionScore({
+      price: form.price,
+      priority: form.priority,
+      status: form.status,
+      targetMonths,
+      monthlyCashflowNeeded,
+      reason: form.reason,
+    });
+
     const nextItem: WantItem = {
       id: getWantId(),
       name,
@@ -66,9 +77,9 @@ export function AddWantModal({ isOpen, onClose, onAdd }: AddWantModalProps) {
       reason: form.reason.trim() || "구매 이유를 아직 정리하지 않았습니다.",
       status: form.status,
       priority: form.priority,
-      score: getPriorityScore(form.priority),
+      score,
       requiredCapital: calculateRequiredCapital(form.price, expectedYield),
-      monthlyCashflowNeeded: calculateMonthlyCashflowNeeded(form.price, targetMonths),
+      monthlyCashflowNeeded,
       targetMonths,
       expectedYield,
       targetDate,
@@ -194,12 +205,6 @@ function toSafeNumber(value: string) {
 
 function getWantId() {
   return crypto.randomUUID?.() ?? Date.now().toString();
-}
-
-function getPriorityScore(priority: WantPriority) {
-  if (priority === "high") return 85;
-  if (priority === "medium") return 70;
-  return 55;
 }
 
 function getTargetDate(targetMonths: number) {
