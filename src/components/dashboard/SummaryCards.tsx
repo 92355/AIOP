@@ -128,7 +128,7 @@ export function SummaryCards({ initialData }: { initialData: SummaryCardsInitial
     setCardsOrder(arrayMove(orderedCards, oldIndex, newIndex).map((card) => card.id));
   }
 
-  const gridClassName = `grid gap-3 ${isCompact ? "grid-cols-2" : "sm:grid-cols-2 xl:grid-cols-6"}`;
+  const gridClassName = `grid gap-3 ${isCompact ? "grid-cols-2" : "md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6"}`;
 
   if (!isEditMode) {
     return (
@@ -222,10 +222,10 @@ function SummaryCardItem({
   }`;
   const content = (
     <>
-      <div className="flex items-start justify-between gap-4">
-        <div>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
           <p className="text-sm text-zinc-500 transition-colors">{card.label}</p>
-          <strong className={`mt-2 block font-semibold text-zinc-50 transition-colors ${isCompact ? "text-xl" : "text-2xl"}`}>
+          <strong className={`mt-2 block min-w-0 break-words font-semibold leading-tight text-zinc-50 transition-colors ${isCompact ? "text-xl" : "text-xl xl:text-2xl"}`}>
             <FlipNumber value={card.value} />
           </strong>
         </div>
@@ -245,7 +245,7 @@ function SummaryCardItem({
           </div>
         )}
       </div>
-      {isCompact ? null : <p className="mt-4 text-sm text-zinc-500 transition-colors">{card.helper}</p>}
+      {isCompact ? null : <p className="mt-4 break-words text-sm leading-5 text-zinc-500 transition-colors">{card.helper}</p>}
     </>
   );
 
