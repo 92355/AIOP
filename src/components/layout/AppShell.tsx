@@ -17,6 +17,7 @@ import { AddWantModal } from "@/components/wants/AddWantModal";
 import { CompactModeProvider, useCompactMode } from "@/contexts/CompactModeContext";
 import { LayoutProvider } from "@/contexts/LayoutContext";
 import { SearchProvider } from "@/contexts/SearchContext";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { createId, createTodoFromTry, getLocalDateString } from "@/lib/retros";
 import { createWant } from "@/app/wants/actions";
@@ -64,6 +65,8 @@ function AppShellContent({ children }: AppShellProps) {
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<QuickAddCategory | null>(null);
   const { isCompact } = useCompactMode();
+  const isMobile = useIsMobile();
+  const showBottomNav = isCompact || isMobile;
   const isDarkMode = themeMode === "dark";
 
   useEffect(() => {
@@ -121,25 +124,26 @@ function AppShellContent({ children }: AppShellProps) {
   }
 
   return (
-    <div className={`min-h-screen bg-zinc-950 text-zinc-100 ${isCompact ? "" : "md:flex"} ${isDarkMode ? "theme-dark" : "theme-light"}`}>
-      {isCompact ? null : <Sidebar />}
+    <div className={`min-h-screen bg-zinc-950 text-zinc-100 ${showBottomNav ? "" : "md:flex"} ${isDarkMode ? "theme-dark" : "theme-light"}`}>
+      {showBottomNav ? null : <Sidebar />}
       <div className="min-w-0 flex-1">
         <Header
           isDarkMode={isDarkMode}
+          isMobileLayout={showBottomNav}
           onToggleTheme={handleToggleTheme}
           onOpenQuickAdd={() => setQuickAddOpen(true)}
         />
         <main
           className={`thin-scrollbar min-h-0 ${
-            isCompact
+            showBottomNav
               ? "mx-auto max-w-md px-3 py-4 pb-24 md:h-[calc(100vh-88px)] md:overflow-y-auto"
               : "px-5 py-6 md:h-[calc(100vh-88px)] md:overflow-y-auto md:px-8"
           }`}
         >
-          <div className={isCompact ? "space-y-4" : undefined}>{children}</div>
+          <div className={showBottomNav ? "space-y-4" : undefined}>{children}</div>
         </main>
       </div>
-      {isCompact ? <BottomTabBar /> : null}
+      {showBottomNav ? <BottomTabBar /> : null}
       <UpdateNoticeModal isOpen={updateNoticeOpen} onClose={handleCloseUpdateNotice} />
       <QuickAddModal isOpen={quickAddOpen} onClose={() => setQuickAddOpen(false)} onSelectCategory={handleSelectQuickAddCategory} />
       <AddWantModal

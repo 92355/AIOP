@@ -215,6 +215,7 @@ src/app/<domain>/actions.ts
 ✅ 14. Vercel 배포 (https://aiop-alpha.vercel.app)
 ⏸ 15. localStorage export JSON → Supabase import 도구 — 로컬 데이터 없음, 불필요 판단
 ⬜ 16. 모바일 UI/UX 개선
+⬜ 20. 성능 개선 — 데이터 로딩 / 페이지 이동 속도
 ⬜ 17. exchange_rates 캐시 테이블 + Cron
 ⬜ 18. 서버 기반 export
 ⬜ 19. v2.1+ AI Route Handler
@@ -227,13 +228,27 @@ src/app/<domain>/actions.ts
 v2.0 핵심 DB 전환 + Vercel 배포 완료. 남은 항목:
 
 - **단기**: 모바일 UI/UX 개선 (현재 모바일 미최적화 상태)
+- **단기**: 성능 개선 (아래 상세 참고)
 - **단기**: exchange_rates 캐시 + Frankfurter API 연동 (통화 환산 실데이터)
 - **중기**: localStorage → Supabase 데이터 이전 도구 — 로컬 데이터 없음, 불필요 판단
 - **장기**: v2.1 AI 기능 (입력 자동분류 → 오늘의 할일 추천 → 투자종목 추천)
 
 ---
 
-## 12. 주의사항
+## 12. 알려진 성능 이슈 (미해결)
+
+- **증상**: 데이터 로딩 속도 느림, 페이지 이동 속도 느림
+- **현재 상태**: Dashboard는 RSC + Promise.all 전환 완료 (2026-05-13). 그러나 체감 속도는 여전히 느림
+- **원인 미특정**: 호스팅 서버(Vercel 리전), DB 서버(Supabase 리전), 코드 구조 중 어느 쪽인지 불명확
+- **다음 진단 방향**:
+  - Vercel/Supabase 리전 확인 (둘 다 같은 리전인지)
+  - Next.js `cache()` 적용 여부 검토
+  - Supabase 쿼리 실행시간 로깅
+  - Vercel Analytics / Speed Insights 활성화
+
+---
+
+## 13. 주의사항
 
 - `dataPortability.ts`는 아직 localStorage 기반. export/import 기능은 현재 사용 불가 상태로 간주.
 - `aiop-compact-mode`, `aiop-theme-mode` 2개 키는 의도적으로 localStorage 유지 (per-device UI 설정).

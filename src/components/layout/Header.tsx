@@ -13,11 +13,12 @@ import { getActiveNavItem, isDashboardPathname, viewTitles } from "@/components/
 
 type HeaderProps = {
   isDarkMode: boolean;
+  isMobileLayout: boolean;
   onToggleTheme: () => void;
   onOpenQuickAdd: () => void;
 };
 
-export function Header({ isDarkMode, onToggleTheme, onOpenQuickAdd }: HeaderProps) {
+export function Header({ isDarkMode, isMobileLayout, onToggleTheme, onOpenQuickAdd }: HeaderProps) {
   const pathname = usePathname();
   const { isCompact, toggleCompact } = useCompactMode();
   const { searchQuery, setSearchQuery } = useSearchContext();
@@ -28,20 +29,20 @@ export function Header({ isDarkMode, onToggleTheme, onOpenQuickAdd }: HeaderProp
   const today = new Intl.DateTimeFormat("ko-KR", {
     dateStyle: "full",
   }).format(new Date());
-  const headerLayoutClass = isCompact ? "px-3 py-2.5" : "flex items-center justify-end px-5 py-4 md:px-8";
-  const controlsLayoutClass = isCompact ? "flex w-full flex-col items-stretch gap-3" : "flex flex-col items-end gap-3 sm:flex-row sm:items-center";
-  const headerInnerClass = isCompact ? "mx-auto w-full max-w-md" : "";
-  const searchPlaceholder = isCompact ? "검색..." : "구매 목표, 노트, 인사이트 검색...";
-  const searchBoxClass = isCompact
+  const headerLayoutClass = isMobileLayout ? "px-3 py-2.5" : "flex items-center justify-end px-5 py-4 md:px-8";
+  const controlsLayoutClass = isMobileLayout ? "flex w-full flex-col items-stretch gap-3" : "flex flex-col items-end gap-3 sm:flex-row sm:items-center";
+  const headerInnerClass = isMobileLayout ? "mx-auto w-full max-w-md" : "";
+  const searchPlaceholder = isMobileLayout ? "검색..." : "구매 목표, 노트, 인사이트 검색...";
+  const searchBoxClass = isMobileLayout
     ? "flex h-10 min-w-0 items-center gap-2 rounded-2xl border border-zinc-800 bg-zinc-900 px-3 text-zinc-500"
     : "flex h-11 min-w-0 items-center gap-2 rounded-2xl border border-zinc-800 bg-zinc-900 px-3 text-zinc-500";
-  const iconButtonClass = isCompact
+  const iconButtonClass = isMobileLayout
     ? "flex h-10 w-10 items-center justify-center rounded-2xl border border-zinc-800 bg-zinc-900 text-zinc-300 hover:text-zinc-50"
     : "flex h-11 w-11 items-center justify-center rounded-2xl border border-zinc-800 bg-zinc-900 text-zinc-300 hover:text-zinc-50";
   const compactToggleClass = isCompact
     ? "flex h-10 w-10 items-center justify-center rounded-2xl border border-emerald-400/30 bg-emerald-400/10 text-emerald-300 hover:text-zinc-50"
     : "flex h-11 w-11 items-center justify-center rounded-2xl border border-zinc-800 bg-zinc-900 text-zinc-300 hover:text-zinc-50";
-  const quickAddClass = isCompact
+  const quickAddClass = isMobileLayout
     ? "flex h-10 items-center gap-2 rounded-2xl bg-emerald-400 px-3.5 text-sm font-semibold text-zinc-950 hover:bg-emerald-300"
     : "flex h-11 items-center gap-2 rounded-2xl bg-emerald-400 px-4 text-sm font-semibold text-zinc-950 hover:bg-emerald-300";
   const normalizedSearchQuery = useMemo(() => searchQuery.trim(), [searchQuery]);
@@ -58,7 +59,7 @@ export function Header({ isDarkMode, onToggleTheme, onOpenQuickAdd }: HeaderProp
   return (
     <header className={`relative z-50 border-b border-zinc-800 bg-zinc-950/80 backdrop-blur ${headerLayoutClass}`}>
       <div className={`${headerInnerClass} flex flex-col gap-4`}>
-        {isCompact ? (
+        {isMobileLayout ? (
           <Link href="/" className="rounded-2xl px-1 py-0.5 transition hover:bg-zinc-900" aria-label="대시보드로 이동">
             <p className="text-xs uppercase tracking-[0.28em] text-emerald-300/80">AIOP</p>
             <h2 className="mt-1 text-xl font-semibold text-zinc-50">{title}</h2>
@@ -118,16 +119,18 @@ export function Header({ isDarkMode, onToggleTheme, onOpenQuickAdd }: HeaderProp
             >
               {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </button>
-            <button
-              className={compactToggleClass}
-              type="button"
-              title={isCompact ? "일반뷰" : "간단뷰"}
-              aria-label={isCompact ? "일반뷰로 변경" : "간단뷰로 변경"}
-              aria-pressed={isCompact}
-              onClick={toggleCompact}
-            >
-              <Smartphone className="h-4 w-4" />
-            </button>
+            {!isMobileLayout || isCompact ? (
+              <button
+                className={compactToggleClass}
+                type="button"
+                title={isCompact ? "일반뷰" : "간단뷰"}
+                aria-label={isCompact ? "일반뷰로 변경" : "간단뷰로 변경"}
+                aria-pressed={isCompact}
+                onClick={toggleCompact}
+              >
+                <Smartphone className="h-4 w-4" />
+              </button>
+            ) : null}
             <button
               className={quickAddClass}
               type="button"
