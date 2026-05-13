@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(sed -i 's|from \"\\\\./actions\"|from \"@/app/insights/actions\"|' C:/dev/AIOP/src/app/\\\\\\(app\\\\\\)/insights/page.tsx)",
+      "Bash(sed -i 's|from \"\\\\./actions\"|from \"@/app/regret/actions\"|' C:/dev/AIOP/src/app/\\\\\\(app\\\\\\)/regret/page.tsx)",
+      "Bash(sed -i 's|from \"\\\\./actions\"|from \"@/app/subscriptions/actions\"|' C:/dev/AIOP/src/app/\\\\\\(app\\\\\\)/subscriptions/page.tsx)",
+      "Bash(sed -i 's|from \"\\\\./actions\"|from \"@/app/wants/actions\"|' C:/dev/AIOP/src/app/\\\\\\(app\\\\\\)/wants/page.tsx)"
     ]
   }
 }

@@ -1,5 +1,5 @@
 import { BookInsightsView } from "@/components/insights/BookInsightsView";
-import { getInsights } from "./actions";
+import { getInsights } from "@/app/insights/actions";
 
 export default async function InsightsPage() {
   const items = await getInsights();

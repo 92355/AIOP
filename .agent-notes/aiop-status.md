@@ -213,7 +213,7 @@ src/app/<domain>/actions.ts
 v2.0 핵심 DB 전환 완료. 남은 항목:
 
 - **단기**: exchange_rates 캐시 + Frankfurter API 연동 (통화 환산 실데이터)
-- **중기**: localStorage → Supabase 데이터 이전 도구 (`dataPortability.ts` 전환)
+- **중기**: localStorage → Supabase 데이터 이전 도구 (`dataPortability.ts` 전환) - 로컬에 저장된게 없어, 이전작업 불필요하다 판단 
 - **장기**: v2.1 AI 기능 (입력 자동분류 → 오늘의 할일 추천 → 투자종목 추천)
 
 ---
