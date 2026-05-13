@@ -66,6 +66,7 @@ export function RetroView({ initialRetros, initialTodos }: { initialRetros: KptR
   const [inputs, setInputs] = useState(emptyInputs);
   const [addTryToTodo, setAddTryToTodo] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState("");
   const [editingErrorMessage, setEditingErrorMessage] = useState("");
@@ -105,6 +106,26 @@ export function RetroView({ initialRetros, initialTodos }: { initialRetros: KptR
     setEditingErrorMessage("");
   }, [selectedDate]);
 
+  useEffect(() => {
+    if (!saveError) return;
+
+    const clearTimer = window.setTimeout(() => {
+      setSaveError(null);
+    }, 5000);
+
+    return () => {
+      window.clearTimeout(clearTimer);
+    };
+  }, [saveError]);
+
+  function resolveErrorMessage(error: unknown): string {
+    if (error instanceof Error && error.message) {
+      return error.message;
+    }
+
+    return "저장에 실패했습니다. 잠시 후 다시 시도해 주세요.";
+  }
+
   function handleInputChange(section: RetroSectionKey, value: string) {
     setInputs((currentInputs) => ({
       ...currentInputs,
@@ -128,7 +149,7 @@ export function RetroView({ initialRetros, initialTodos }: { initialRetros: KptR
       linkedTodoId: todo?.id,
     };
 
-    upsertRetroItems(section, [nextItem]);
+    await upsertRetroItems(section, [nextItem]);
 
     if (todo) {
       setTodos([todo, ...todos]);
@@ -151,7 +172,7 @@ export function RetroView({ initialRetros, initialTodos }: { initialRetros: KptR
     setEditingErrorMessage("");
   }
 
-  function handleSaveEditing(section: RetroSectionKey, item: RetroItem) {
+  async function handleSaveEditing(section: RetroSectionKey, item: RetroItem) {
     const trimmedText = editingText.trim();
 
     if (!trimmedText) {
@@ -180,7 +201,13 @@ export function RetroView({ initialRetros, initialTodos }: { initialRetros: KptR
       .sort(sortRetrosByDateDesc);
 
     setStoredRetros(newRetros);
-    saveRetro(newRetro);
+
+    try {
+      await saveRetro(newRetro);
+      setSaveError(null);
+    } catch (error) {
+      setSaveError(resolveErrorMessage(error));
+    }
 
     if (section === "try" && item.linkedTodoId) {
       const linkedTodoId = item.linkedTodoId;
@@ -192,15 +219,15 @@ export function RetroView({ initialRetros, initialTodos }: { initialRetros: KptR
     handleCancelEditing();
   }
 
-  function handleCarryOverAll() {
-    upsertRetroItems("try", carryOverTryItems(unfinishedTryItems));
+  async function handleCarryOverAll() {
+    await upsertRetroItems("try", carryOverTryItems(unfinishedTryItems));
   }
 
-  function handleCarryOverOne(item: RetroItem) {
-    upsertRetroItems("try", carryOverTryItems([item]));
+  async function handleCarryOverOne(item: RetroItem) {
+    await upsertRetroItems("try", carryOverTryItems([item]));
   }
 
-  function handleDeleteItem(section: RetroSectionKey, itemId: string) {
+  async function handleDeleteItem(section: RetroSectionKey, itemId: string) {
     const targetItem = selectedRetro[section].find((item) => item.id === itemId);
     if (!confirmDelete(targetItem?.text ?? `${sectionMeta[section].title} 항목`)) return;
 
@@ -235,11 +262,17 @@ export function RetroView({ initialRetros, initialTodos }: { initialRetros: KptR
         .filter(hasRetroContent)
         .sort(sortRetrosByDateDesc);
       setStoredRetros(newRetros);
-      saveRetro(newRetro);
+
+      try {
+        await saveRetro(newRetro);
+        setSaveError(null);
+      } catch (error) {
+        setSaveError(resolveErrorMessage(error));
+      }
     }
   }
 
-  function handleToggleTryItem(itemId: string) {
+  async function handleToggleTryItem(itemId: string) {
     const targetItem = selectedRetro.try.find((item) => item.id === itemId);
     const nextDone = !targetItem?.done;
     const now = new Date().toISOString();
@@ -260,7 +293,13 @@ export function RetroView({ initialRetros, initialTodos }: { initialRetros: KptR
       .sort(sortRetrosByDateDesc);
 
     setStoredRetros(newRetros);
-    saveRetro(newRetro);
+
+    try {
+      await saveRetro(newRetro);
+      setSaveError(null);
+    } catch (error) {
+      setSaveError(resolveErrorMessage(error));
+    }
 
     if (targetItem?.linkedTodoId) {
       const linkedTodoId = targetItem.linkedTodoId;
@@ -270,18 +309,24 @@ export function RetroView({ initialRetros, initialTodos }: { initialRetros: KptR
     }
   }
 
-  function handleDeleteRetro(date: string) {
+  async function handleDeleteRetro(date: string) {
     if (!confirmDelete(`${formatDateLabel(date)} 회고`)) return;
 
     setStoredRetros(normalizeRetros(storedRetros).filter((retro) => retro.date !== date));
-    deleteRetroByDate(date);
+
+    try {
+      await deleteRetroByDate(date);
+      setSaveError(null);
+    } catch (error) {
+      setSaveError(resolveErrorMessage(error));
+    }
 
     if (date === selectedDate) {
       setSelectedDate(today);
     }
   }
 
-  function upsertRetroItems(section: RetroSectionKey, nextItems: RetroItem[]) {
+  async function upsertRetroItems(section: RetroSectionKey, nextItems: RetroItem[]) {
     if (nextItems.length === 0) return;
 
     const now = new Date().toISOString();
@@ -311,7 +356,12 @@ export function RetroView({ initialRetros, initialTodos }: { initialRetros: KptR
     }
 
     setStoredRetros(newRetros);
-    saveRetro(updatedRetro);
+    try {
+      await saveRetro(updatedRetro);
+      setSaveError(null);
+    } catch (error) {
+      setSaveError(resolveErrorMessage(error));
+    }
     setCarryoverDismissed(false);
   }
 
@@ -369,6 +419,7 @@ export function RetroView({ initialRetros, initialTodos }: { initialRetros: KptR
         </div>
 
         {errorMessage ? <p className="mt-4 text-sm text-red-300">{errorMessage}</p> : null}
+        {saveError ? <p className="mt-2 text-sm text-red-300">{saveError}</p> : null}
       </section>
 
       {shouldShowCarryover ? (
