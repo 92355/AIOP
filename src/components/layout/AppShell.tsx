@@ -61,7 +61,7 @@ function AppShellContent({ children }: AppShellProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [themeMode, setThemeMode] = useLocalStorage<ThemeMode>("aiop-theme-mode", "dark");
-  const [updateNoticeOpen, setUpdateNoticeOpen] = useState(true);
+  const [updateNoticeDismissed, setUpdateNoticeDismissed] = useLocalStorage<boolean>("aiop-update-notice-v1", false);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<QuickAddCategory | null>(null);
   const { isCompact } = useCompactMode();
@@ -87,7 +87,7 @@ function AppShellContent({ children }: AppShellProps) {
   }
 
   function handleCloseUpdateNotice() {
-    setUpdateNoticeOpen(false);
+    setUpdateNoticeDismissed(true);
   }
 
   async function handleAddedItem(targetHref: string, action: () => Promise<unknown>) {
@@ -144,7 +144,7 @@ function AppShellContent({ children }: AppShellProps) {
         </main>
       </div>
       {showBottomNav ? <BottomTabBar /> : null}
-      <UpdateNoticeModal isOpen={updateNoticeOpen} onClose={handleCloseUpdateNotice} />
+      <UpdateNoticeModal isOpen={!updateNoticeDismissed} onClose={handleCloseUpdateNotice} />
       <QuickAddModal isOpen={quickAddOpen} onClose={() => setQuickAddOpen(false)} onSelectCategory={handleSelectQuickAddCategory} />
       <AddWantModal
         isOpen={activeCategory === "want"}

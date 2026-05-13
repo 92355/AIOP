@@ -9,6 +9,7 @@ type MoneyInputFieldProps = {
   onChange: (value: number) => void;
   currency?: Currency;
   helperText?: string;
+  compact?: boolean;
 };
 
 const KRW_INCREMENTS: Array<{
@@ -44,7 +45,7 @@ const INCREMENT_BUTTONS: Record<Currency, Array<{
   USD: USD_INCREMENTS,
 };
 
-export function MoneyInputField({ label, value, onChange, currency = "KRW", helperText }: MoneyInputFieldProps) {
+export function MoneyInputField({ label, value, onChange, currency = "KRW", helperText, compact = false }: MoneyInputFieldProps) {
   const previewText = currency === "KRW" ? formatKRW(value) : formatCurrency(value, currency);
   const increments = INCREMENT_BUTTONS[currency];
   const currencyLabel = CURRENCY_LABELS[currency];
@@ -55,18 +56,18 @@ export function MoneyInputField({ label, value, onChange, currency = "KRW", help
   }
 
   return (
-    <label className="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4">
+    <label className={`rounded-2xl border border-zinc-800 bg-zinc-950/70 ${compact ? "p-3" : "p-4"}`}>
       <span className="text-sm text-zinc-500">{label}</span>
-      <div className="mt-3 flex min-w-0 items-center gap-2">
+      <div className={`flex min-w-0 items-center gap-2 ${compact ? "mt-2" : "mt-3"}`}>
         <input
           type="number"
           value={Number.isFinite(value) ? value : 0}
           onChange={(event) => onChange(toSafeNumber(event.target.value))}
-          className="min-w-0 flex-1 bg-transparent text-3xl font-semibold text-zinc-50 outline-none md:text-4xl"
+          className={`min-w-0 flex-1 bg-transparent font-semibold text-zinc-50 outline-none ${compact ? "text-xl" : "text-3xl md:text-4xl"}`}
         />
         <span className="shrink-0 text-base text-zinc-500">{currencyLabel}</span>
       </div>
-      <div className="mt-3 flex flex-wrap gap-1.5">
+      <div className={`flex flex-wrap gap-1.5 ${compact ? "mt-2" : "mt-3"}`}>
         {increments.map((increment) => (
           <button
             key={increment.label}
@@ -78,7 +79,7 @@ export function MoneyInputField({ label, value, onChange, currency = "KRW", help
           </button>
         ))}
       </div>
-      <div className="mt-3 flex items-center justify-between gap-3">
+      <div className={`flex items-center justify-between gap-3 ${compact ? "mt-2" : "mt-3"}`}>
         <p className="text-xs text-zinc-500">{helperText ?? "금액 입력"}</p>
         <p className="text-sm font-medium text-emerald-300">{previewText}</p>
       </div>

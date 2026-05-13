@@ -34,6 +34,7 @@ export function BottomTabBar() {
             <Link
               key={item.key}
               href={item.href}
+              prefetch
               className={`flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-0.5 text-[10px] font-medium transition ${
                 active
                   ? "text-emerald-300"

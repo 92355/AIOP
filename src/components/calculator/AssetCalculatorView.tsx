@@ -36,7 +36,7 @@ export function AssetCalculatorView() {
           </div>
         </div>
         <div className={`grid gap-4 ${isCompact ? "mt-5" : "mt-8 sm:grid-cols-2"}`}>
-          <MoneyInputField label="구매 가격" value={price} onChange={setPrice} helperText="천 / 만 / 억 단위로 볼 수 있습니다." />
+          <MoneyInputField label="구매 가격" value={price} onChange={setPrice} helperText="천 / 만 / 억 단위로 볼 수 있습니다." compact={isCompact} />
           <label className="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4">
             <span className="text-sm text-zinc-500">목표 기간</span>
             <div className="mt-3 flex items-center gap-2">
@@ -61,7 +61,7 @@ export function AssetCalculatorView() {
               <span className="text-sm text-zinc-500">%</span>
             </div>
           </label>
-          <MoneyInputField label="월 투자 가능액" value={monthlyInvestment} onChange={setMonthlyInvestment} helperText="목표 기간 기준으로 계산합니다." />
+          <MoneyInputField label="월 투자 가능액" value={monthlyInvestment} onChange={setMonthlyInvestment} helperText="목표 기간 기준으로 계산합니다." compact={isCompact} />
         </div>
       </section>
 
@@ -76,9 +76,9 @@ export function AssetCalculatorView() {
           </div>
         </div>
         <div className={isCompact ? "mt-5 space-y-3" : "mt-8 space-y-4"}>
-          <ResultRow label="필요 자산" value={formatKRW(result.requiredCapital)} highlight />
-          <ResultRow label="월 필요 현금흐름" value={formatKRW(result.monthlyCashflowNeeded)} />
-          <ResultRow label="구매까지 걸리는 기간" value={result.monthsToBuy > 0 ? `${result.monthsToBuy.toFixed(1)}개월` : "계산 대기"} />
+          <ResultRow label="필요 자산" value={formatKRW(result.requiredCapital)} highlight compact={isCompact} />
+          <ResultRow label="월 필요 현금흐름" value={formatKRW(result.monthlyCashflowNeeded)} compact={isCompact} />
+          <ResultRow label="구매까지 걸리는 기간" value={result.monthsToBuy > 0 ? `${result.monthsToBuy.toFixed(1)}개월` : "계산 대기"} compact={isCompact} />
           <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-5">
             <p className="text-sm text-emerald-300/80">구매 판단</p>
             <p className="mt-2 text-2xl font-semibold text-emerald-200">{decision}</p>
@@ -89,11 +89,11 @@ export function AssetCalculatorView() {
   );
 }
 
-function ResultRow({ label, value, highlight = false }: { label: string; value: string; highlight?: boolean }) {
+function ResultRow({ label, value, highlight = false, compact = false }: { label: string; value: string; highlight?: boolean; compact?: boolean }) {
   return (
-    <div className="flex flex-col gap-2 rounded-2xl border border-zinc-800 bg-zinc-950/70 p-5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+    <div className={`flex flex-col gap-2 rounded-2xl border border-zinc-800 bg-zinc-950/70 sm:flex-row sm:items-center sm:justify-between sm:gap-4 ${compact ? "p-3" : "p-5"}`}>
       <p className="text-sm text-zinc-500">{label}</p>
-      <p className={`break-words text-xl font-semibold ${highlight ? "text-emerald-300" : "text-zinc-50"}`}>{value}</p>
+      <p className={`break-words font-semibold ${compact ? "text-base" : "text-xl"} ${highlight ? "text-emerald-300" : "text-zinc-50"}`}>{value}</p>
     </div>
   );
 }

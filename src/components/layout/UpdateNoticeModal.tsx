@@ -35,15 +35,15 @@ export function UpdateNoticeModal({ isOpen, onClose }: UpdateNoticeModalProps) {
 
   return (
     <div
-      className={`fixed inset-0 z-[80] flex items-center justify-center bg-zinc-950/80 backdrop-blur-sm ${isCompact ? "p-0" : "p-4"}`}
+      className={`fixed inset-0 z-[80] flex bg-zinc-950/80 backdrop-blur-sm ${isCompact ? "items-end" : "items-center justify-center p-4"}`}
       onClick={onClose}
     >
       <section
         role="dialog"
         aria-modal="true"
         aria-labelledby="update-notice-title"
-        className={`w-full overflow-y-auto border border-zinc-800 bg-zinc-900 shadow-soft ${
-          isCompact ? "h-[100dvh] max-w-full rounded-none p-4" : "max-w-xl rounded-2xl p-6"
+        className={`w-full overflow-y-auto bg-zinc-900 shadow-soft border-zinc-800 ${
+          isCompact ? "rounded-t-2xl border-x border-t max-h-[80dvh] p-4" : "rounded-2xl border max-w-xl p-6"
         }`}
         onClick={(event) => event.stopPropagation()}
       >

@@ -69,10 +69,10 @@ export function QuickAddModal({ isOpen, onClose, onSelectCategory }: QuickAddMod
   if (!isOpen) return null;
 
   return (
-    <div className={`fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/80 backdrop-blur-sm ${isCompact ? "p-0 sm:p-4" : "p-4"}`} onClick={onClose}>
+    <div className={`fixed inset-0 z-50 flex bg-zinc-950/80 backdrop-blur-sm ${isCompact ? "items-end" : "items-center justify-center p-4"}`} onClick={onClose}>
       <div
-        className={`w-full overflow-y-auto border border-zinc-800 bg-zinc-900 shadow-soft ${
-          isCompact ? "h-[100dvh] max-w-full rounded-none p-4 sm:h-auto sm:max-h-[90vh] sm:max-w-3xl sm:rounded-2xl sm:p-6" : "max-w-3xl rounded-2xl p-6"
+        className={`w-full overflow-y-auto bg-zinc-900 shadow-soft border-zinc-800 ${
+          isCompact ? "rounded-t-2xl border-x border-t max-h-[88dvh] p-4" : "rounded-2xl border max-w-3xl p-6"
         }`}
         onClick={(event) => event.stopPropagation()}
       >
@@ -87,7 +87,7 @@ export function QuickAddModal({ isOpen, onClose, onSelectCategory }: QuickAddMod
           </button>
         </div>
 
-        <div className={`mt-6 grid gap-3 ${isCompact ? "" : "sm:grid-cols-2 lg:grid-cols-3"}`}>
+        <div className={`mt-6 grid ${isCompact ? "grid-cols-3 gap-2" : "gap-3 sm:grid-cols-2 lg:grid-cols-3"}`}>
           {categories.map((category) => {
             const Icon = category.icon;
 
@@ -96,12 +96,12 @@ export function QuickAddModal({ isOpen, onClose, onSelectCategory }: QuickAddMod
                 key={category.key}
                 type="button"
                 onClick={() => onSelectCategory(category.key)}
-                className="group rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4 text-left transition hover:border-emerald-400/40 hover:bg-emerald-400/10"
+                className={`group rounded-2xl border border-zinc-800 bg-zinc-950/70 text-left transition hover:border-emerald-400/40 hover:bg-emerald-400/10 ${isCompact ? "p-3" : "p-4"}`}
               >
-                <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-zinc-800 bg-zinc-900 text-emerald-300 group-hover:border-emerald-400/30">
-                  <Icon className="h-5 w-5" />
+                <span className={`flex items-center justify-center rounded-2xl border border-zinc-800 bg-zinc-900 text-emerald-300 group-hover:border-emerald-400/30 ${isCompact ? "h-8 w-8" : "h-10 w-10"}`}>
+                  <Icon className={isCompact ? "h-4 w-4" : "h-5 w-5"} />
                 </span>
-                <span className="mt-4 block text-base font-semibold text-zinc-50">{category.title}</span>
+                <span className={`block font-semibold text-zinc-50 ${isCompact ? "mt-2 text-xs" : "mt-4 text-base"}`}>{category.title}</span>
                 {isCompact ? null : <span className="mt-2 block text-sm leading-6 text-zinc-500">{category.description}</span>}
               </button>
             );

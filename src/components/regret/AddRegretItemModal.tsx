@@ -83,11 +83,11 @@ export function AddRegretItemModal({ isOpen, onClose, onAdd }: AddRegretItemModa
   }
 
   return (
-    <div className={`fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/80 backdrop-blur-sm ${isCompact ? "p-0 sm:p-4" : "p-4"}`}>
-      <div className={`w-full overflow-y-auto border border-zinc-800 bg-zinc-900 shadow-soft ${isCompact ? "h-[100dvh] max-w-full rounded-none p-4 sm:h-auto sm:max-h-[90vh] sm:max-w-2xl sm:rounded-2xl sm:p-6" : "max-h-[90vh] max-w-2xl rounded-2xl p-6"}`}>
+    <div className={`fixed inset-0 z-50 flex bg-zinc-950/80 backdrop-blur-sm ${isCompact ? "items-end" : "items-center justify-center p-4"}`} onClick={onClose}>
+      <div className={`w-full overflow-y-auto bg-zinc-900 shadow-soft border-zinc-800 ${isCompact ? "rounded-t-2xl border-x border-t max-h-[88dvh] p-4" : "rounded-2xl border max-h-[90vh] max-w-2xl p-6"}`} onClick={(event) => event.stopPropagation()}>
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h3 className="text-2xl font-semibold text-zinc-50">후회 항목 추가</h3>
+            <h3 className={`font-semibold text-zinc-50 ${isCompact ? "text-xl" : "text-2xl"}`}>후회 항목 추가</h3>
             {isCompact ? null : <p className="mt-1 text-sm text-zinc-500">관심 가격과 현재 가격을 비교해 놓친 손익을 기록합니다.</p>}
           </div>
           <button type="button" onClick={onClose} className="rounded-2xl border border-zinc-800 p-2 text-zinc-400 hover:text-zinc-50">
@@ -95,8 +95,8 @@ export function AddRegretItemModal({ isOpen, onClose, onAdd }: AddRegretItemModa
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="mt-6 space-y-5">
-          <div className={`grid gap-4 ${isCompact ? "" : "sm:grid-cols-2"}`}>
+        <form onSubmit={handleSubmit} className={`${isCompact ? "mt-4" : "mt-6"} space-y-4`}>
+          <div className={`grid gap-3 ${isCompact ? "grid-cols-2" : "sm:grid-cols-2"}`}>
             <TextField label="이름" value={form.name} onChange={(value) => setForm((prev) => ({ ...prev, name: value }))} />
             <SelectField label="자산 유형" value={form.assetType} options={assetTypes} onChange={(value) => setForm((prev) => ({ ...prev, assetType: value }))} />
             <TextField label="심볼" value={form.symbol} onChange={(value) => setForm((prev) => ({ ...prev, symbol: value }))} />

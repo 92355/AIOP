@@ -34,6 +34,7 @@ export function Sidebar() {
               <Link
                 key={item.key}
                 href={item.href}
+                prefetch
                 className={`flex min-w-fit items-center gap-3 rounded-2xl px-3 py-3 text-sm transition md:w-full ${
                   active
                     ? "border border-emerald-400/25 bg-emerald-400/10 text-emerald-200 shadow-soft"
