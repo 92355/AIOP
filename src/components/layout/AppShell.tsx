@@ -19,6 +19,7 @@ import { LayoutProvider } from "@/contexts/LayoutContext";
 import { SearchProvider } from "@/contexts/SearchContext";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { dispatchDashboardOptimisticEvent, type OptimisticCategory, type OptimisticPayloadMap } from "@/lib/dashboardOptimistic";
 import { createId, createTodoFromTry, getLocalDateString } from "@/lib/retros";
 import { createWant } from "@/app/wants/actions";
 import { createSubscription } from "@/app/subscriptions/actions";
@@ -81,12 +82,22 @@ function AppShellContent({ children }: AppShellProps) {
     setUpdateNoticeDismissed(true);
   }
 
-  async function handleAddedItem(action: () => Promise<unknown>) {
+  async function handleAddedItem<T extends OptimisticCategory>(
+    category: T,
+    item: OptimisticPayloadMap[T],
+    action: () => Promise<unknown>,
+  ) {
     setActiveCategory(null);
-    await action();
-    startRefreshTransition(() => {
-      router.refresh();
-    });
+    dispatchDashboardOptimisticEvent({ type: "apply", category, item });
+    try {
+      await action();
+      startRefreshTransition(() => {
+        router.refresh();
+      });
+    } catch (error) {
+      dispatchDashboardOptimisticEvent({ type: "rollback", category, id: item.id });
+      console.error("Failed to save quick add item", error);
+    }
   }
 
   async function handleAddedRetro(input: QuickRetroInput) {
@@ -132,32 +143,38 @@ function AppShellContent({ children }: AppShellProps) {
       <AddWantModal
         isOpen={activeCategory === "want"}
         onClose={handleCloseItemModal}
-        onAdd={(item: WantItem) => handleAddedItem(() => createWant(item))}
+        onAdd={(item: WantItem) => handleAddedItem("want", item, () => createWant(item))}
       />
       <AddSubscriptionModal
         isOpen={activeCategory === "subscription"}
         onClose={handleCloseItemModal}
-        onAdd={(item: Subscription) => handleAddedItem(() => createSubscription(item))}
+        onAdd={(item: Subscription) => handleAddedItem("subscription", item, () => createSubscription(item))}
       />
       <AddInsightModal
         isOpen={activeCategory === "insight"}
         onClose={handleCloseItemModal}
-        onAdd={(item: Insight) => handleAddedItem(() => createInsight(item))}
+        onAdd={(item: Insight) => handleAddedItem("insight", item, () => createInsight(item))}
       />
       <AddRegretItemModal
         isOpen={activeCategory === "regret"}
         onClose={handleCloseItemModal}
-        onAdd={(item: RegretItem) => handleAddedItem(() => createRegretItem(item))}
+        onAdd={async (item: RegretItem) => {
+          setActiveCategory(null);
+          await createRegretItem(item);
+          startRefreshTransition(() => {
+            router.refresh();
+          });
+        }}
       />
       <AddNoteModal
         isOpen={activeCategory === "note"}
         onClose={handleCloseItemModal}
-        onAdd={(item: Note) => handleAddedItem(() => createNote(item))}
+        onAdd={(item: Note) => handleAddedItem("note", item, () => createNote(item))}
       />
       <AddTodoModal
         isOpen={activeCategory === "todo"}
         onClose={handleCloseItemModal}
-        onAdd={(item: TodoItem) => handleAddedItem(() => createTodo(item))}
+        onAdd={(item: TodoItem) => handleAddedItem("todo", item, () => createTodo(item))}
       />
       <AddRetroModal
         isOpen={activeCategory === "retro"}

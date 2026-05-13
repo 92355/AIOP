@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Responsive, useContainerWidth, type Layout, type LayoutItem } from "react-grid-layout";
 import { AssetSnapshot } from "@/components/dashboard/AssetSnapshot";
 import { HeroWidget } from "@/components/dashboard/HeroWidget";
@@ -12,6 +13,7 @@ import { editableWidgetIds } from "@/components/layout/grid/defaultLayout";
 import { WidgetFrame } from "@/components/layout/grid/WidgetFrame";
 import { useCompactMode } from "@/contexts/CompactModeContext";
 import { useLayoutContext } from "@/contexts/LayoutContext";
+import { DASHBOARD_OPTIMISTIC_EVENT_NAME, type DashboardOptimisticEvent } from "@/lib/dashboardOptimistic";
 import type { Insight, Note, Subscription, TodoItem, WantItem } from "@/types";
 import type { WidgetId, WidgetLayout } from "@/types/layout";
 
@@ -79,6 +81,7 @@ function renderWidget(id: WidgetId, data: DashboardData) {
 }
 
 export function DashboardGrid({ initialData }: { initialData: DashboardData }) {
+  const [dashboardData, setDashboardData] = useState<DashboardData>(initialData);
   const { isCompact } = useCompactMode();
   const { isEditMode, layout, setLayout, setNarrowLayout } = useLayoutContext();
   const { width, containerRef, mounted } = useContainerWidth({ initialWidth: 1280 });
@@ -92,6 +95,38 @@ export function DashboardGrid({ initialData }: { initialData: DashboardData }) {
   const visibleNarrowWidgetIds = narrowWidgetOrder.filter((id) => visibleWidgetIds.includes(id));
   const editableLayouts = layout.widgets.filter((widgetLayout) => visibleWidgetIds.includes(widgetLayout.id));
   const largeLayout = editableLayouts.map(toGridLayout);
+
+  useEffect(() => {
+    setDashboardData(initialData);
+  }, [initialData]);
+
+  useEffect(() => {
+    function handleOptimisticEvent(event: Event) {
+      const detail = (event as CustomEvent<DashboardOptimisticEvent>).detail;
+      if (!detail) return;
+
+      setDashboardData((currentData) => {
+        if (detail.type === "apply") {
+          if (detail.category === "want") return { ...currentData, wants: [detail.item as WantItem, ...currentData.wants] };
+          if (detail.category === "subscription") return { ...currentData, subscriptions: [detail.item as Subscription, ...currentData.subscriptions] };
+          if (detail.category === "insight") return { ...currentData, insights: [detail.item as Insight, ...currentData.insights] };
+          if (detail.category === "note") return { ...currentData, notes: [detail.item as Note, ...currentData.notes] };
+          if (detail.category === "todo") return { ...currentData, todos: [detail.item as TodoItem, ...currentData.todos] };
+          return currentData;
+        }
+
+        if (detail.category === "want") return { ...currentData, wants: currentData.wants.filter((item) => item.id !== detail.id) };
+        if (detail.category === "subscription") return { ...currentData, subscriptions: currentData.subscriptions.filter((item) => item.id !== detail.id) };
+        if (detail.category === "insight") return { ...currentData, insights: currentData.insights.filter((item) => item.id !== detail.id) };
+        if (detail.category === "note") return { ...currentData, notes: currentData.notes.filter((item) => item.id !== detail.id) };
+        if (detail.category === "todo") return { ...currentData, todos: currentData.todos.filter((item) => item.id !== detail.id) };
+        return currentData;
+      });
+    }
+
+    window.addEventListener(DASHBOARD_OPTIMISTIC_EVENT_NAME, handleOptimisticEvent as EventListener);
+    return () => window.removeEventListener(DASHBOARD_OPTIMISTIC_EVENT_NAME, handleOptimisticEvent as EventListener);
+  }, []);
 
   function handleLayoutChange(currentLayout: Layout) {
     if (!canEditLayout) return;
@@ -145,7 +180,7 @@ export function DashboardGrid({ initialData }: { initialData: DashboardData }) {
                 onMoveUp={isEditMode ? () => handleMoveNarrowWidget(id, "up") : undefined}
                 onMoveDown={isEditMode ? () => handleMoveNarrowWidget(id, "down") : undefined}
               >
-                {renderWidget(id, initialData)}
+                {renderWidget(id, dashboardData)}
               </WidgetFrame>
             ))}
           </div>
@@ -170,7 +205,7 @@ export function DashboardGrid({ initialData }: { initialData: DashboardData }) {
                   id={id}
                   title={widgetTitles[id]}
                 >
-                  {renderWidget(id, initialData)}
+                  {renderWidget(id, dashboardData)}
                 </WidgetFrame>
               </div>
             ))}
