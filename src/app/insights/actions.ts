@@ -1,5 +1,6 @@
 'use server'
 
+import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { dbToInsight, insightToDb } from '@/lib/db/mappers'
 import type { Insight } from '@/types'
@@ -32,6 +33,7 @@ export async function createInsight(item: Insight): Promise<Insight> {
     .single()
 
   if (error) throw new Error(error.message)
+  revalidatePath('/', 'layout')
   return dbToInsight(data)
 }
 

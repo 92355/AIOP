@@ -1,5 +1,6 @@
 'use server'
 
+import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { dbToRegretItem, regretItemToDb } from '@/lib/db/mappers'
 import type { RegretItem } from '@/types'
@@ -32,6 +33,7 @@ export async function createRegretItem(item: RegretItem): Promise<RegretItem> {
     .single()
 
   if (error) throw new Error(error.message)
+  revalidatePath('/', 'layout')
   return dbToRegretItem(data)
 }
 

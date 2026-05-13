@@ -1,5 +1,6 @@
 'use server'
 
+import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { dbToWant, wantToDb } from '@/lib/db/mappers'
 import type { WantItem } from '@/types'
@@ -32,6 +33,7 @@ export async function createWant(item: WantItem): Promise<WantItem> {
     .single()
 
   if (error) throw new Error(error.message)
+  revalidatePath('/', 'layout')
   return dbToWant(data)
 }
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { AddInsightModal } from "@/components/insights/AddInsightModal";
 import { BottomTabBar } from "@/components/layout/BottomTabBar";
 import { Header } from "@/components/layout/Header";
@@ -35,15 +35,6 @@ type AppShellProps = {
 
 type ThemeMode = "dark" | "light";
 
-const categoryRoutes: Record<QuickAddCategory, string> = {
-  want: "/wants",
-  subscription: "/subscriptions",
-  insight: "/insights",
-  regret: "/regret",
-  note: "/notes",
-  todo: "/todos",
-  retro: "/retros",
-};
 
 export function AppShell({ children }: AppShellProps) {
   return (
@@ -58,7 +49,6 @@ export function AppShell({ children }: AppShellProps) {
 }
 
 function AppShellContent({ children }: AppShellProps) {
-  const pathname = usePathname();
   const router = useRouter();
   const [themeMode, setThemeMode] = useLocalStorage<ThemeMode>("aiop-theme-mode", "dark");
   const [updateNoticeDismissed, setUpdateNoticeDismissed] = useLocalStorage<boolean>("aiop-update-notice-v1", false);
@@ -90,16 +80,10 @@ function AppShellContent({ children }: AppShellProps) {
     setUpdateNoticeDismissed(true);
   }
 
-  async function handleAddedItem(targetHref: string, action: () => Promise<unknown>) {
-    await action();
+  async function handleAddedItem(action: () => Promise<unknown>) {
     setActiveCategory(null);
-
-    if (pathname === targetHref) {
-      router.refresh();
-      return;
-    }
-
-    router.push(targetHref);
+    await action();
+    router.refresh();
   }
 
   async function handleAddedRetro(input: QuickRetroInput) {
@@ -112,15 +96,9 @@ function AppShellContent({ children }: AppShellProps) {
       linkedTodoId: todo?.id,
     };
 
-    await addRetroItem(today, input.section, retroItem, todo ?? undefined);
     setActiveCategory(null);
-
-    if (pathname === categoryRoutes.retro) {
-      router.refresh();
-      return;
-    }
-
-    router.push(categoryRoutes.retro);
+    await addRetroItem(today, input.section, retroItem, todo ?? undefined);
+    router.refresh();
   }
 
   return (
@@ -149,32 +127,32 @@ function AppShellContent({ children }: AppShellProps) {
       <AddWantModal
         isOpen={activeCategory === "want"}
         onClose={handleCloseItemModal}
-        onAdd={(item: WantItem) => handleAddedItem(categoryRoutes.want, () => createWant(item))}
+        onAdd={(item: WantItem) => handleAddedItem(() => createWant(item))}
       />
       <AddSubscriptionModal
         isOpen={activeCategory === "subscription"}
         onClose={handleCloseItemModal}
-        onAdd={(item: Subscription) => handleAddedItem(categoryRoutes.subscription, () => createSubscription(item))}
+        onAdd={(item: Subscription) => handleAddedItem(() => createSubscription(item))}
       />
       <AddInsightModal
         isOpen={activeCategory === "insight"}
         onClose={handleCloseItemModal}
-        onAdd={(item: Insight) => handleAddedItem(categoryRoutes.insight, () => createInsight(item))}
+        onAdd={(item: Insight) => handleAddedItem(() => createInsight(item))}
       />
       <AddRegretItemModal
         isOpen={activeCategory === "regret"}
         onClose={handleCloseItemModal}
-        onAdd={(item: RegretItem) => handleAddedItem(categoryRoutes.regret, () => createRegretItem(item))}
+        onAdd={(item: RegretItem) => handleAddedItem(() => createRegretItem(item))}
       />
       <AddNoteModal
         isOpen={activeCategory === "note"}
         onClose={handleCloseItemModal}
-        onAdd={(item: Note) => handleAddedItem(categoryRoutes.note, () => createNote(item))}
+        onAdd={(item: Note) => handleAddedItem(() => createNote(item))}
       />
       <AddTodoModal
         isOpen={activeCategory === "todo"}
         onClose={handleCloseItemModal}
-        onAdd={(item: TodoItem) => handleAddedItem(categoryRoutes.todo, () => createTodo(item))}
+        onAdd={(item: TodoItem) => handleAddedItem(() => createTodo(item))}
       />
       <AddRetroModal
         isOpen={activeCategory === "retro"}

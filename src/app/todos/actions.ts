@@ -1,5 +1,6 @@
 'use server'
 
+import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { dbToTodo, todoToDb } from '@/lib/db/mappers'
 import type { TodoItem, TodoStatus } from '@/types'
@@ -32,6 +33,7 @@ export async function createTodo(item: TodoItem): Promise<TodoItem> {
     .single()
 
   if (error) throw new Error(error.message)
+  revalidatePath('/', 'layout')
   return dbToTodo(data)
 }
 

@@ -1,5 +1,6 @@
 'use server'
 
+import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { dbToNote, noteToDb } from '@/lib/db/mappers'
 import type { Note, NoteStatus } from '@/types'
@@ -32,6 +33,7 @@ export async function createNote(item: Note): Promise<Note> {
     .single()
 
   if (error) throw new Error(error.message)
+  revalidatePath('/', 'layout')
   return dbToNote(data)
 }
 

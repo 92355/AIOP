@@ -1,5 +1,6 @@
 'use server'
 
+import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { dbToRetro, retroToDb, todoToDb } from '@/lib/db/mappers'
 import type { KptRetro, RetroItem, TodoItem } from '@/types'
@@ -94,4 +95,6 @@ export async function addRetroItem(
     const { error } = await supabase.from('todos').insert(todoToDb(todo, userId))
     if (error) throw new Error(error.message)
   }
+
+  revalidatePath('/', 'layout')
 }

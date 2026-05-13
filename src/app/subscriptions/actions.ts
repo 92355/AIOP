@@ -1,5 +1,6 @@
 'use server'
 
+import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { dbToSubscription, subscriptionToDb } from '@/lib/db/mappers'
 import type { Subscription, SubscriptionStatus } from '@/types'
@@ -32,6 +33,7 @@ export async function createSubscription(item: Subscription): Promise<Subscripti
     .single()
 
   if (error) throw new Error(error.message)
+  revalidatePath('/', 'layout')
   return dbToSubscription(data)
 }
 
