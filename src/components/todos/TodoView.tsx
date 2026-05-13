@@ -1,11 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Check, ChevronDown, Circle, Clock3, MessageSquareText, Plus, Trash2 } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { Check, ChevronDown, Circle, Clock3, MessageSquareText, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useCompactMode } from "@/contexts/CompactModeContext";
 import { useSearchContext, normalizeSearchTerm } from "@/contexts/SearchContext";
 import { confirmDelete } from "@/lib/confirmDelete";
-import { createTodo, deleteTodo, updateTodoMemo, updateTodoStatus } from "@/app/todos/actions";
+import { createTodo, deleteTodo, updateTodoMemo, updateTodoPriority, updateTodoStatus, updateTodoTitle } from "@/app/todos/actions";
 import type { TodoItem, TodoStatus } from "@/types";
 
 const statusOptions: TodoStatus[] = ["todo", "doing", "done"];
@@ -25,6 +25,10 @@ export function TodoView({ initialItems }: { initialItems: TodoItem[] }) {
   const [priority, setPriority] = useState<TodoItem["priority"]>("medium");
   const [errorMessage, setErrorMessage] = useState("");
   const [showCompleted, setShowCompleted] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editPriority, setEditPriority] = useState<TodoItem["priority"]>("medium");
+  const editInputRef = useRef<HTMLInputElement>(null);
   const searchTerm = normalizeSearchTerm(searchQuery);
   const visibleItems = searchTerm ? items.filter((item) => matchesTodoSearch(item, searchTerm)) : items;
   const activeItems = visibleItems.filter((item) => item.status !== "done");
@@ -78,6 +82,35 @@ export function TodoView({ initialItems }: { initialItems: TodoItem[] }) {
 
     setItems((currentItems) => currentItems.filter((item) => item.id !== id));
     await deleteTodo(id);
+  }
+
+  function handleStartEdit(item: TodoItem) {
+    setEditingId(item.id);
+    setEditTitle(item.title);
+    setEditPriority(item.priority);
+    setTimeout(() => editInputRef.current?.focus(), 0);
+  }
+
+  function handleCancelEdit() {
+    setEditingId(null);
+  }
+
+  async function handleSaveEdit(id: string) {
+    const trimmedTitle = editTitle.trim();
+    if (!trimmedTitle) return;
+
+    const original = items.find((item) => item.id === id);
+    setItems((currentItems) =>
+      currentItems.map((item) =>
+        item.id === id ? { ...item, title: trimmedTitle, priority: editPriority } : item,
+      ),
+    );
+    setEditingId(null);
+
+    const titleChanged = original?.title !== trimmedTitle;
+    const priorityChanged = original?.priority !== editPriority;
+    if (titleChanged) await updateTodoTitle(id, trimmedTitle);
+    if (priorityChanged) await updateTodoPriority(id, editPriority);
   }
 
   function handleUpdateMemo(id: string, nextMemo: string) {
@@ -173,45 +206,104 @@ export function TodoView({ initialItems }: { initialItems: TodoItem[] }) {
 
           {activeItems.map((item) => (
             <article key={item.id} className={`rounded-2xl border border-zinc-800 bg-zinc-950/70 ${isCompact ? "p-3" : "p-4"}`}>
-              <div className="flex items-start gap-3">
-                <button
-                  type="button"
-                  onClick={() => handleCycleStatus(item.id)}
-                  className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-zinc-800 text-zinc-400 hover:border-emerald-400/40 hover:text-emerald-300"
-                  aria-label="Todo 상태 변경"
-                >
-                  {getStatusIcon(item.status)}
-                </button>
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h4 className={`min-w-0 truncate font-medium ${item.status === "done" ? "text-zinc-500 line-through" : "text-zinc-100"}`}>
-                      {item.title}
-                    </h4>
-                    <span className={`rounded-full px-2 py-1 text-xs ${getPriorityClassName(item.priority)}`}>{getPriorityLabel(item.priority)}</span>
-                    <span className="rounded-full bg-zinc-800 px-2 py-1 text-xs text-zinc-400">{statusLabels[item.status]}</span>
+              {editingId === item.id ? (
+                <div className="space-y-3">
+                  <input
+                    ref={editInputRef}
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleSaveEdit(item.id);
+                      if (e.key === "Escape") handleCancelEdit();
+                    }}
+                    className="h-10 w-full rounded-xl border border-zinc-700 bg-zinc-900 px-3 text-sm text-zinc-100 outline-none focus:border-emerald-400/50"
+                  />
+                  <div className="flex gap-2">
+                    {(["low", "medium", "high"] as const).map((p) => (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => setEditPriority(p)}
+                        className={`flex-1 rounded-xl border px-2 py-1.5 text-xs ${
+                          editPriority === p
+                            ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300"
+                            : "border-zinc-800 text-zinc-400 hover:text-zinc-100"
+                        }`}
+                      >
+                        {getPriorityLabel(p)}
+                      </button>
+                    ))}
                   </div>
-                  {isCompact ? null : <p className="mt-2 text-sm text-zinc-500">{item.createdAt}</p>}
-                  <label className="mt-3 flex items-start gap-2 rounded-2xl border border-zinc-800 bg-zinc-900/70 px-3 py-2">
-                    <MessageSquareText className="mt-1 h-4 w-4 shrink-0 text-zinc-500" />
-                    <textarea
-                      value={item.memo ?? ""}
-                      onChange={(event) => handleUpdateMemo(item.id, event.target.value)}
-                      onBlur={(event) => updateTodoMemo(item.id, getOptionalMemo(event.target.value))}
-                      rows={2}
-                      className="min-h-10 flex-1 resize-none bg-transparent text-sm leading-5 text-zinc-300 outline-none placeholder:text-zinc-600"
-                      placeholder="짧은 메모"
-                    />
-                  </label>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleSaveEdit(item.id)}
+                      className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-emerald-400/30 bg-emerald-400/10 py-2 text-xs font-medium text-emerald-300"
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                      저장
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleCancelEdit}
+                      className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-zinc-800 py-2 text-xs text-zinc-400"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                      취소
+                    </button>
+                  </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => handleDelete(item.id)}
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-zinc-800 text-zinc-500 hover:border-red-400/40 hover:text-red-300"
-                  aria-label="Todo 삭제"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
+              ) : (
+                <div className="flex items-start gap-3">
+                  <button
+                    type="button"
+                    onClick={() => handleCycleStatus(item.id)}
+                    className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-zinc-800 text-zinc-400 hover:border-emerald-400/40 hover:text-emerald-300"
+                    aria-label="Todo 상태 변경"
+                  >
+                    {getStatusIcon(item.status)}
+                  </button>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h4 className={`min-w-0 truncate font-medium ${item.status === "done" ? "text-zinc-500 line-through" : "text-zinc-100"}`}>
+                        {item.title}
+                      </h4>
+                      <span className={`rounded-full px-2 py-1 text-xs ${getPriorityClassName(item.priority)}`}>{getPriorityLabel(item.priority)}</span>
+                      <span className="rounded-full bg-zinc-800 px-2 py-1 text-xs text-zinc-400">{statusLabels[item.status]}</span>
+                    </div>
+                    {isCompact ? null : <p className="mt-2 text-sm text-zinc-500">{formatCreatedAt(item.createdAt)}</p>}
+                    <label className="mt-3 flex items-start gap-2 rounded-2xl border border-zinc-800 bg-zinc-900/70 px-3 py-2">
+                      <MessageSquareText className="mt-1 h-4 w-4 shrink-0 text-zinc-500" />
+                      <textarea
+                        value={item.memo ?? ""}
+                        onChange={(event) => handleUpdateMemo(item.id, event.target.value)}
+                        onBlur={(event) => updateTodoMemo(item.id, getOptionalMemo(event.target.value))}
+                        rows={2}
+                        className="min-h-10 flex-1 resize-none bg-transparent text-sm leading-5 text-zinc-300 outline-none placeholder:text-zinc-600"
+                        placeholder="짧은 메모"
+                      />
+                    </label>
+                  </div>
+                  <div className="flex shrink-0 flex-col gap-1">
+                    <button
+                      type="button"
+                      onClick={() => handleStartEdit(item)}
+                      className="flex h-9 w-9 items-center justify-center rounded-full border border-zinc-800 text-zinc-500 hover:border-zinc-600 hover:text-zinc-300"
+                      aria-label="Todo 편집"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(item.id)}
+                      className="flex h-9 w-9 items-center justify-center rounded-full border border-zinc-800 text-zinc-500 hover:border-red-400/40 hover:text-red-300"
+                      aria-label="Todo 삭제"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
             </article>
           ))}
         </div>
@@ -255,7 +347,7 @@ export function TodoView({ initialItems }: { initialItems: TodoItem[] }) {
                         <span className={`rounded-full px-2 py-1 text-xs ${getPriorityClassName(item.priority)}`}>{getPriorityLabel(item.priority)}</span>
                         <span className="rounded-full bg-zinc-800 px-2 py-1 text-xs text-zinc-400">{statusLabels[item.status]}</span>
                       </div>
-                      {isCompact ? null : <p className="mt-2 text-sm text-zinc-500">{item.createdAt}</p>}
+                      {isCompact ? null : <p className="mt-2 text-sm text-zinc-500">{formatCreatedAt(item.createdAt)}</p>}
                       <label className="mt-3 flex items-start gap-2 rounded-2xl border border-zinc-800 bg-zinc-900/70 px-3 py-2">
                         <MessageSquareText className="mt-1 h-4 w-4 shrink-0 text-zinc-500" />
                         <textarea
@@ -319,10 +411,13 @@ function getOptionalMemo(value: string) {
   return value.trim().length > 0 ? value : undefined;
 }
 
-function formatCreatedAt(date: Date) {
-  return `오늘 ${date.toLocaleTimeString("ko-KR", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  })}`;
+function formatCreatedAt(dateOrString: Date | string) {
+  const date = typeof dateOrString === "string" ? new Date(dateOrString) : dateOrString;
+  if (isNaN(date.getTime())) return dateOrString as string;
+
+  const today = new Date();
+  if (date.toDateString() === today.toDateString()) {
+    return `오늘 ${date.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false })}`;
+  }
+  return date.toLocaleDateString("ko-KR", { year: "2-digit", month: "2-digit", day: "2-digit" });
 }

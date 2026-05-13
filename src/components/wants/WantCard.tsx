@@ -1,16 +1,33 @@
 import { Trash2 } from "lucide-react";
-import type { WantItem } from "@/types";
-import { formatKRW } from "@/lib/formatters";
+import type { WantItem, WantStatus } from "@/types";
+import { formatCurrency, formatKRW } from "@/lib/formatters";
 import { getWantCategoryLabel, getWantStatusLabel } from "@/lib/labels";
 import { useCompactMode } from "@/contexts/CompactModeContext";
 
 type WantCardProps = {
   item: WantItem;
   onDelete?: (id: string) => void;
+  onStatusChange?: (id: string, status: WantStatus) => void;
 };
 
-export function WantCard({ item, onDelete }: WantCardProps) {
+const statusOrder: WantStatus[] = ["thinking", "planned", "bought", "skipped"];
+
+const statusClassName: Record<WantStatus, string> = {
+  thinking: "bg-zinc-800 text-zinc-300",
+  planned: "bg-blue-400/10 text-blue-300",
+  bought: "bg-emerald-400/10 text-emerald-300",
+  skipped: "bg-red-400/10 text-red-300",
+};
+
+export function WantCard({ item, onDelete, onStatusChange }: WantCardProps) {
   const { isCompact } = useCompactMode();
+
+  function handleStatusClick() {
+    if (!onStatusChange) return;
+    const currentIndex = statusOrder.indexOf(item.status);
+    const nextStatus = statusOrder[(currentIndex + 1) % statusOrder.length];
+    onStatusChange(item.id, nextStatus);
+  }
 
   return (
     <article className={`relative rounded-2xl border border-zinc-800 bg-zinc-900 shadow-soft ${isCompact ? "p-4" : "p-5"}`}>
@@ -20,7 +37,16 @@ export function WantCard({ item, onDelete }: WantCardProps) {
           <h3 className="mt-2 truncate text-xl font-semibold text-zinc-50">{item.name}</h3>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          {isCompact ? null : <span className="rounded-full bg-emerald-400/10 px-3 py-1 text-xs font-medium text-emerald-300">{getWantStatusLabel(item.status)}</span>}
+          {isCompact ? null : (
+            <button
+              type="button"
+              onClick={handleStatusClick}
+              title="클릭하여 상태 변경"
+              className={`rounded-full px-3 py-1 text-xs font-medium transition hover:opacity-80 ${statusClassName[item.status]}`}
+            >
+              {getWantStatusLabel(item.status)}
+            </button>
+          )}
           {onDelete ? (
             <button
               type="button"
@@ -33,7 +59,7 @@ export function WantCard({ item, onDelete }: WantCardProps) {
           ) : null}
         </div>
       </div>
-      <p className={`mt-4 font-semibold text-zinc-50 ${isCompact ? "text-xl" : "text-2xl"}`}>{formatKRW(item.price)}</p>
+      <p className={`mt-4 font-semibold text-zinc-50 ${isCompact ? "text-xl" : "text-2xl"}`}>{item.currency === "USD" ? formatCurrency(item.price, "USD") : formatKRW(item.price)}</p>
       <p className={`mt-3 text-sm leading-6 text-zinc-400 ${isCompact ? "line-clamp-1" : "line-clamp-2 min-h-12"}`}>{item.reason}</p>
       <div className={`mt-5 grid gap-3 ${isCompact ? "grid-cols-2" : "sm:grid-cols-3"}`}>
         <div className={`rounded-2xl bg-zinc-950/70 p-3 ${isCompact ? "hidden" : ""}`}>

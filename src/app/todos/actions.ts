@@ -70,6 +70,17 @@ export async function updateTodoTitle(id: string, title: string): Promise<void> 
   if (error) throw new Error(error.message)
 }
 
+export async function updateTodoPriority(id: string, priority: TodoItem['priority']): Promise<void> {
+  const { supabase, userId } = await getAuthenticatedUser()
+  const { error } = await supabase
+    .from('todos')
+    .update({ priority })
+    .eq('id', id)
+    .eq('user_id', userId)
+
+  if (error) throw new Error(error.message)
+}
+
 export async function deleteTodo(id: string): Promise<void> {
   const { supabase, userId } = await getAuthenticatedUser()
   const { error } = await supabase

@@ -87,7 +87,7 @@ export function AddInsightModal({ isOpen, onClose, onAdd }: AddInsightModalProps
             />
             <TextField label="제목" value={form.title} onChange={(value) => setForm((prev) => ({ ...prev, title: value }))} />
             <TextField label="관련 목표" value={form.relatedGoal} onChange={(value) => setForm((prev) => ({ ...prev, relatedGoal: value }))} />
-            <TextField label="태그" value={form.tags} onChange={(value) => setForm((prev) => ({ ...prev, tags: value }))} />
+            <TagsField value={form.tags} onChange={(value) => setForm((prev) => ({ ...prev, tags: value }))} />
           </div>
 
           <label className="block rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4">
@@ -123,6 +123,30 @@ export function AddInsightModal({ isOpen, onClose, onAdd }: AddInsightModalProps
         </form>
       </div>
     </div>
+  );
+}
+
+function TagsField({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  const chips = getTags(value);
+  return (
+    <label className="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4">
+      <span className="text-sm text-zinc-500">태그</span>
+      <input
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder="쉼표로 구분"
+        className="mt-3 w-full bg-transparent text-lg font-semibold text-zinc-50 outline-none placeholder:text-zinc-600 placeholder:text-base placeholder:font-normal"
+      />
+      {chips.length > 0 ? (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {chips.map((chip) => (
+            <span key={chip} className="rounded-full bg-zinc-800 px-2.5 py-1 text-xs text-zinc-300">
+              {chip}
+            </span>
+          ))}
+        </div>
+      ) : null}
+    </label>
   );
 }
 

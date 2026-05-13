@@ -8,8 +8,8 @@ import { useCompactMode } from "@/contexts/CompactModeContext";
 import { useSearchContext, normalizeSearchTerm } from "@/contexts/SearchContext";
 import { confirmDelete } from "@/lib/confirmDelete";
 import { getWantCategoryLabel, getWantPriorityLabel, getWantStatusLabel } from "@/lib/labels";
-import { createWant, deleteWant } from "@/app/wants/actions";
-import type { WantItem } from "@/types";
+import { createWant, deleteWant, updateWant } from "@/app/wants/actions";
+import type { WantItem, WantStatus } from "@/types";
 
 type WantCategoryFilter = "All" | WantItem["category"];
 type WantsViewProps = { initialItems: WantItem[] };
@@ -32,6 +32,11 @@ export function WantsView({ initialItems }: WantsViewProps) {
   async function handleAdd(item: WantItem) {
     setItems((prev) => [item, ...prev]);
     await createWant(item);
+  }
+
+  async function handleStatusChange(id: string, status: WantStatus) {
+    setItems((prev) => prev.map((item) => (item.id === id ? { ...item, status } : item)));
+    await updateWant(id, { status });
   }
 
   async function handleDelete(id: string) {
@@ -85,7 +90,7 @@ export function WantsView({ initialItems }: WantsViewProps) {
           </div>
         ) : null}
         {filteredItems.map((item) => (
-          <WantCard key={item.id} item={item} onDelete={handleDelete} />
+          <WantCard key={item.id} item={item} onDelete={handleDelete} onStatusChange={handleStatusChange} />
         ))}
       </div>
       <AddWantModal isOpen={isAddOpen} onClose={() => setIsAddOpen(false)} onAdd={handleAdd} />
