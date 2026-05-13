@@ -18,7 +18,7 @@ export function ExchangeRatePanel({ compact = false }: { compact?: boolean }) {
   const refreshButtonDisabled = isLoading || !canManualRefresh;
 
   return (
-    <section className={`rounded-2xl border border-zinc-800 bg-zinc-900 shadow-soft ${compact ? "p-4" : "p-5"}`}>
+    <section className={`min-w-0 w-full max-w-full overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-soft ${compact ? "p-4" : "p-5"}`}>
       <div className="flex items-start justify-between gap-4">
         <div>
           <h3 className="text-lg font-semibold text-zinc-50">환율 캐시</h3>
@@ -36,9 +36,9 @@ export function ExchangeRatePanel({ compact = false }: { compact?: boolean }) {
         </button>
       </div>
 
-      <div className="mt-4 rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4">
+      <div className="mt-4 min-w-0 rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4">
         <p className="text-sm text-zinc-500">USD/KRW</p>
-        <p className="mt-2 text-2xl font-semibold text-emerald-300">{isLoading && !data ? "불러오는 중..." : rateText}</p>
+        <p className={`mt-2 min-w-0 break-words font-semibold text-emerald-300 ${compact ? "text-xl" : "text-2xl"}`}>{isLoading && !data ? "불러오는 중..." : rateText}</p>
         {errorMessage ? <p className="mt-3 text-sm text-red-300">{errorMessage}</p> : null}
       </div>
 

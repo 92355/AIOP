@@ -56,7 +56,7 @@ export function MoneyInputField({ label, value, onChange, currency = "KRW", help
   }
 
   return (
-    <label className={`rounded-2xl border border-zinc-800 bg-zinc-950/70 ${compact ? "p-3" : "p-4"}`}>
+    <label className={`min-w-0 w-full overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950/70 ${compact ? "p-3" : "p-4"}`}>
       <span className="text-sm text-zinc-500">{label}</span>
       <div className={`flex min-w-0 items-center gap-2 ${compact ? "mt-2" : "mt-3"}`}>
         <input
@@ -79,9 +79,9 @@ export function MoneyInputField({ label, value, onChange, currency = "KRW", help
           </button>
         ))}
       </div>
-      <div className={`flex items-center justify-between gap-3 ${compact ? "mt-2" : "mt-3"}`}>
-        <p className="text-xs text-zinc-500">{helperText ?? "금액 입력"}</p>
-        <p className="text-sm font-medium text-emerald-300">{previewText}</p>
+      <div className={`flex min-w-0 items-center justify-between gap-3 ${compact ? "mt-2" : "mt-3"}`}>
+        <p className="min-w-0 flex-1 text-xs text-zinc-500">{helperText ?? "금액 입력"}</p>
+        <p className="min-w-0 max-w-[55%] truncate text-right text-sm font-medium text-emerald-300">{previewText}</p>
       </div>
     </label>
   );

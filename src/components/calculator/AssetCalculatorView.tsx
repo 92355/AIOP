@@ -48,9 +48,9 @@ export function AssetCalculatorView() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className={`grid gap-4 ${isCompactLayout ? "" : "xl:grid-cols-[1.05fr_0.95fr] xl:gap-6"}`}>
-      <section className={`rounded-2xl border border-emerald-400/20 bg-zinc-900 shadow-soft ${isCompactLayout ? "p-4" : "p-6"}`}>
+    <div className="min-w-0 max-w-full space-y-4 overflow-x-hidden">
+      <div className={`min-w-0 max-w-full grid gap-4 ${isCompactLayout ? "" : "xl:grid-cols-[1.05fr_0.95fr] xl:gap-6"}`}>
+      <section className={`min-w-0 w-full max-w-full overflow-hidden rounded-2xl border border-emerald-400/20 bg-zinc-900 shadow-soft ${isCompactLayout ? "p-4" : "p-6"}`}>
         <div className="flex items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-400/10 text-emerald-300">
             <Calculator className="h-6 w-6" />
@@ -90,7 +90,7 @@ export function AssetCalculatorView() {
         </div>
       </section>
 
-      <section className={`rounded-2xl border border-zinc-800 bg-zinc-900 shadow-soft ${isCompactLayout ? "p-4" : "p-6"}`}>
+      <section className={`min-w-0 w-full max-w-full overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-soft ${isCompactLayout ? "p-4" : "p-6"}`}>
         <div className="flex items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-zinc-950 text-emerald-300">
             <TrendingUp className="h-6 w-6" />
