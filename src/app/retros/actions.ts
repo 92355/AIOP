@@ -5,6 +5,12 @@ import { createClient } from '@/lib/supabase/server'
 import { dbToRetro, retroToDb, todoToDb } from '@/lib/db/mappers'
 import type { KptRetro, RetroItem, TodoItem } from '@/types'
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
+function ensureUuid(value: string): string {
+  return UUID_PATTERN.test(value) ? value : crypto.randomUUID()
+}
+
 async function getAuthenticatedUser() {
   const supabase = await createClient()
   const { data: { user }, error } = await supabase.auth.getUser()
@@ -27,9 +33,13 @@ export async function getRetros(): Promise<KptRetro[]> {
 // date 기준 upsert — UNIQUE(user_id, date) 활용
 export async function saveRetro(retro: KptRetro): Promise<void> {
   const { supabase, userId } = await getAuthenticatedUser()
+  const safeRetro: KptRetro = {
+    ...retro,
+    id: ensureUuid(retro.id),
+  }
   const { error } = await supabase
     .from('retros')
-    .upsert(retroToDb(retro, userId), { onConflict: 'user_id,date' })
+    .upsert(retroToDb(safeRetro, userId), { onConflict: 'user_id,date' })
 
   if (error) throw new Error(error.message)
 }
