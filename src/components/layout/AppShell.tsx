@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Coffee, X } from "lucide-react";
 import { AddInsightModal } from "@/components/insights/AddInsightModal";
 import { BottomTabBar } from "@/components/layout/BottomTabBar";
 import { Header } from "@/components/layout/Header";
@@ -56,6 +57,7 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
   const [themeMode, setThemeMode] = useLocalStorage<ThemeMode>("aiop-theme-mode", "dark");
   const [updateNoticeDismissed, setUpdateNoticeDismissed] = useLocalStorage<boolean>("aiop-update-notice-v1", false);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
+  const [developerCoffeeOpen, setDeveloperCoffeeOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<QuickAddCategory | null>(null);
   const [, startRefreshTransition] = useTransition();
   const { isCompact } = useCompactMode();
@@ -121,7 +123,7 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
 
   return (
     <div className={`min-h-screen bg-zinc-950 text-zinc-100 ${showBottomNav ? "" : "md:flex"} ${isDarkMode ? "theme-dark" : "theme-light"}`}>
-      {showBottomNav ? null : <Sidebar />}
+      {showBottomNav ? null : <Sidebar onOpenCoffee={() => setDeveloperCoffeeOpen(true)} />}
       <div className="min-w-0 flex-1">
         <Header
           isDarkMode={isDarkMode}
@@ -140,6 +142,55 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
         </main>
       </div>
       {showBottomNav ? <BottomTabBar /> : null}
+      {developerCoffeeOpen ? (
+        <div
+          className={`fixed inset-0 z-[80] flex bg-zinc-950/80 backdrop-blur-sm ${isCompact ? "items-end" : "items-center justify-center p-4"}`}
+          onClick={() => setDeveloperCoffeeOpen(false)}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="developer-coffee-title"
+            className={`w-full overflow-y-auto border border-zinc-800 bg-zinc-900 shadow-soft ${
+              isCompact ? "max-h-[80dvh] rounded-t-2xl border-x border-t p-4" : "max-w-lg rounded-2xl p-6"
+            }`}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs uppercase tracking-[0.28em] text-emerald-300/80">Support</p>
+                <h2 id="developer-coffee-title" className="mt-2 text-xl font-semibold text-zinc-50">
+                  개발자 커피사주기
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDeveloperCoffeeOpen(false)}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-zinc-800 text-zinc-400 hover:text-zinc-50"
+                aria-label="개발자 커피사주기  닫기"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="mt-5 rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4">
+              <p className="flex items-center gap-2 text-sm font-medium text-zinc-100">
+                <Coffee className="h-4 w-4 text-emerald-300" />
+                개발자에게 시원한 아메리카노 한잔 어때요?
+              </p>
+              <p className="mt-2 text-sm leading-6 text-zinc-400">
+                카카오페이도 받습니다. 서버비용... 나 거지된다
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setDeveloperCoffeeOpen(false)}
+              className="mt-6 flex h-11 w-full items-center justify-center rounded-2xl bg-emerald-400 px-4 text-sm font-semibold text-zinc-950 hover:bg-emerald-300"
+            >
+              확인
+            </button>
+          </section>
+        </div>
+      ) : null}
       <UpdateNoticeModal isOpen={!updateNoticeDismissed} onClose={handleCloseUpdateNotice} />
       <QuickAddModal isOpen={quickAddOpen} onClose={() => setQuickAddOpen(false)} onSelectCategory={handleSelectQuickAddCategory} />
       <AddWantModal

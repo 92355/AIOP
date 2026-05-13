@@ -1,12 +1,16 @@
 "use client";
 
-import { ClipboardList } from "lucide-react";
+import { ClipboardList, Coffee } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { isNavItemActive, navItems, viewTitles } from "@/components/layout/navItems";
 import { SidebarSettingsButton } from "@/components/layout/settings/SidebarSettingsButton";
 
-export function Sidebar() {
+type SidebarProps = {
+  onOpenCoffee: () => void;
+};
+
+export function Sidebar({ onOpenCoffee }: SidebarProps) {
   const pathname = usePathname();
 
   return (
@@ -59,7 +63,15 @@ export function Sidebar() {
         </div>
       </div>
 
-      <div className="mt-auto hidden pt-6 md:block">
+      <div className="mt-auto hidden space-y-2 pt-6 md:block">
+        <button
+          type="button"
+          onClick={onOpenCoffee}
+          className="flex w-full items-center gap-3 rounded-2xl border border-zinc-800 px-3 py-3 text-sm text-zinc-400 transition hover:bg-zinc-900 hover:text-zinc-100"
+        >
+          <Coffee className="h-4 w-4" />
+          <span>개발자 커피사주기</span>
+        </button>
         <SidebarSettingsButton />
       </div>
     </aside>
