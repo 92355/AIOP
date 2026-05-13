@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext } from "react";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 
 type CompactModeContextValue = {
@@ -12,7 +13,9 @@ type CompactModeContextValue = {
 const CompactModeContext = createContext<CompactModeContextValue | null>(null);
 
 export function CompactModeProvider({ children }: { children: React.ReactNode }) {
-  const [isCompact, setIsCompact] = useLocalStorage<boolean>("aiop-compact-mode", false);
+  const [isCompactSetting, setIsCompact] = useLocalStorage<boolean>("aiop-compact-mode", false);
+  const isMobile = useIsMobile();
+  const isCompact = isCompactSetting || isMobile;
 
   function setCompact(nextValue: boolean) {
     setIsCompact(nextValue);
