@@ -153,7 +153,12 @@ export function RetroView({ initialRetros, initialTodos }: { initialRetros: KptR
 
     if (todo) {
       setTodos([todo, ...todos]);
-      await createTodo(todo);
+      try {
+        await createTodo(todo);
+        setSaveError(null);
+      } catch (error) {
+        setSaveError(resolveErrorMessage(error));
+      }
     }
 
     handleInputChange(section, "");
@@ -213,7 +218,12 @@ export function RetroView({ initialRetros, initialTodos }: { initialRetros: KptR
       const linkedTodoId = item.linkedTodoId;
       const newTodos = updateLinkedTodoTitle(todos, linkedTodoId, trimmedText);
       setTodos(newTodos);
-      updateTodoTitle(linkedTodoId, trimmedText);
+      try {
+        await updateTodoTitle(linkedTodoId, trimmedText);
+        setSaveError(null);
+      } catch (error) {
+        setSaveError(resolveErrorMessage(error));
+      }
     }
 
     handleCancelEditing();
@@ -240,7 +250,12 @@ export function RetroView({ initialRetros, initialTodos }: { initialRetros: KptR
     if (section === "try" && targetItem?.linkedTodoId) {
       const linkedTodoId = targetItem.linkedTodoId;
       setTodos(todos.filter((todo) => todo.id !== linkedTodoId));
-      deleteTodo(linkedTodoId);
+      try {
+        await deleteTodo(linkedTodoId);
+        setSaveError(null);
+      } catch (error) {
+        setSaveError(resolveErrorMessage(error));
+      }
     }
 
     const safeRetros = normalizeRetros(storedRetros);
@@ -255,7 +270,12 @@ export function RetroView({ initialRetros, initialTodos }: { initialRetros: KptR
 
     if (!hasRetroContent(newRetro)) {
       setStoredRetros(safeRetros.filter((retro) => retro.date !== selectedDate));
-      deleteRetroByDate(selectedDate);
+      try {
+        await deleteRetroByDate(selectedDate);
+        setSaveError(null);
+      } catch (error) {
+        setSaveError(resolveErrorMessage(error));
+      }
     } else {
       const newRetros = safeRetros
         .map((retro) => (retro.date === selectedDate ? newRetro : retro))
@@ -305,7 +325,12 @@ export function RetroView({ initialRetros, initialTodos }: { initialRetros: KptR
       const linkedTodoId = targetItem.linkedTodoId;
       const nextStatus: TodoStatus = nextDone ? "done" : "todo";
       setTodos(todos.map((todo) => (todo.id === linkedTodoId ? { ...todo, status: nextStatus } : todo)));
-      updateTodoStatus(linkedTodoId, nextStatus);
+      try {
+        await updateTodoStatus(linkedTodoId, nextStatus);
+        setSaveError(null);
+      } catch (error) {
+        setSaveError(resolveErrorMessage(error));
+      }
     }
   }
 
