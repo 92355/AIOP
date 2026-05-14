@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Settings } from "lucide-react";
 import { SettingsMenu } from "@/components/layout/settings/SettingsMenu";
 import { useEscapeKey } from "@/hooks/useEscapeKey";
@@ -11,8 +12,18 @@ type HeaderSettingsButtonProps = {
 
 export function HeaderSettingsButton({ isMobileLayout }: HeaderSettingsButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEscapeKey(isOpen, () => setIsOpen(false));
+
+  useEffect(() => {
+    setIsMounted(true);
+    return () => setIsMounted(false);
+  }, []);
+
+  useEffect(() => {
+    setIsOpen(false);
+  }, [isMobileLayout]);
 
   return (
     <div className="relative">
@@ -26,19 +37,22 @@ export function HeaderSettingsButton({ isMobileLayout }: HeaderSettingsButtonPro
       >
         <Settings className="h-4 w-4" />
       </button>
-      {isOpen && isMobileLayout ? (
-        <div
-          className="fixed inset-0 z-[80] flex items-end bg-zinc-950/80 backdrop-blur-sm"
-          onClick={() => setIsOpen(false)}
-        >
-          <div className="w-full p-3" onClick={(event) => event.stopPropagation()}>
-            <SettingsMenu
-              onClose={() => setIsOpen(false)}
-              className="max-h-[80dvh] w-full rounded-2xl"
-            />
-          </div>
-        </div>
-      ) : null}
+      {isOpen && isMobileLayout && isMounted
+        ? createPortal(
+            <div
+              className="fixed inset-0 z-[90] flex items-end bg-zinc-950/80 backdrop-blur-sm"
+              onClick={() => setIsOpen(false)}
+            >
+              <div className="w-full p-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]" onClick={(event) => event.stopPropagation()}>
+                <SettingsMenu
+                  onClose={() => setIsOpen(false)}
+                  className="max-h-[80dvh] w-full rounded-2xl"
+                />
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
       {isOpen && !isMobileLayout ? (
         <div className="absolute right-0 top-12 z-[70]">
           <SettingsMenu onClose={() => setIsOpen(false)} />
