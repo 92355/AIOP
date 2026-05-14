@@ -64,24 +64,24 @@ export function AssetCalculatorView() {
           <MoneyInputField label="구매 가격" value={price} onChange={setPrice} compact={isCompactLayout} />
           <label className="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4">
             <span className="text-sm text-zinc-500">목표 기간</span>
-            <div className="mt-3 flex items-center gap-2">
+            <div className="mt-3 flex min-w-0 items-center gap-2 overflow-hidden">
               <input
                 type="number"
                 value={targetMonths}
                 onChange={(event) => setTargetMonths(toSafeNumber(event.target.value))}
-                className="min-w-0 flex-1 bg-transparent text-2xl font-semibold text-zinc-50 outline-none"
+                className="w-0 min-w-0 flex-1 bg-transparent text-xl font-semibold text-zinc-50 outline-none sm:text-2xl"
               />
               <span className="text-sm text-zinc-500">개월</span>
             </div>
           </label>
           <label className="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4">
             <span className="text-sm text-zinc-500">예상 수익률</span>
-            <div className="mt-3 flex items-center gap-2">
+            <div className="mt-3 flex min-w-0 items-center gap-2 overflow-hidden">
               <input
                 type="number"
                 value={expectedYield}
                 onChange={(event) => setExpectedYield(toSafeNumber(event.target.value))}
-                className="min-w-0 flex-1 bg-transparent text-2xl font-semibold text-zinc-50 outline-none"
+                className="w-0 min-w-0 flex-1 bg-transparent text-xl font-semibold text-zinc-50 outline-none sm:text-2xl"
               />
               <span className="text-sm text-zinc-500">%</span>
             </div>

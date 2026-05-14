@@ -64,7 +64,7 @@ export function MoneyInputField({ label, value, onChange, currency = "KRW", comp
   return (
     <label className={`min-w-0 w-full overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950/70 ${compact ? "p-3" : "p-4"}`}>
       <span className="text-sm text-zinc-500">{label}</span>
-      <div className={`flex min-w-0 items-center gap-2 ${compact ? "mt-2" : "mt-3"}`}>
+      <div className={`flex min-w-0 items-center gap-2 overflow-hidden ${compact ? "mt-2" : "mt-3"}`}>
         <input
           type="number"
           value={inputValue}
@@ -82,7 +82,7 @@ export function MoneyInputField({ label, value, onChange, currency = "KRW", comp
               onChange(0);
             }
           }}
-          className={`min-w-0 flex-1 bg-transparent font-semibold text-zinc-50 outline-none ${compact ? "text-xl" : "text-3xl md:text-4xl"}`}
+          className={`w-0 min-w-0 flex-1 bg-transparent font-semibold text-zinc-50 outline-none ${compact ? "text-lg sm:text-xl" : "text-2xl sm:text-3xl md:text-4xl"}`}
         />
         <span className="shrink-0 text-base text-zinc-500">{currencyLabel}</span>
       </div>
