@@ -346,11 +346,14 @@ v2.1 성능 개선:
 - `(app)/layout.tsx`에서 `dashboard_layouts.layout`을 서버에서 먼저 조회해 `AppShell`에 전달한다.
 - `useDashboardLayout`은 서버에서 받은 초기 레이아웃이 있으면 mount 직후 중복 조회를 생략한다.
 - `TodoSummary`는 `router.refresh()`로 갱신된 `initialTodos`를 다시 로컬 상태에 반영한다.
+- `DashboardGrid`는 그리드 폭 측정 전에도 단순 스택으로 위젯을 먼저 렌더링해 초기 빈 화면을 줄인다.
+- `supabase/schema.sql`에 대시보드 조회용 `user_id, created_at DESC` 복합 인덱스가 추가됐다.
 
 주의:
 
 - 레이아웃 저장은 여전히 클라이언트에서 `saveDashboardLayout()`을 호출한다.
 - QuickAdd 후 일부 도메인은 optimistic event와 `router.refresh()`를 함께 사용한다.
+- 대시보드 조회 인덱스는 운영 Supabase DB에 SQL을 적용해야 실제 성능 개선 효과가 난다.
 
 ---
 

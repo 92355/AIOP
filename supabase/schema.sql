@@ -216,6 +216,17 @@ CREATE TRIGGER todos_updated_at
   BEFORE UPDATE ON todos
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+-- ============================================================
+-- Dashboard read indexes / 대시보드 조회 최적화 인덱스
+-- RSC dashboard queries filter by user_id and order by created_at DESC.
+-- RSC 대시보드는 user_id 필터와 created_at DESC 정렬을 함께 사용한다.
+-- ============================================================
+CREATE INDEX IF NOT EXISTS wants_user_created_at_idx ON wants (user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS subscriptions_user_created_at_idx ON subscriptions (user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS insights_user_created_at_idx ON insights (user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS notes_user_created_at_idx ON notes (user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS todos_user_created_at_idx ON todos (user_id, created_at DESC);
+
 
 -- ============================================================
 -- 6. retros (K.P.T 회고)

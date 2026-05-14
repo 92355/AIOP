@@ -163,6 +163,7 @@ export function DashboardGrid({ initialData }: { initialData: DashboardData }) {
   }
 
   const gapClass = isCompact ? "space-y-4" : "space-y-6";
+  const initialStackWidgetIds = isNarrowLayout ? visibleNarrowWidgetIds : visibleWidgetIds;
 
   return (
     <div ref={containerRef} className={gapClass}>
@@ -213,7 +214,23 @@ export function DashboardGrid({ initialData }: { initialData: DashboardData }) {
             ))}
           </Responsive>
         )
-      ) : null}
+      ) : (
+        // Show dashboard content immediately while measuring grid width.
+        // 그리드 폭 측정 전에도 대시보드 콘텐츠를 먼저 표시한다.
+        <div className={gapClass}>
+          {initialStackWidgetIds.map((id) => (
+            <WidgetFrame
+              key={id}
+              id={id}
+              title={widgetTitles[id]}
+              isNarrow
+            >
+              {renderWidget(id, dashboardData)}
+            </WidgetFrame>
+          ))}
+          <CoffeeSupportWidget />
+        </div>
+      )}
       {visibleWidgetIds.length === 0 ? (
         <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 text-sm text-zinc-500 shadow-soft">
           표시 중인 Dashboard 위젯이 없습니다. 설정에서 위젯을 다시 추가하세요.
